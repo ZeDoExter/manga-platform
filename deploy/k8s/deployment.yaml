@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: manga-platform
+  labels:
+    app.kubernetes.io/name: manga-platform
+    app.kubernetes.io/part-of: manga-reading-platform
+spec:
+  replicas: 2
+  # Zero-Downtime Rolling Update Strategy (Bonus Track 2)
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%        # Create 25% new pods before terminating old ones
+      maxUnavailable: 0    # Never allow available pods to drop below replica count
+  selector:
+    matchLabels:
+      app: manga-platform
+  template:
+    metadata:
+      labels:
+        app: manga-platform
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: manga-platform
+          image: manga-platform:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "8080"
+            - name: CDN_BASE_URL
+              value: "https://img.yourmanga.com"
+          # Health & Zero-Downtime Probes (Bonus Track 2 & 3)
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 2
+          # Cost-aware Resource Limits (NFR-Cost-1)
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
