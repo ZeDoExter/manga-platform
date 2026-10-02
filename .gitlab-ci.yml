@@ -27,16 +27,8 @@ test:
     - echo "Running unit and integration tests..."
     - go test -v -coverprofile=coverage.out ./...
     - COVERAGE=$(go test -cover ./services/commerce/... | grep -o "[0-9.]*%" | tr -d "%")
-    - echo "Commerce service test coverage: ${COVERAGE}%"
-    - |
-      awk -v c="$COVERAGE" 'BEGIN {
-        if (c + 0 < 80) {
-          print "FAILED: Test coverage (" c "%) is below required threshold (80%)";
-          exit 1;
-        }
-        print "PASSED: Coverage threshold satisfied.";
-      }'
-  coverage: '/coverage: \d+.\d+% of statements/'
+    - echo "Commerce service test coverage $COVERAGE percent"
+    - awk -v c="$COVERAGE" 'BEGIN { if (c + 0 < 80) { print "FAILED_COVERAGE_BELOW_80"; exit 1 } print "PASSED_COVERAGE_OK" }'
   artifacts:
     when: always
     paths:
