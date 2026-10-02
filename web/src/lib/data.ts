@@ -6,6 +6,18 @@ export interface CreatorSplit {
   percentage: number;
 }
 
+export interface UploaderTeam {
+  id: string;
+  name: string;
+  handle: string;
+  avatar: string;
+  roleTitle: string;
+  verified: boolean;
+  followers: string;
+  worksCount: number;
+  bio: string;
+}
+
 export interface Chapter {
   id: string;
   storyId: string;
@@ -20,32 +32,41 @@ export interface Chapter {
 export interface Story {
   id: string;
   title: string;
+  thaiTitle?: string;
   type: StoryType;
   cover: string;
   banner: string;
   desc: string;
   author: string;
   artist: string;
+  uploader: UploaderTeam;
   creatorSplits: CreatorSplit[];
   tags: string[];
   rating: string;
   views: string;
   status: 'ต่อเนื่อง' | 'จบแล้ว';
+  isMature?: boolean; // 18+ content (FR-G1)
   chapters: Chapter[];
 }
 
-const MANGA_PAGES_SOLO = [
+const MANGA_PAGES_COMMON = [
   'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=900&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=900&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=900&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1563089145-599997674d42?w=900&auto=format&fit=crop&q=80',
 ];
 
-const MANGA_PAGES_FRIEREN = [
-  'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=900&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop&q=80',
-];
+const DEFAULT_UPLOADER: UploaderTeam = {
+  id: 'team-dooscans',
+  name: 'DooScans Studio',
+  handle: '@dooscans_official',
+  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+  roleTitle: 'ทีมแปลทางการระดับพรีเมียม',
+  verified: true,
+  followers: '148K',
+  worksCount: 38,
+  bio: 'ทีมแปลมังฮวาและมังงะคุณภาพสูง แปลตรงจากต้นฉบับเกาหลี/ญี่ปุ่น คมชัดระดับ 4K อัปเดตรายสัปดาห์',
+};
 
 const NOVEL_TEXT_TBATE = `สายลมหนาวพัดผ่านยอดสนโบราณจนกิ่งไม้สั่นไหวอย่างแผ่วเบา
 
@@ -57,14 +78,66 @@ const NOVEL_TEXT_TBATE = `สายลมหนาวพัดผ่านยอ
 
 export const STORIES: Story[] = [
   {
-    id: 'solo-leveling',
-    title: 'Solo Leveling: Ragnarok',
+    id: 'the-legendary-hero',
+    title: 'The Legendary Hero is an Academy Honors Student',
+    thaiTitle: 'วีรบุรุษในตำนานเกิดใหม่เป็นยอดอัจฉริยะแห่งสถาบัน',
     type: 'manga',
     cover: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80',
     banner: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1600&auto=format&fit=crop&q=80',
+    desc: 'ในยุคแห่งมหันตภัย วีรบุรุษทั้งห้าได้กอบกู้โลกจากความชั่วร้ายโบราณ หนึ่งในนั้นคือ "ลีโอ" จอมทัพผู้ยิ่งใหญ่ที่ยอมสละชีพ บัดนี้เขากลับมาเกิดใหม่ในร่างของเด็กหนุ่มตระกูลขุนนางตกอับ และสอบเข้าสู่สถาบันเวทมนตร์อันดับหนึ่งในฐานะอัจฉริยะเกียรตินิยม!',
+    author: 'Lee Han-Gyeol',
+    artist: 'Ant Studio',
+    uploader: DEFAULT_UPLOADER,
+    creatorSplits: [
+      { name: 'Lee Han-Gyeol', role: 'ผู้แต่งเนื้อเรื่อง', percentage: 70 },
+      { name: 'Ant Studio', role: 'สตูดิโอผู้วาด', percentage: 30 },
+    ],
+    tags: ['แอ็กชัน', 'เกิดใหม่', 'สถาบันเวทมนตร์', 'อัจฉริยะ', 'แฟนตาซี'],
+    rating: '4.98',
+    views: '3.8M',
+    status: 'ต่อเนื่อง',
+    isMature: false,
+    chapters: [
+      {
+        id: 'lh-1',
+        storyId: 'the-legendary-hero',
+        orderIndex: 1,
+        title: 'ตอนที่ 1: การจุติใหม่ของวีรบุรุษ',
+        priceCoins: 0,
+        pages: MANGA_PAGES_COMMON,
+        releaseDate: '12 นาทีที่แล้ว',
+      },
+      {
+        id: 'lh-2',
+        storyId: 'the-legendary-hero',
+        orderIndex: 2,
+        title: 'ตอนที่ 2: วันทดสอบพรสวรรค์แห่งสถาบัน',
+        priceCoins: 0,
+        pages: MANGA_PAGES_COMMON,
+        releaseDate: '1 วันที่แล้ว',
+      },
+      {
+        id: 'lh-3',
+        storyId: 'the-legendary-hero',
+        orderIndex: 3,
+        title: 'ตอนที่ 3: คะแนนเกียรตินิยมอันดับหนึ่ง',
+        priceCoins: 40,
+        pages: MANGA_PAGES_COMMON,
+        releaseDate: '3 วันที่แล้ว',
+      },
+    ],
+  },
+  {
+    id: 'solo-leveling',
+    title: 'Solo Leveling: Ragnarok',
+    thaiTitle: 'จุติราชันเงา บทแห่งแร็กนาร็อค',
+    type: 'manga',
+    cover: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
+    banner: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&auto=format&fit=crop&q=80',
     desc: 'ประตูมิติปริศนาเปิดขึ้นอีกครั้ง เมื่อทวยเทพจากห้วงอวกาศเริ่มรุกรานโลก ทายาทแห่งราชันเงาจึงตื่นขึ้นเพื่อสืบทอดพลังและปกป้องมนุษยชาติ',
     author: 'Chugong',
     artist: 'REDICE Studio',
+    uploader: DEFAULT_UPLOADER,
     creatorSplits: [
       { name: 'Chugong', role: 'ผู้แต่งเนื้อเรื่อง', percentage: 70 },
       { name: 'REDICE Studio', role: 'ผู้วาดภาพประกอบ', percentage: 30 },
@@ -73,6 +146,7 @@ export const STORIES: Story[] = [
     rating: '4.95',
     views: '2.4M',
     status: 'ต่อเนื่อง',
+    isMature: false,
     chapters: [
       {
         id: 'sl-1',
@@ -80,8 +154,8 @@ export const STORIES: Story[] = [
         orderIndex: 1,
         title: 'ตอนที่ 1: ผู้สืบทอดบัลลังก์เงา',
         priceCoins: 0,
-        pages: MANGA_PAGES_SOLO,
-        releaseDate: '10 นาทีที่แล้ว',
+        pages: MANGA_PAGES_COMMON,
+        releaseDate: '2 ชม.ก่อน',
       },
       {
         id: 'sl-2',
@@ -89,29 +163,22 @@ export const STORIES: Story[] = [
         orderIndex: 2,
         title: 'ตอนที่ 2: การตื่นขึ้นของประตูนรก',
         priceCoins: 40,
-        pages: MANGA_PAGES_SOLO,
+        pages: MANGA_PAGES_COMMON,
         releaseDate: '2 วันที่แล้ว',
-      },
-      {
-        id: 'sl-3',
-        storyId: 'solo-leveling',
-        orderIndex: 3,
-        title: 'ตอนที่ 3: กองทัพเงาสงคราม',
-        priceCoins: 50,
-        pages: MANGA_PAGES_SOLO,
-        releaseDate: '5 วันที่แล้ว',
       },
     ],
   },
   {
     id: 'frieren',
     title: 'คำอธิษฐานในวันที่จากลา',
+    thaiTitle: 'การเดินทางของเอลฟ์ผู้มีชีวิตนิรันดร์',
     type: 'manga',
     cover: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80',
     banner: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&auto=format&fit=crop&q=80',
     desc: 'การเดินทางของปาร์ตี้ผู้กล้าได้สิ้นสุดลงแล้ว แต่ชีวิตของเอลฟ์นักเวทผู้มีอายุขัยนับพันปีกำลังเริ่มต้นใหม่อีกครั้งเพื่อทำความเข้าใจหัวใจของมนุษย์',
     author: 'Kanehito Yamada',
     artist: 'Tsukasa Abe',
+    uploader: DEFAULT_UPLOADER,
     creatorSplits: [
       { name: 'Kanehito Yamada', role: 'เนื้อเรื่อง', percentage: 65 },
       { name: 'Tsukasa Abe', role: 'ภาพประกอบ', percentage: 35 },
@@ -120,6 +187,7 @@ export const STORIES: Story[] = [
     rating: '4.98',
     views: '3.1M',
     status: 'ต่อเนื่อง',
+    isMature: false,
     chapters: [
       {
         id: 'fr-1',
@@ -127,29 +195,22 @@ export const STORIES: Story[] = [
         orderIndex: 1,
         title: 'ตอนที่ 1: จุดสิ้นสุดของการผจญภัย',
         priceCoins: 0,
-        pages: MANGA_PAGES_FRIEREN,
-        releaseDate: '1 ชม.ก่อน',
-      },
-      {
-        id: 'fr-2',
-        storyId: 'frieren',
-        orderIndex: 2,
-        title: 'ตอนที่ 2: คำโกหกของนักบวช',
-        priceCoins: 35,
-        pages: MANGA_PAGES_FRIEREN,
-        releaseDate: '3 วันที่แล้ว',
+        pages: MANGA_PAGES_COMMON,
+        releaseDate: '1 วันที่แล้ว',
       },
     ],
   },
   {
     id: 'tbate',
     title: 'วันที่ข้าได้เกิดใหม่เป็นราชา',
+    thaiTitle: 'The Beginning After The End',
     type: 'novel',
     cover: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
     banner: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&auto=format&fit=crop&q=80',
     desc: 'อดีตราชาผู้ยิ่งใหญ่เกิดใหม่ในโลกเวทมนตร์และสัตว์อสูร โอกาสครั้งที่สองที่จะได้สัมผัสความอบอุ่นของครอบครัวและพลังที่แท้จริง',
     author: 'TurtleMe',
     artist: 'Fuyuki23',
+    uploader: DEFAULT_UPLOADER,
     creatorSplits: [
       { name: 'TurtleMe', role: 'ผู้เขียนนวนิยาย', percentage: 100 },
     ],
@@ -157,6 +218,7 @@ export const STORIES: Story[] = [
     rating: '4.92',
     views: '1.8M',
     status: 'ต่อเนื่อง',
+    isMature: false,
     chapters: [
       {
         id: 'tb-1',
@@ -167,26 +229,19 @@ export const STORIES: Story[] = [
         novelText: NOVEL_TEXT_TBATE,
         releaseDate: '3 ชม.ก่อน',
       },
-      {
-        id: 'tb-2',
-        storyId: 'tbate',
-        orderIndex: 2,
-        title: 'ตอนที่ 2: แก่นแท้แห่งมานา',
-        priceCoins: 30,
-        novelText: NOVEL_TEXT_TBATE,
-        releaseDate: '1 สัปดาห์ก่อน',
-      },
     ],
   },
   {
     id: 'omniscient-reader',
     title: 'มุมมองนักอ่านพระเจ้า',
+    thaiTitle: 'Omniscient Reader’s Viewpoint',
     type: 'manga',
     cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80',
     banner: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1600&auto=format&fit=crop&q=80',
     desc: 'โลกกลายเป็นนรกตามนิยายที่เขาอ่านเพียงคนเดียวมาตลอดสิบปี มีเพียงเขาเท่านั้นที่รู้บทสรุปของหายนะครั้งนี้',
     author: 'sing N song',
     artist: 'Sleepy-C',
+    uploader: DEFAULT_UPLOADER,
     creatorSplits: [
       { name: 'sing N song', role: 'ผู้แต่ง', percentage: 60 },
       { name: 'Sleepy-C', role: 'สตูดิโอผู้วาด', percentage: 40 },
@@ -195,6 +250,7 @@ export const STORIES: Story[] = [
     rating: '4.96',
     views: '2.9M',
     status: 'ต่อเนื่อง',
+    isMature: false,
     chapters: [
       {
         id: 'orv-1',
@@ -202,16 +258,7 @@ export const STORIES: Story[] = [
         orderIndex: 1,
         title: 'ตอนที่ 1: จุดเริ่มต้นบนรถไฟใต้ดิน',
         priceCoins: 0,
-        pages: MANGA_PAGES_SOLO,
-        releaseDate: '5 ชม.ก่อน',
-      },
-      {
-        id: 'orv-2',
-        storyId: 'omniscient-reader',
-        orderIndex: 2,
-        title: 'ตอนที่ 2: ภารกิจแรก ความเป็นหรือความตาย',
-        priceCoins: 40,
-        pages: MANGA_PAGES_SOLO,
+        pages: MANGA_PAGES_COMMON,
         releaseDate: '4 วันที่แล้ว',
       },
     ],
@@ -219,12 +266,14 @@ export const STORIES: Story[] = [
   {
     id: 'dungeon-cleaner',
     title: 'อดีตผู้กล้ามาเป็นคนเก็บขยะดันเจี้ยน',
+    thaiTitle: 'Retired Hero, S-Rank Dungeon Sweeper',
     type: 'manga',
     cover: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop&q=80',
     banner: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1600&auto=format&fit=crop&q=80',
     desc: 'หลังปราบจอมมารได้ เขากลับถูกปลดประจำการ งานใหม่ที่ได้คือภารกิจเก็บกวาดซากมอนสเตอร์ที่ดันเจี้ยนชั้นลึกสุด',
     author: 'คิมจินวู',
     artist: 'สตูดิโอเคียว',
+    uploader: DEFAULT_UPLOADER,
     creatorSplits: [
       { name: 'คิมจินวู', role: 'เนื้อเรื่อง', percentage: 70 },
       { name: 'สตูดิโอเคียว', role: 'ภาพ', percentage: 30 },
@@ -233,6 +282,7 @@ export const STORIES: Story[] = [
     rating: '4.75',
     views: '980K',
     status: 'ต่อเนื่อง',
+    isMature: false,
     chapters: [
       {
         id: 'dc-1',
@@ -240,7 +290,7 @@ export const STORIES: Story[] = [
         orderIndex: 1,
         title: 'ตอนที่ 1: งานแรกหลังปลดเกษียณ',
         priceCoins: 0,
-        pages: MANGA_PAGES_FRIEREN,
+        pages: MANGA_PAGES_COMMON,
         releaseDate: 'เมื่อวาน',
       },
     ],
@@ -248,12 +298,14 @@ export const STORIES: Story[] = [
   {
     id: 'magic-emperor',
     title: 'จักรพรรดิเวทมนตร์หวนคืน',
+    thaiTitle: 'The Reincarnated Magic Sovereign',
     type: 'novel',
     cover: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&auto=format&fit=crop&q=80',
     banner: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1600&auto=format&fit=crop&q=80',
     desc: 'จักรพรรดิเวทมนตร์ผู้ถูกทรยศโดยศิษย์เอก ตื่นขึ้นมาในร่างของคุณชายตกอับพร้อมคัมภีร์เวทโบราณที่หายสาบสูญ',
     author: 'เยี่ยหมิง',
     artist: 'หลินเฟิง',
+    uploader: DEFAULT_UPLOADER,
     creatorSplits: [
       { name: 'เยี่ยหมิง', role: 'ผู้เขียน', percentage: 100 },
     ],
@@ -261,6 +313,7 @@ export const STORIES: Story[] = [
     rating: '4.88',
     views: '1.4M',
     status: 'จบแล้ว',
+    isMature: true,
     chapters: [
       {
         id: 'me-1',

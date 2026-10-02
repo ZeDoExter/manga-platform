@@ -4,13 +4,13 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useRef } from 'react';
 import { useStore } from '@/lib/store';
-import { Search, Coins, Bookmark, Play, BookOpen } from 'lucide-react';
+import { Search, Coins, Bookmark, Play, ShieldAlert } from 'lucide-react';
 
 export function TopBar() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { coins, topUpCoins } = useStore();
+  const { coins, topUpCoins, is18Plus, toggle18Plus } = useStore();
   const timer = useRef<number | null>(null);
 
   const onSearch = (v: string) => {
@@ -76,6 +76,54 @@ export function TopBar() {
             <Coins style={{ width: 15, height: 15 }} />
             <span>{coins}</span>
             <span className="coin-add-label">+ เติม</span>
+          </button>
+
+          {/* 18+ Mature Content Toggle (FR-G1) */}
+          <button
+            onClick={() => toggle18Plus()}
+            className="toggle-18-btn"
+            title={is18Plus ? 'ปิดโหมดเนื้อหา 18+ (FR-G1)' : 'เปิดโหมดเนื้อหา 18+ (ต้องเข้าสู่ระบบและยืนยันอายุ)'}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 10px',
+              borderRadius: 99,
+              background: is18Plus ? 'rgba(255, 59, 92, 0.16)' : 'var(--surface)',
+              border: `1px solid ${is18Plus ? 'rgba(255, 59, 92, 0.5)' : 'var(--border)'}`,
+              color: is18Plus ? 'var(--primary)' : 'var(--text-faint)',
+              fontSize: 11.5,
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span style={{ letterSpacing: 0.5 }}>18+</span>
+            {/* Toggle switch track */}
+            <div
+              style={{
+                width: 28,
+                height: 16,
+                borderRadius: 99,
+                background: is18Plus ? 'var(--primary)' : '#262c3d',
+                position: 'relative',
+                transition: 'background 0.2s',
+              }}
+            >
+              <div
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  background: '#fff',
+                  position: 'absolute',
+                  top: 2,
+                  left: is18Plus ? 14 : 2,
+                  transition: 'left 0.2s',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                }}
+              />
+            </div>
           </button>
 
           {/* Avatar Profile Link */}
