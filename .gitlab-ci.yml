@@ -11,29 +11,31 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
   MIN_COVERAGE: "80"
 
-# Stage 1: Static Analysis & Lint
+# Code Quality & Static Analysis
 lint:
   stage: lint
   image: golang:1.25-alpine
   script:
-    - echo "Running Go static analysis (go vet)..."
+    - echo "Running go vet..."
     - go vet ./...
 
-# Stage 2: Automated Testing with Quality Gate (NFR-Dev-1 >= 80% coverage)
+# Automated Tests & Coverage Gate
 test:
   stage: test
   image: golang:1.25-alpine
   script:
-    - echo "Executing comprehensive unit and integration test suite..."
+    - echo "Running unit and integration tests..."
     - go test -v -coverprofile=coverage.out ./...
+    - COVERAGE=$(go test -cover ./services/commerce/... | grep -o "[0-9.]*%" | tr -d "%")
+    - echo "Commerce service test coverage: ${COVERAGE}%"
     - |
-      COVERAGE=$(go test -cover ./services/commerce/... | grep -o "[0-9.]*%" | tr -d "%")
-      echo "Commerce Service Test Coverage: ${COVERAGE}%"
-      if [ $(echo "$COVERAGE < 80" | awk '{print ($1 < $2)}') -eq 1 ]; then
-        echo "FAILED: Test coverage ($COVERAGE%) is below required threshold (80%)"
-        exit 1
-      fi
-      echo "PASSED: Test coverage meets quality gate requirement."
+      awk -v c="$COVERAGE" 'BEGIN {
+        if (c + 0 < 80) {
+          print "FAILED: Test coverage (" c "%) is below required threshold (80%)";
+          exit 1;
+        }
+        print "PASSED: Coverage threshold satisfied.";
+      }'
   coverage: '/coverage: \d+.\d+% of statements/'
   artifacts:
     when: always
@@ -41,20 +43,19 @@ test:
       - coverage.out
     expire_in: 7 days
 
-# Stage 3: Container Image Build (Bonus 1)
+# Container Image Build
 build:
   stage: build
   image: docker:24.0.5
   services:
     - docker:24.0.5-dind
   before_script:
-    - echo "Logging in to GitLab Container Registry..."
     - |
       if [ -n "$CI_REGISTRY_USER" ]; then
         echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
       fi
   script:
-    - echo "Building multi-stage production container image..."
+    - echo "Building container image..."
     - docker build -t ${CI_REGISTRY_IMAGE:-manga-platform}:${CI_COMMIT_SHORT_SHA} -t ${CI_REGISTRY_IMAGE:-manga-platform}:latest .
     - |
       if [ -n "$CI_REGISTRY_USER" ]; then
@@ -62,13 +63,12 @@ build:
         docker push ${CI_REGISTRY_IMAGE}:latest
       fi
 
-# Stage 4: Zero-Downtime Deployment (Bonus 2)
+# Production Deployment
 deploy:
   stage: deploy
   image: bitnami/kubectl:latest
   script:
-    - echo "Executing Rolling Update deployment to Kubernetes (Zero-Downtime Bonus 2)..."
-    - echo "Deploying image with maxUnavailable=0 and maxSurge=25%..."
-    - echo "Deployment manifest verified successfully."
+    - echo "Executing rolling update deployment to Kubernetes..."
+    - echo "Validating deployment manifests..."
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
