@@ -13,12 +13,11 @@ import {
   Sparkles,
   Star,
   Eye,
-  CheckCircle,
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'DUKETOON — แพลตฟอร์มมังงะและนิยายออนไลน์',
-  description: 'อ่านการ์ตูนมังงะและนิยายออนไลน์ อัปเดตตอนใหม่ทุกวัน ภาพคมชัด โหลดไว ไม่มีโฆษณากวนใจ',
+  title: 'DooToon — ดูตูน แพลตฟอร์มมังงะและนิยายออนไลน์',
+  description: 'ดูตูน แพลตฟอร์มมังงะและนิยายออนไลน์ อัปเดตตอนใหม่ทุกวัน ภาพคมชัด ไร้โฆษณากวนใจ',
 };
 
 const CHIPS = ['ทั้งหมด', 'มังงะ', 'นิยาย', 'จบแล้ว', 'ฟรี'];
@@ -40,60 +39,60 @@ export default async function Home({
   const { q = '' } = await searchParams;
   const list = matchQuery(q);
   const continueReading = STORIES.filter((s) => s.progress > 0);
-  const featured = STORIES[0]; // Hero feature
+  const featured = STORIES[0]; // Hero spotlight
 
   return (
-    <div className="home-container">
+    <div style={{ minHeight: '100vh', paddingBottom: 60 }}>
       {/* ========================================================================= */}
-      {/* SECTION 1: HERO SPOTLIGHT BANNER ("แบบปังๆ คมชัด สไตล์ Duketoon")         */}
+      {/* SECTION 1: HERO SPOTLIGHT (DOOTOON BANNER)                                */}
       {/* ========================================================================= */}
       {!q && (
-        <section className="hero-spotlight">
-          {/* Background art with cinematic gradient */}
+        <section className="hero-wrap">
           <div
-            className="hero-backdrop"
+            className="hero-bg"
             style={{ backgroundImage: `url(${featured.banner})` }}
           />
-          <div className="hero-scrim" />
+          <div className="hero-gradient" />
 
-          <div className="hero-content wrap">
-            <div className="hero-badge-row">
-              <span className="pill-badge pill-hot">
-                <Flame style={{ width: 13, height: 13 }} />
-                <span>อันดับ 1 ประจำสัปดาห์</span>
-              </span>
-              <span className="pill-badge pill-type">{featured.type}</span>
-              <span className="pill-badge pill-rating">
-                <Star style={{ width: 12, height: 12, fill: 'currentColor' }} />
-                <span>{featured.rating}</span>
-              </span>
-              <span className="pill-views">
-                <Eye style={{ width: 13, height: 13 }} />
-                <span>{featured.views} ยอดอ่าน</span>
-              </span>
-            </div>
-
-            <h1 className="hero-title">{featured.title}</h1>
-
-            <p className="hero-synopsis">{featured.desc}</p>
-
-            <div className="hero-tags">
-              {featured.tags.map((tag) => (
-                <span key={tag} className="hero-tag-item">
-                  #{tag}
+          <div className="wrap" style={{ height: '100%' }}>
+            <div className="hero-box">
+              <div className="hero-tag-row">
+                <span className="hero-kicker">
+                  <Flame style={{ width: 13, height: 13 }} />
+                  <span>อันดับ 1 มาแรง</span>
                 </span>
-              ))}
-            </div>
+                <span className="badge badge-rank-n">{featured.type}</span>
+                <span className="badge badge-coin">
+                  <Star style={{ width: 11, height: 11, fill: 'currentColor' }} />
+                  <span>{featured.rating}</span>
+                </span>
+                <span className="hero-stat">
+                  <Eye style={{ width: 13, height: 13 }} />
+                  <span>{featured.views} ยอดอ่าน</span>
+                </span>
+              </div>
 
-            <div className="hero-actions">
-              <Link className="btn btn-primary btn-lg" href={`/read/${featured.id}/1`}>
-                <Play style={{ width: 16, height: 16, fill: 'currentColor' }} />
-                <span>เริ่มอ่านตอนที่ 1 (ฟรี)</span>
-              </Link>
-              <Link className="btn btn-lightline btn-lg" href={`/story/${featured.id}`}>
-                <BookOpen style={{ width: 16, height: 16 }} />
-                <span>รายละเอียดเรื่อง</span>
-              </Link>
+              <h1 className="hero-heading">{featured.title}</h1>
+              <p className="hero-desc">{featured.desc}</p>
+
+              <div className="hero-meta-tags">
+                {featured.tags.map((tag) => (
+                  <span key={tag} className="hero-meta-tag">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="hero-buttons">
+                <Link className="btn btn-primary" href={`/read/${featured.id}/1`}>
+                  <Play style={{ width: 15, height: 15, fill: '#fff' }} />
+                  <span>เริ่มอ่านตอนที่ 1 (ฟรี)</span>
+                </Link>
+                <Link className="btn btn-secondary" href={`/story/${featured.id}`}>
+                  <BookOpen style={{ width: 15, height: 15 }} />
+                  <span>รายละเอียดเรื่อง</span>
+                </Link>
+              </div>
             </div>
           </div>
         </section>
@@ -101,45 +100,38 @@ export default async function Home({
 
       <div className="wrap">
         {/* ========================================================================= */}
-        {/* SECTION 2: แถบอ่านต่อจากที่ค้างไว้ (CONTINUE READING SHELF - FR-L1, FR-L3) */}
+        {/* SECTION 2: กำลังอ่านค้างไว้ (CONTINUE READING ROW - FR-L1)                 */}
         {/* ========================================================================= */}
         {!q && continueReading.length > 0 && (
-          <section className="section-block">
-            <div className="sec-head">
-              <div className="sec-title-group">
-                <Clock style={{ width: 19, height: 19, color: 'var(--sky)' }} />
-                <h2>อ่านต่อจากที่ค้างไว้</h2>
+          <section className="section-container">
+            <div className="section-head">
+              <div className="section-title">
+                <Clock className="section-title-icon" style={{ width: 20, height: 20, color: '#38bdf8' }} />
+                <span>กำลังอ่านค้างไว้</span>
               </div>
-              <span className="sec-sub">บันทึกตำแหน่งอัตโนมัติ (FR-L1)</span>
+              <span className="section-more" style={{ fontSize: 12, color: 'var(--text-faint)' }}>
+                ซิงค์ประวัติอัตโนมัติ (FR-L1)
+              </span>
             </div>
 
-            <div className="rail">
+            <div className="continue-rail">
               {continueReading.map((story) => {
                 const ch = resumeChapter(story);
                 return (
-                  <Link key={story.id} className="continue-card" href={`/read/${story.id}/${ch}`}>
-                    <img
-                      src={story.cover}
-                      alt={story.title}
-                      className="continue-thumb"
-                      loading="lazy"
-                    />
-                    <div className="continue-info">
-                      <span className="continue-type">{story.type}</span>
-                      <b className="continue-title">{story.title}</b>
-                      <span className="continue-ch">อ่านถึงตอนที่ {ch}</span>
+                  <Link key={story.id} className="continue-item" href={`/read/${story.id}/${ch}`}>
+                    <img src={story.cover} alt={story.title} className="continue-cover" loading="lazy" />
+                    <div className="continue-detail">
+                      <span className="continue-name">{story.title}</span>
+                      <span className="continue-ch-label">อ่านถึงตอนที่ {ch}</span>
 
-                      {/* Progress bar */}
-                      <div className="continue-bar-wrap">
-                        <div className="continue-bar">
-                          <i style={{ width: `${story.progress}%` }} />
+                      <div className="continue-bar-container">
+                        <div className="continue-track">
+                          <div className="continue-fill" style={{ width: `${story.progress}%` }} />
                         </div>
-                        <span className="continue-pct">{story.progress}%</span>
+                        <span className="continue-pct-text">{story.progress}%</span>
                       </div>
                     </div>
-                    <div className="continue-action">
-                      <ArrowRight style={{ width: 16, height: 16 }} />
-                    </div>
+                    <ArrowRight style={{ width: 15, height: 15, color: 'var(--text-muted)' }} />
                   </Link>
                 );
               })}
@@ -148,48 +140,50 @@ export default async function Home({
         )}
 
         {/* ========================================================================= */}
-        {/* SECTION 3: ชาร์ตอันดับยอดนิยม (WEEKLY TOP RANKING 1, 2, 3...)            */}
+        {/* SECTION 3: ชาร์ตอันดับยอดนิยม (WEEKLY TOP RANKINGS 1, 2, 3...)            */}
         {/* ========================================================================= */}
         {!q && (
-          <section className="section-block">
-            <div className="sec-head">
-              <div className="sec-title-group">
-                <Trophy style={{ width: 19, height: 19, color: 'var(--coin)' }} />
-                <h2>ชาร์ตยอดนิยมประจำสัปดาห์</h2>
+          <section className="section-container">
+            <div className="section-head">
+              <div className="section-title">
+                <Trophy className="section-title-icon" style={{ width: 20, height: 20, color: 'var(--coin)' }} />
+                <span>อันดับยอดนิยมประจำสัปดาห์</span>
               </div>
-              <Link href="/?q=ทั้งหมด" className="more">
-                ดูทั้งหมด
+              <Link href="/?q=ทั้งหมด" className="section-more">
+                <span>ดูทั้งหมด</span>
+                <ArrowRight style={{ width: 14, height: 14 }} />
               </Link>
             </div>
 
-            <div className="ranking-grid">
-              {STORIES.slice(0, 4).map((story, index) => {
-                const rank = index + 1;
-                const isTop3 = rank <= 3;
+            <div className="rankings-grid">
+              {STORIES.slice(0, 4).map((story, idx) => {
+                const rank = idx + 1;
+                const badgeClass =
+                  rank === 1
+                    ? 'badge-rank-1'
+                    : rank === 2
+                    ? 'badge-rank-2'
+                    : rank === 3
+                    ? 'badge-rank-3'
+                    : 'badge-rank-n';
+
                 return (
-                  <Link key={story.id} className="ranking-card" href={`/story/${story.id}`}>
-                    <div className={`ranking-badge rank-${rank}`}>
-                      {rank}
-                    </div>
-                    <img
-                      src={story.cover}
-                      alt={story.title}
-                      className="ranking-thumb"
-                      loading="lazy"
-                    />
-                    <div className="ranking-body">
-                      <span className="ranking-genre">{story.tags.slice(0, 2).join(' · ')}</span>
-                      <b className="ranking-title">{story.title}</b>
-                      <div className="ranking-meta">
-                        <span className="ranking-stat">
-                          <Star style={{ width: 12, height: 12, fill: 'var(--coin)', color: 'var(--coin)' }} />
+                  <Link key={story.id} className="rank-card" href={`/story/${story.id}`}>
+                    <div className={`rank-number-box ${badgeClass}`}>{rank}</div>
+                    <img src={story.cover} alt={story.title} className="rank-thumb" loading="lazy" />
+                    <div className="rank-content">
+                      <span className="rank-genre">{story.tags.slice(0, 2).join(' • ')}</span>
+                      <span className="rank-title">{story.title}</span>
+
+                      <div className="rank-stats-row">
+                        <span className="rank-stats-item" style={{ color: 'var(--coin)' }}>
+                          <Star style={{ width: 11, height: 11, fill: 'currentColor' }} />
                           {story.rating}
                         </span>
-                        <span className="ranking-stat">
-                          <Eye style={{ width: 12, height: 12 }} />
+                        <span className="rank-stats-item">
+                          <Eye style={{ width: 11, height: 11 }} />
                           {story.views}
                         </span>
-                        <span className="ranking-ch">ตอนที่ {story.chapters}</span>
                       </div>
                     </div>
                   </Link>
@@ -200,39 +194,42 @@ export default async function Home({
         )}
 
         {/* ========================================================================= */}
-        {/* SECTION 4: อัปเดตตอนใหม่ล่าสุด (LATEST CHAPTER RELEASES)                  */}
+        {/* SECTION 4: อัปเดตตอนใหม่ล่าสุด (LATEST CHAPTER UPDATES)                   */}
         {/* ========================================================================= */}
         {!q && (
-          <section className="section-block">
-            <div className="sec-head">
-              <div className="sec-title-group">
-                <Sparkles style={{ width: 19, height: 19, color: 'var(--hanko)' }} />
-                <h2>อัปเดตตอนใหม่ล่าสุด</h2>
+          <section className="section-container">
+            <div className="section-head">
+              <div className="section-title">
+                <Sparkles className="section-title-icon" style={{ width: 20, height: 20 }} />
+                <span>อัปเดตตอนใหม่ล่าสุด</span>
               </div>
-              <span className="sec-sub">อัปเดตตลอด 24 ชั่วโมง</span>
+              <span className="section-more" style={{ fontSize: 12, color: 'var(--text-faint)' }}>
+                อัปเดตทุกวัน
+              </span>
             </div>
 
-            <div className="latest-updates-grid">
+            <div className="updates-grid">
               {STORIES.slice(0, 6).map((story) => (
-                <div key={story.id} className="update-item">
-                  <Link href={`/story/${story.id}`} className="update-thumb-link">
-                    <img src={story.cover} alt={story.title} className="update-thumb" loading="lazy" />
+                <div key={story.id} className="update-card">
+                  <Link href={`/story/${story.id}`}>
+                    <img src={story.cover} alt={story.title} className="update-img" loading="lazy" />
                   </Link>
-                  <div className="update-info">
-                    <Link href={`/story/${story.id}`} className="update-title">
+                  <div className="update-meta">
+                    <Link href={`/story/${story.id}`} className="update-name">
                       {story.title}
                     </Link>
-                    <span className="update-author">{story.author}</span>
-                    <div className="update-chap-row">
-                      <Link href={`/read/${story.id}/${story.chapters}`} className="update-chap-btn">
+                    <span className="update-creator">{story.author}</span>
+
+                    <div className="update-ch-bar">
+                      <Link href={`/read/${story.id}/${story.chapters}`} className="update-ch-link">
                         <span>ตอนที่ {story.chapters}</span>
                         {story.price === 0 ? (
-                          <span className="free-tag">ฟรี</span>
+                          <span style={{ color: 'var(--success)', fontSize: 10 }}>ฟรี</span>
                         ) : (
-                          <span className="coin-tag">เหรียญ</span>
+                          <span style={{ color: 'var(--coin)', fontSize: 10 }}>{story.price} เหรียญ</span>
                         )}
                       </Link>
-                      <span className="update-time">{story.updatedAt}</span>
+                      <span className="update-time-tag">{story.updatedAt}</span>
                     </div>
                   </div>
                 </div>
@@ -242,47 +239,40 @@ export default async function Home({
         )}
 
         {/* ========================================================================= */}
-        {/* SECTION 5: รายการทั้งหมดและหมวดหมู่ (CATALOG BROWSER)                     */}
+        {/* SECTION 5: สำรวจเรื่องทั้งหมด (CATALOG BROWSER)                           */}
         {/* ========================================================================= */}
-        <section className="section-block">
-          <div className="sec-head" style={{ marginTop: 36 }}>
-            <div className="sec-title-group">
-              <Layers style={{ width: 19, height: 19, color: 'var(--sage)' }} />
-              <h2>{q ? `ผลการค้นหา "${q}"` : 'สำรวจเรื่องทั้งหมด'}</h2>
+        <section className="section-container">
+          <div className="section-head">
+            <div className="section-title">
+              <Layers className="section-title-icon" style={{ width: 20, height: 20, color: '#a78bfa' }} />
+              <span>{q ? `ผลการค้นหา: "${q}"` : 'สำรวจเรื่องทั้งหมด'}</span>
             </div>
-            <span className="sec-sub">พบ {list.length} เรื่อง</span>
+            <span className="section-more" style={{ fontSize: 12, color: 'var(--text-faint)' }}>
+              {list.length} เรื่อง
+            </span>
           </div>
 
           {/* Filter Chips */}
-          <div className="chips-row">
-            {CHIPS.map((c) => {
-              const active = (!q && c === 'ทั้งหมด') || q === c;
-              const href = c === 'ทั้งหมด' ? '/' : `/?q=${encodeURIComponent(c)}`;
+          <div className="filter-chips-rail">
+            {CHIPS.map((chip) => {
+              const active = (!q && chip === 'ทั้งหมด') || q === chip;
+              const href = chip === 'ทั้งหมด' ? '/' : `/?q=${encodeURIComponent(chip)}`;
               return (
-                <Link key={c} className={`chip-btn ${active ? 'active' : ''}`} href={href}>
-                  {c}
+                <Link key={chip} className={`filter-chip ${active ? 'active' : ''}`} href={href}>
+                  {chip}
                 </Link>
               );
             })}
           </div>
 
-          {/* Stories Grid */}
-          {list.length === 0 ? (
-            <div className="empty-box">
-              <p>ไม่พบเรื่องที่ค้นหา ลองค้นหาด้วยคำอื่น หรือกดดู "ทั้งหมด"</p>
-              <Link className="btn btn-primary" href="/">
-                ดูเรื่องทั้งหมด
+          {/* Grid */}
+          <div className="catalog-grid">
+            {list.map((story) => (
+              <Link key={story.id} href={`/story/${story.id}`}>
+                <CoverCard story={story} />
               </Link>
-            </div>
-          ) : (
-            <div className="grid-shelf">
-              {list.map((story) => (
-                <Link key={story.id} href={`/story/${story.id}`} className="story-card-link">
-                  <CoverCard story={story} />
-                </Link>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
         </section>
       </div>
     </div>

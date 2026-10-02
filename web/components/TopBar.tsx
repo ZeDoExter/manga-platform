@@ -4,12 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast, useStore } from '@/lib/store';
-import { Search, Coins, Sun, Moon, BookOpen, Compass, Flame } from 'lucide-react';
-
-function getTheme(): 'dark' | 'light' {
-  if (typeof document === 'undefined') return 'dark';
-  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
-}
+import { Search, Coins, Sun, Moon, Play } from 'lucide-react';
 
 export default function TopBar() {
   const pathname = usePathname();
@@ -20,7 +15,10 @@ export default function TopBar() {
   const timer = useRef<number | null>(null);
 
   useEffect(() => {
-    setTheme(getTheme());
+    if (typeof document !== 'undefined') {
+      const current = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+      setTheme(current);
+    }
   }, []);
 
   const toggleTheme = () => {
@@ -38,89 +36,91 @@ export default function TopBar() {
     clearTimeout(timer.current ?? undefined);
     timer.current = window.setTimeout(() => {
       router.push(v.trim() ? `/?q=${encodeURIComponent(v.trim())}` : '/');
-    }, 350);
+    }, 300);
   };
 
   return (
-    <header className="topbar">
-      <div className="topbar-in">
+    <header className="dootoon-nav">
+      <div className="nav-inner">
         {/* Brand */}
-        <Link className="logo" href="/">
-          <span className="logo-mark">
-            <BookOpen style={{ width: 17, height: 17 }} />
-          </span>
-          <span>
-            DUKETOON<small>MANGA & NOVEL PLATFORM</small>
-          </span>
+        <Link className="brand" href="/">
+          <div className="brand-icon">
+            <Play style={{ width: 16, height: 16, fill: '#fff', marginLeft: 2 }} />
+          </div>
+          <div className="brand-name">
+            DOO<span>TOON</span>
+            <span className="brand-tag">ดูตูน</span>
+          </div>
         </Link>
 
-        {/* Navigation */}
-        <nav className="nav-desktop">
-          <Link href="/" className={pathname === '/' ? 'on' : ''}>
+        {/* Desktop Links */}
+        <nav className="nav-links">
+          <Link href="/" className={`nav-link ${pathname === '/' ? 'active' : ''}`}>
             หน้าแรก
           </Link>
-          <Link href="/?q=มังงะ" className={pathname === '/?q=มังงะ' ? 'on' : ''}>
+          <Link href="/?q=มังงะ" className={`nav-link ${pathname === '/?q=มังงะ' ? 'active' : ''}`}>
             มังงะ
           </Link>
-          <Link href="/?q=นิยาย" className={pathname === '/?q=นิยาย' ? 'on' : ''}>
+          <Link href="/?q=นิยาย" className={`nav-link ${pathname === '/?q=นิยาย' ? 'active' : ''}`}>
             นิยาย
           </Link>
-          <Link href="/story/1" className={pathname.startsWith('/story') ? 'on' : ''}>
+          <Link href="/story/1" className={`nav-link ${pathname.startsWith('/story') ? 'active' : ''}`}>
             เรื่องยอดนิยม
           </Link>
         </nav>
 
-        {/* Search */}
-        <div className="search">
-          <label className="search-box">
-            <Search style={{ width: 15, height: 15, opacity: 0.6, flexShrink: 0 }} />
-            <input
-              key={searchParams.get('q') ?? ''}
-              defaultValue={searchParams.get('q') ?? ''}
-              placeholder="ค้นหาชื่อเรื่อง หมวดหมู่ หรือนักเขียน..."
-              onChange={(e) => onSearch(e.target.value)}
-              aria-label="ค้นหา"
-            />
-          </label>
+        {/* Search Field */}
+        <div className="nav-search">
+          <Search className="search-icon-pos" style={{ width: 15, height: 15 }} />
+          <input
+            key={searchParams.get('q') ?? ''}
+            defaultValue={searchParams.get('q') ?? ''}
+            placeholder="ค้นหาชื่อเรื่อง หมวดหมู่ หรือนักเขียน..."
+            onChange={(e) => onSearch(e.target.value)}
+            className="search-field"
+            aria-label="ค้นหา"
+          />
         </div>
 
-        {/* Coin Balance Pill */}
-        <button
-          className="coin-pill"
-          title="กระเป๋าเหรียญคงเหลือ"
-          onClick={() => toast(`คงเหลือ ${coins} เหรียญ (ระบบแยกเหรียญเติมและเหรียญโบนัสตาม FR-M2)`)}
-        >
-          <Coins style={{ width: 15, height: 15, color: 'var(--coin)' }} />
-          <span>{coins}</span>
-        </button>
+        {/* Right Section */}
+        <div className="nav-right">
+          <button
+            className="coin-chip"
+            onClick={() => toast(`เหรียญคงเหลือ: ${coins} เหรียญ (ระบบบันทึกธุรกรรมแบบแยกเหรียญเติมและโบนัสตาม FR-M2)`)}
+            title="กระเป๋าเหรียญ"
+          >
+            <Coins style={{ width: 15, height: 15 }} />
+            <span>{coins}</span>
+            <span className="coin-add-label">+ เติม</span>
+          </button>
 
-        {/* Theme Toggle */}
-        <button
-          className="icon-btn"
-          onClick={toggleTheme}
-          title="สลับโหมดมืด/สว่าง"
-          aria-label="สลับธีม"
-          style={{
-            background: 'var(--surface2)',
-            border: '1px solid var(--line)',
-            borderRadius: '50%',
-            width: 34,
-            height: 34,
-            display: 'grid',
-            placeItems: 'center',
-            cursor: 'pointer',
-            color: 'var(--text)',
-          }}
-        >
-          {theme === 'dark' ? (
-            <Sun style={{ width: 16, height: 16 }} />
-          ) : (
-            <Moon style={{ width: 16, height: 16 }} />
-          )}
-        </button>
+          <button
+            onClick={toggleTheme}
+            className="icon-btn"
+            title="สลับโหมดมืด/สว่าง"
+            aria-label="สลับธีม"
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: '50%',
+              background: 'var(--surface)',
+              border: '1px solid var(--line)',
+              display: 'grid',
+              placeItems: 'center',
+              color: 'var(--text)',
+            }}
+          >
+            {theme === 'dark' ? (
+              <Sun style={{ width: 16, height: 16 }} />
+            ) : (
+              <Moon style={{ width: 16, height: 16 }} />
+            )}
+          </button>
 
-        {/* User Avatar */}
-        <div className="avatar">N</div>
+          <div className="user-avatar" title="บัญชีผู้ใช้">
+            D
+          </div>
+        </div>
       </div>
     </header>
   );

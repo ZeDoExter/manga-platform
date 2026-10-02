@@ -1,5 +1,5 @@
 import type { Story } from '@/lib/data';
-import { Coins, Check, Sparkles, BookOpen } from 'lucide-react';
+import { Coins, Check, Sparkles, Star } from 'lucide-react';
 
 interface Props {
   story: Story;
@@ -8,55 +8,56 @@ interface Props {
 }
 
 export default function CoverCard({ story, owned = false, showPrice = true }: Props) {
-  const free = story.price === 0;
+  const isFree = story.price === 0;
 
   return (
-    <div className="cover">
-      {/* Cover Image */}
-      <img
-        src={story.cover}
-        alt={story.title}
-        className="cover-art"
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        loading="lazy"
-      />
+    <div className="manga-card">
+      <div className="manga-thumb-wrap">
+        <img
+          src={story.cover}
+          alt={story.title}
+          className="manga-thumb"
+          loading="lazy"
+        />
 
-      {/* Progress spine on the left edge (FR-L1) */}
-      {story.progress > 0 && (
-        <div className="spine">
-          <i style={{ height: `${story.progress}%` }} />
+        <div className="manga-card-shade" />
+
+        {/* Story Type Tag */}
+        <div className="manga-badge-pos">
+          <span className="badge badge-rank-n">
+            {story.type}
+          </span>
         </div>
-      )}
 
-      {/* Type badge */}
-      <span className="type-tag">{story.type}</span>
+        {/* Rating */}
+        <div className="manga-rating-pos">
+          <Star style={{ width: 10, height: 10, fill: 'currentColor' }} />
+          <span>{story.rating}</span>
+        </div>
+      </div>
 
-      {/* Price / Status Hanko Stamp */}
-      {showPrice &&
-        (owned ? (
-          <span className="hanko owned">
-            <Check style={{ width: 12, height: 12 }} />
-            <span>มีแล้ว</span>
-          </span>
-        ) : free ? (
-          <span className="hanko free">
-            <Sparkles style={{ width: 11, height: 11 }} />
-            <span>ฟรี</span>
-          </span>
-        ) : (
-          <span className="hanko">
-            <Coins style={{ width: 11, height: 11 }} />
-            <span>{story.price}</span>
-          </span>
-        ))}
+      <div className="manga-body">
+        <h4 className="manga-card-title">{story.title}</h4>
 
-      {/* Gradient Shade & Metadata */}
-      <div className="cover-shade" />
-      <div className="cover-meta">
-        <b>{story.title}</b>
-        <span>
-          ตอนที่ {story.chapters} · {story.updatedAt}
-        </span>
+        <div className="manga-card-ch-info">
+          <span>ตอนที่ {story.chapters}</span>
+
+          {showPrice && (
+            owned ? (
+              <span className="badge" style={{ background: 'var(--surface-elevated)', color: 'var(--success)' }}>
+                <Check style={{ width: 11, height: 11 }} /> ปลดแล้ว
+              </span>
+            ) : isFree ? (
+              <span className="badge badge-free">
+                <Sparkles style={{ width: 10, height: 10 }} /> ฟรี
+              </span>
+            ) : (
+              <span className="badge badge-coin">
+                <Coins style={{ width: 10, height: 10 }} /> {story.price}
+              </span>
+            )
+          )}
+        </div>
       </div>
     </div>
   );

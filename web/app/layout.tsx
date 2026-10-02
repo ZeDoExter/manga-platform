@@ -5,11 +5,10 @@ import TopBar from '@/components/TopBar';
 import MobileTabs from '@/components/MobileTabs';
 import Toaster from '@/components/Toaster';
 import './globals.css';
-import './duketoon.css';
 
 export const metadata: Metadata = {
-  title: { default: 'มังงะฮับ — อ่านมังงะและนิยาย', template: '%s · มังงะฮับ' },
-  description: 'แพลตฟอร์มอ่านมังงะและนิยายภาษาไทย ปลดล็อกตอนด้วยเหรียญ ทีมวาดได้ส่วนแบ่งทุกการซื้อ (FR-SEO1)',
+  title: { default: 'DooToon — ดูตูน แพลตฟอร์มมังงะและนิยายออนไลน์', template: '%s · DooToon' },
+  description: 'ดูตูน แพลตฟอร์มมังงะและนิยายออนไลน์ อัปเดตตอนใหม่ทุกวัน ภาพคมชัด ไร้โฆษณากวนใจ',
 };
 
 // ตั้งธีมก่อน paint กันจอกระพริบ (default dark-first แบบ Mihon)
