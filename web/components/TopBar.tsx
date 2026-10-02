@@ -64,8 +64,8 @@ export default function TopBar() {
           <Link href="/?q=นิยาย" className={`nav-link ${pathname === '/?q=นิยาย' ? 'active' : ''}`}>
             นิยาย
           </Link>
-          <Link href="/story/1" className={`nav-link ${pathname.startsWith('/story') ? 'active' : ''}`}>
-            เรื่องยอดนิยม
+          <Link href="/bookmarks" className={`nav-link ${pathname === '/bookmarks' ? 'active' : ''}`}>
+            บุ๊กมาร์ก
           </Link>
         </nav>
 

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { toast, useStore } from '@/lib/store';
-import { Home, BookOpen, Compass, Coins, User } from 'lucide-react';
+import { Home, Bookmark, Compass, Coins, User } from 'lucide-react';
 
 export default function MobileTabs() {
   const pathname = usePathname();
@@ -17,11 +17,11 @@ export default function MobileTabs() {
         </span>
         หน้าแรก
       </Link>
-      <Link href="/story/1" className={pathname.startsWith('/story') ? 'on' : ''}>
+      <Link href="/bookmarks" className={pathname === '/bookmarks' ? 'on' : ''}>
         <span className="ic">
-          <BookOpen style={{ width: 17, height: 17 }} />
+          <Bookmark style={{ width: 17, height: 17 }} />
         </span>
-        เรื่องเด่น
+        บุ๊กมาร์ก
       </Link>
       <Link href="/read/1/1" className={pathname.startsWith('/read') ? 'on' : ''}>
         <span className="ic">
@@ -31,7 +31,7 @@ export default function MobileTabs() {
       </Link>
       <button
         className="tab"
-        onClick={() => toast(`เหรียญคงเหลือ <b>${coins}</b> · เติมผ่าน PromptPay QR (FR-M1/FR-PAY1)`)}
+        onClick={() => toast(`เหรียญคงเหลือ ${coins} เหรียญ`)}
       >
         <span className="ic">
           <Coins style={{ width: 17, height: 17 }} />
@@ -40,12 +40,12 @@ export default function MobileTabs() {
       </button>
       <button
         className="tab"
-        onClick={() => toast('บัญชีผู้ใช้ · สิทธิ์และนโยบายโฆษณาแบ่งตามระดับสมาชิก (FR-X3)')}
+        onClick={() => toast('บัญชีผู้ใช้ • สิทธิ์และนโยบายแบ่งตามระดับสมาชิก')}
       >
         <span className="ic">
           <User style={{ width: 17, height: 17 }} />
         </span>
-        โปรไฟล์
+        ฉัน
       </button>
     </nav>
   );

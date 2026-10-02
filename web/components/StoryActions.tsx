@@ -4,32 +4,60 @@ import Link from 'next/link';
 import { toast, useStore } from '@/lib/store';
 import { resumeChapter } from '@/lib/data';
 import type { Story } from '@/lib/data';
+import { Play, Bookmark, BookmarkCheck, Heart } from 'lucide-react';
 
-/** ปุ่มอ่านต่อ/ติดตาม/ทิปบนหน้าเรื่อง (FR-L2/FR-E2) */
 export default function StoryActions({ story }: { story: Story }) {
   const { following, toggleFollow } = useStore();
   const isFollowing = following.includes(story.id);
   const resume = resumeChapter(story);
 
   return (
-    <div className="action-row">
+    <div className="action-row" style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
       <Link className="btn btn-primary" href={`/read/${story.id}/${resume}`}>
-        อ่านต่อตอนที่ {resume}
+        <Play style={{ width: 14, height: 14, fill: '#fff' }} />
+        <span>อ่านต่อตอนที่ {resume}</span>
       </Link>
+
       <button
-        className="btn btn-ghost"
+        className="btn btn-secondary"
         onClick={() => {
           toggleFollow(story.id);
-          if (!isFollowing) toast('ติดตามแล้ว — มีตอนใหม่จะแจ้งเตือนทางอีเมล/LINE (FR-N1a)');
+          toast(
+            isFollowing
+              ? `นำ "${story.title}" ออกจากบุ๊กมาร์กแล้ว`
+              : `เพิ่ม "${story.title}" ในบุ๊กมาร์กแล้ว (FR-L2)`,
+          );
+        }}
+        style={{
+          background: isFollowing ? 'rgba(255, 59, 92, 0.15)' : 'var(--surface-elevated)',
+          color: isFollowing ? 'var(--primary)' : 'var(--text)',
+          borderColor: isFollowing ? 'var(--primary)' : 'var(--line)',
         }}
       >
-        {isFollowing ? '✓ ติดตามแล้ว' : '+ ติดตาม'} (FR-L2)
+        {isFollowing ? (
+          <>
+            <BookmarkCheck style={{ width: 14, height: 14 }} />
+            <span>บุ๊กมาร์กแล้ว</span>
+          </>
+        ) : (
+          <>
+            <Bookmark style={{ width: 14, height: 14 }} />
+            <span>บุ๊กมาร์ก</span>
+          </>
+        )}
       </button>
+
       <button
-        className="btn btn-coin"
-        onClick={() => toast('ทิปให้นักวาดโดยตรง แยกจากค่าปลดล็อก (FR-E2)')}
+        className="btn"
+        style={{
+          background: 'rgba(245, 166, 35, 0.12)',
+          color: 'var(--coin)',
+          border: '1px solid rgba(245, 166, 35, 0.35)',
+        }}
+        onClick={() => toast('ส่งเหรียญทิปให้ผู้สร้างผลงานโดยตรง (FR-E2)')}
       >
-        ♥ ทิป
+        <Heart style={{ width: 14, height: 14, fill: 'currentColor' }} />
+        <span>ทิป</span>
       </button>
     </div>
   );
