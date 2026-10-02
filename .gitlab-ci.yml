@@ -58,7 +58,9 @@ build:
 # Production Deployment
 deploy:
   stage: deploy
-  image: bitnami/kubectl:latest
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
   script:
     - echo "Executing rolling update deployment to Kubernetes..."
     - echo "Validating deployment manifests..."
