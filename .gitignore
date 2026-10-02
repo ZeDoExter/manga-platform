@@ -1,4 +1,8 @@
 # Binaries and build artifacts
+# Documentation & Rubric (local only, untracked per user request)
+docs/
+*.pdf
+
 bin/
 dist/
 *.exe
