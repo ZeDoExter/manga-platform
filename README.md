@@ -18,7 +18,7 @@ Skills live under `.claude/skills/` and are auto-discoverable by Claude Code.
 - 4 roles: `guest`, `user`, `uploader`, `admin`. Authorization is per-story for uploaders, not global.
 - Money logic (wallet/ledger/payouts) must be ACID and idempotent. Never "fix" a money bug with a quick patch that skips the transaction boundary.
 - Content delivery (manga pages, novel text) must always pass through the `entitlement` check before being served. Never bypass this for convenience in a demo.
-- Cloud target: Azure. IaC: Terraform. CI/CD: Bitbucket → Jenkins. Local dev: Tilt.
+- Cloud target: Azure. IaC: Terraform. CI/CD: GitLab CI/CD. Local dev: Tilt.
 - The platform explicitly disclaims ownership of uploaded content and operates a takedown process (see FR-D2, FR-U3). Any feature touching content removal must also touch `commerce` (revenue reversal) — see NFR "Content protection" and FR-M6.
 
 ## Conventions
