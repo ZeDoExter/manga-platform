@@ -78,20 +78,20 @@ export function TopBar() {
             <span className="coin-add-label">+ เติม</span>
           </button>
 
-          {/* Bookmarks shortcut for mobile */}
+          {/* Avatar Profile Link */}
           <Link
-            href="/bookmarks"
-            className="btn btn-secondary btn-sm"
-            style={{ padding: 8, borderRadius: '50%', width: 34, height: 34, display: 'flex' }}
-            title="บุ๊กมาร์กของฉัน"
+            href="/profile"
+            className="user-avatar"
+            title="โปรไฟล์และการตั้งค่า"
+            style={{
+              display: 'grid',
+              placeItems: 'center',
+              textDecoration: 'none',
+              boxShadow: pathname === '/profile' ? '0 0 0 2px var(--primary)' : 'none',
+            }}
           >
-            <Bookmark style={{ width: 15, height: 15, color: pathname === '/bookmarks' ? 'var(--primary)' : 'var(--text-muted)' }} />
-          </Link>
-
-          {/* Avatar */}
-          <div className="user-avatar" title="บัญชีผู้ใช้">
             D
-          </div>
+          </Link>
         </div>
       </div>
     </header>

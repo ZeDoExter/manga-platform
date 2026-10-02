@@ -1182,3 +1182,127 @@ button {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* ========================================================================= */
+/* NETFLIX-STYLE TOP RANKINGS (GIANT OVERLAPPING NUMBERS)                     */
+/* ========================================================================= */
+
+.netflix-rail {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 12px 4px 28px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.netflix-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.netflix-item {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  display: flex;
+  align-items: flex-end;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.netflix-item:hover {
+  transform: translateY(-4px);
+}
+
+.netflix-rank-num {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 130px;
+  font-weight: 950;
+  line-height: 0.72;
+  color: #08090c;
+  -webkit-text-stroke: 3.5px #525a6c;
+  margin-right: -32px;
+  z-index: 10;
+  user-select: none;
+  flex-shrink: 0;
+  filter: drop-shadow(4px 4px 10px rgba(0, 0, 0, 0.8));
+  transition: -webkit-text-stroke 0.2s, color 0.2s;
+}
+
+@media (max-width: 640px) {
+  .netflix-rank-num {
+    font-size: 100px;
+    margin-right: -24px;
+    -webkit-text-stroke: 3px #525a6c;
+  }
+}
+
+.netflix-item:hover .netflix-rank-num {
+  -webkit-text-stroke: 3.5px var(--primary);
+  color: rgba(255, 59, 92, 0.2);
+}
+
+/* Rank 1 Highlight */
+.netflix-item:first-child .netflix-rank-num {
+  -webkit-text-stroke: 4px #f5a623;
+  color: rgba(245, 166, 35, 0.15);
+}
+
+.netflix-poster-wrap {
+  position: relative;
+  width: 140px;
+  height: 200px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+@media (min-width: 768px) {
+  .netflix-poster-wrap {
+    width: 160px;
+    height: 230px;
+  }
+}
+
+.netflix-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+.netflix-item:hover .netflix-poster-img {
+  transform: scale(1.06);
+}
+
+.netflix-poster-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(9, 10, 15, 0.9) 100%);
+}
+
+.netflix-poster-meta {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+}
+
+.netflix-poster-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.netflix-poster-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}

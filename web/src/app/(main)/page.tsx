@@ -150,14 +150,14 @@ export default async function HomePage({ searchParams }: SearchProps) {
         )}
 
         {/* ========================================================================= */}
-        {/* SECTION 3: ชาร์ตอันดับยอดนิยม (WEEKLY TOP RANKINGS 1, 2, 3...)            */}
+        {/* SECTION 3: อันดับยอดนิยมสไตล์ NETFLIX TOP 10                             */}
         {/* ========================================================================= */}
         {!q && !type && (
           <section className="section-container">
             <div className="section-head">
               <div className="section-title">
                 <Trophy className="section-title-icon" style={{ width: 20, height: 20, color: 'var(--coin)' }} />
-                <span>อันดับยอดนิยมประจำสัปดาห์</span>
+                <span>ท็อป 10 เรื่องฮิตติดชาร์ต</span>
               </div>
               <Link href="/?type=manga" className="section-more">
                 <span>ดูทั้งหมด</span>
@@ -165,35 +165,23 @@ export default async function HomePage({ searchParams }: SearchProps) {
               </Link>
             </div>
 
-            <div className="rankings-grid">
-              {STORIES.slice(0, 4).map((story, idx) => {
+            <div className="netflix-rail">
+              {STORIES.map((story, idx) => {
                 const rank = idx + 1;
-                const badgeClass =
-                  rank === 1
-                    ? 'badge-rank-1'
-                    : rank === 2
-                    ? 'badge-rank-2'
-                    : rank === 3
-                    ? 'badge-rank-3'
-                    : 'badge-rank-n';
-
                 return (
-                  <Link key={story.id} className="rank-card" href={`/story/${story.id}`}>
-                    <div className={`rank-number-box ${badgeClass}`}>{rank}</div>
-                    <img src={story.cover} alt={story.title} className="rank-thumb" loading="lazy" />
-                    <div className="rank-content">
-                      <span className="rank-genre">{story.tags.slice(0, 2).join(' • ')}</span>
-                      <span className="rank-title">{story.title}</span>
-
-                      <div className="rank-stats-row">
-                        <span className="rank-stats-item" style={{ color: 'var(--coin)' }}>
-                          <Star style={{ width: 11, height: 11, fill: 'currentColor' }} />
-                          {story.rating}
-                        </span>
-                        <span className="rank-stats-item">
-                          <Eye style={{ width: 11, height: 11 }} />
-                          {story.views}
-                        </span>
+                  <Link key={story.id} className="netflix-item" href={`/story/${story.id}`}>
+                    <span className="netflix-rank-num">{rank}</span>
+                    <div className="netflix-poster-wrap">
+                      <img src={story.cover} alt={story.title} className="netflix-poster-img" loading="lazy" />
+                      <div className="netflix-poster-shade" />
+                      <div className="netflix-poster-meta">
+                        <span className="netflix-poster-title">{story.title}</span>
+                        <div className="netflix-poster-sub">
+                          <Star style={{ width: 10, height: 10, fill: 'var(--coin)', color: 'var(--coin)' }} />
+                          <span>{story.rating}</span>
+                          <span>•</span>
+                          <span>{story.views}</span>
+                        </div>
                       </div>
                     </div>
                   </Link>
