@@ -23,35 +23,30 @@ pipeline {
 
         stage('Lint & Vet') {
             steps {
-                echo 'Running Go vet analysis...'
-                sh 'go vet ./...'
+                echo 'Running Go vet analysis via containerized Go environment...'
+                sh '''
+                    docker run --rm -v "$(pwd)":/app -w /app golang:1.25-alpine go vet ./...
+                '''
             }
         }
 
         stage('Test & Coverage Gate') {
             steps {
-                echo 'Executing unit and integration test suite with coverage analysis (NFR-Dev-1)...'
+                echo 'Executing unit and integration tests with coverage analysis (NFR-Dev-1)...'
                 sh '''
-                    go test -v -coverprofile=coverage.out ./...
-                    
-                    # Verify Commerce & Money logic meets the >= 80% coverage requirement
-                    COVERAGE=$(go test -cover ./services/commerce/... | grep -o '[0-9.]*%' | tr -d '%')
-                    echo "Commerce Service Test Coverage: ${COVERAGE}%"
-                    
-                    # Enforce Quality Gate
-                    awk -v cov="$COVERAGE" -v min="$MIN_COVERAGE" 'BEGIN {
-                        if (cov + 0 < min + 0) {
-                            print "FAILED: Test coverage (" cov "%) is below required threshold (" min "%)";
-                            exit 1;
-                        }
-                        print "PASSED: Test coverage meets quality gate requirement.";
-                    }'
+                    docker run --rm -v "$(pwd)":/app -w /app golang:1.25-alpine sh -c '
+                        go test -v -coverprofile=coverage.out ./...
+                        COVERAGE=$(go test -cover ./services/commerce/... | grep -o "[0-9.]*%" | tr -d "%")
+                        echo "Commerce Service Test Coverage: ${COVERAGE}%"
+                        awk -v cov="$COVERAGE" -v min=80 "BEGIN {
+                            if (cov + 0 < min + 0) {
+                                print \\"FAILED: Coverage (\\" cov \\"%) is below required 80%\\";
+                                exit 1;
+                            }
+                            print \\"PASSED: Quality gate satisfied.\\";
+                        }"
+                    '
                 '''
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'coverage.out', allowEmptyArchive: true
-                }
             }
         }
 

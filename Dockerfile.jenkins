@@ -1,0 +1,12 @@
+FROM jenkins/jenkins:lts
+
+USER root
+
+# Install curl, git, and official static Docker CLI (Bonus 1)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl git ca-certificates && \
+    curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.3.1.tgz | tar -xz -C /usr/local/bin --strip-components=1 && \
+    chmod +x /usr/local/bin/docker && \
+    rm -rf /var/lib/apt/lists/*
+
+USER jenkins
