@@ -112,6 +112,7 @@ func shipLog(service, traceID, method, path string, status int, ms int64) {
 					"logRecords": []any{map[string]any{
 						"timeUnixNano":         time.Now().UnixNano(),
 						"observedTimeUnixNano": time.Now().UnixNano(),
+						"severityNumber":       9,
 						"severityText":         "INFO",
 						"body":                 map[string]any{"stringValue": string(raw)},
 						"attributes": []any{
