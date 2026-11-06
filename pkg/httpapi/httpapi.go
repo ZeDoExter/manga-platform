@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"log"
@@ -9,10 +10,14 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"manga-platform/pkg/tracing"
 )
 
@@ -49,18 +54,107 @@ func Health(mux *http.ServeMux) {
 	})
 }
 
+// metrics instruments per-service HTTP request count + latency. Lazily built
+// once per service; no-op when no meter provider is installed (tests).
+var metricsOnce sync.Map // service -> *httpMetrics
+
+type httpMetrics struct {
+	requests metric.Int64Counter
+	latency  metric.Float64Histogram
+}
+
+func metricsFor(service string) *httpMetrics {
+	if m, ok := metricsOnce.Load(service); ok {
+		return m.(*httpMetrics)
+	}
+	m := otel.Meter("manga-platform/httpapi")
+	reqs, _ := m.Int64Counter("http.server.requests",
+		metric.WithDescription("HTTP requests served"))
+	lat, _ := m.Float64Histogram("http.server.duration_ms",
+		metric.WithDescription("HTTP request duration in milliseconds"))
+	hm := &httpMetrics{requests: reqs, latency: lat}
+	actual, _ := metricsOnce.LoadOrStore(service, hm)
+	return actual.(*httpMetrics)
+}
+
+type statusWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (s *statusWriter) WriteHeader(code int) {
+	s.status = code
+	s.ResponseWriter.WriteHeader(code)
+}
+
+// logShipper forwards JSON access logs to the OTLP/HTTP logs endpoint.
+// Fire-and-forget with a short timeout; failures only print locally.
+var logShipURL = os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+
+func shipLog(service, traceID, method, path string, status int, ms int64) {
+	line := map[string]any{
+		"level": "info", "service": service, "trace_id": traceID,
+		"method": method, "path": path, "status": status, "duration_ms": ms,
+	}
+	raw, _ := json.Marshal(line)
+	log.Print(string(raw))
+	if logShipURL == "" {
+		return
+	}
+	go func() {
+		body, _ := json.Marshal(map[string]any{
+			"resourceLogs": []any{map[string]any{
+				"resource": map[string]any{"attributes": []any{
+					map[string]any{"key": "service.name", "value": map[string]any{"stringValue": service}},
+				}},
+				"scopeLogs": []any{map[string]any{
+					"scope": map[string]any{"name": "manga-platform/httpapi"},
+					"logRecords": []any{map[string]any{
+						"timeUnixNano":    time.Now().UnixNano(),
+						"severityText":    "INFO",
+						"body":            map[string]any{"stringValue": string(raw)},
+						"traceId":         traceID,
+						"observedTimeUnixNano": time.Now().UnixNano(),
+					}},
+				}},
+			}},
+		})
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		req, err := http.NewRequestWithContext(ctx, "POST", "http://"+logShipURL+"/v1/logs", bytes.NewReader(body))
+		if err != nil {
+			return
+		}
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err == nil {
+			resp.Body.Close()
+		}
+	}()
+}
+
 func Logging(service string, next http.Handler) http.Handler {
+	hm := metricsFor(service)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		traceID := r.Header.Get("X-Trace-ID")
 		if traceID == "" {
 			traceID = strconv.FormatInt(time.Now().UnixNano(), 16)
 		}
+		sw := &statusWriter{ResponseWriter: w, status: 200}
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(sw, r)
 
-		log.Printf(`{"level":"info","service":"%s","trace_id":"%s","method":"%s","path":"%s","duration_ms":%d}`,
-			service, traceID, r.Method, r.URL.Path, time.Since(start).Milliseconds())
+		ms := time.Since(start).Milliseconds()
+		attrs := []attribute.KeyValue{
+			attribute.String("service", service),
+			attribute.String("method", r.Method),
+			attribute.String("path", r.URL.Path),
+			attribute.Int("status", sw.status),
+		}
+		hm.requests.Add(r.Context(), 1, metric.WithAttributes(attrs...))
+		hm.latency.Record(r.Context(), float64(ms), metric.WithAttributes(attrs...))
+		shipLog(service, traceID, r.Method, r.URL.Path, sw.status, ms)
 	})
 }
 
