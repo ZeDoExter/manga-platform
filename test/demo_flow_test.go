@@ -131,16 +131,17 @@ func TestDemoDefinitionOfDone_CompleteFlow(t *testing.T) {
 		t.Errorf("Step 5 Failed: expected Alice to have 60 coins, got %d", aliceWalletAfter.PurchasedCoins)
 	}
 
-	// Author (70% of 40 = 28 coins)
+	// Platform takes 30% first (12 coins), creators split the remaining 28:
+	// Author (70% of 28 = 19 coins after integer division)
 	authorWallet, _ := com.GetWallet(ctx, author.ID)
-	if authorWallet.PurchasedCoins != 28 {
-		t.Errorf("Step 5 Failed: expected Author to receive 28 coins, got %d", authorWallet.PurchasedCoins)
+	if authorWallet.PurchasedCoins != 19 {
+		t.Errorf("Step 5 Failed: expected Author to receive 19 coins, got %d", authorWallet.PurchasedCoins)
 	}
 
-	// Artist (30% of 40 = 12 coins)
+	// Artist (30% of 28 = 8 coins after integer division)
 	artistWallet, _ := com.GetWallet(ctx, artist.ID)
-	if artistWallet.PurchasedCoins != 12 {
-		t.Errorf("Step 5 Failed: expected Artist to receive 12 coins, got %d", artistWallet.PurchasedCoins)
+	if artistWallet.PurchasedCoins != 8 {
+		t.Errorf("Step 5 Failed: expected Artist to receive 8 coins, got %d", artistWallet.PurchasedCoins)
 	}
 
 	// Alice reads Chapter 2 -> SUCCESS with banner ad policy

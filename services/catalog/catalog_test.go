@@ -86,3 +86,38 @@ func TestFR_C2_CreateChapterAndFreeStatus(t *testing.T) {
 		t.Errorf("expected status %s, got %s", catalog.StatusTakenDown, updated.Status)
 	}
 }
+
+func TestWebSync_ExplicitIDsAndChapterUpdate(t *testing.T) {
+	ctx := context.Background()
+	svc := catalog.NewService()
+
+	story, err := svc.CreateStoryWithID(ctx, "story-web-1", "creator-1", catalog.StoryTypeManga, "Web Sync Story", "Synced from web", []string{"Action"}, nil)
+	if err != nil {
+		t.Fatalf("CreateStoryWithID failed: %v", err)
+	}
+	if story.ID != "story-web-1" {
+		t.Fatalf("expected caller-assigned story ID, got %q", story.ID)
+	}
+	if _, err := svc.CreateStoryWithID(ctx, "story-web-1", "creator-1", catalog.StoryTypeManga, "Duplicate", "", nil, nil); err != catalog.ErrStoryExists {
+		t.Fatalf("expected ErrStoryExists, got %v", err)
+	}
+
+	chapter, err := svc.CreateChapterWithID(ctx, "story-web-1-ch-4", story.ID, 4, "Chapter 4", 30, nil, "", nil)
+	if err != nil {
+		t.Fatalf("CreateChapterWithID failed: %v", err)
+	}
+	if chapter.ID != "story-web-1-ch-4" {
+		t.Fatalf("expected caller-assigned chapter ID, got %q", chapter.ID)
+	}
+	if _, err := svc.CreateChapterWithID(ctx, "story-web-1-ch-4", story.ID, 4, "Duplicate", 30, nil, "", nil); err != catalog.ErrChapterExists {
+		t.Fatalf("expected ErrChapterExists, got %v", err)
+	}
+
+	updated, err := svc.UpdateChapter(ctx, chapter.ID, "Chapter 4 - Revised", 35)
+	if err != nil {
+		t.Fatalf("UpdateChapter failed: %v", err)
+	}
+	if updated.Title != "Chapter 4 - Revised" || updated.PriceCoins != 35 {
+		t.Fatalf("unexpected updated chapter: %+v", updated)
+	}
+}

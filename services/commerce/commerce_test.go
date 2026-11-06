@@ -85,10 +85,10 @@ func TestFR_M3_PurchaseChapter_AtomicDebitAndEntitlement(t *testing.T) {
 		t.Errorf("expected 70 coins remaining for buyer, got %d", buyerWallet.PurchasedCoins)
 	}
 
-	// Check creator wallet (0 + 30 = 30)
+	// Check creator wallet: 30 price → 9 platform fee → 21 creator pool (0 + 21 = 21)
 	creatorWallet, _ := svc.GetWallet(ctx, creatorID)
-	if creatorWallet.PurchasedCoins != 30 {
-		t.Errorf("expected 30 coins for creator, got %d", creatorWallet.PurchasedCoins)
+	if creatorWallet.PurchasedCoins != 21 {
+		t.Errorf("expected 21 coins for creator, got %d", creatorWallet.PurchasedCoins)
 	}
 
 	// Check entitlement (FR-R3)
@@ -136,16 +136,17 @@ func TestFR_M4_CreatorEarningsSplit(t *testing.T) {
 		t.Fatalf("expected 2 earnings records, got %d", len(res.Earnings))
 	}
 
-	// Author gets 70% of 50 = 35 coins
+	// Platform takes 30% of 50 = 15 fee; creators split the remaining 35
+	// Author gets 70% of 35 = 24 coins (integer division)
 	authorWallet, _ := svc.GetWallet(ctx, authorID)
-	if authorWallet.PurchasedCoins != 35 {
-		t.Errorf("expected author to get 35 coins, got %d", authorWallet.PurchasedCoins)
+	if authorWallet.PurchasedCoins != 24 {
+		t.Errorf("expected author to get 24 coins, got %d", authorWallet.PurchasedCoins)
 	}
 
-	// Artist gets 30% of 50 = 15 coins
+	// Artist gets 30% of 35 = 10 coins (integer division)
 	artistWallet, _ := svc.GetWallet(ctx, artistID)
-	if artistWallet.PurchasedCoins != 15 {
-		t.Errorf("expected artist to get 15 coins, got %d", artistWallet.PurchasedCoins)
+	if artistWallet.PurchasedCoins != 10 {
+		t.Errorf("expected artist to get 10 coins, got %d", artistWallet.PurchasedCoins)
 	}
 }
 
@@ -269,10 +270,10 @@ func TestFR_M6_TakedownReversalWorkflow(t *testing.T) {
 		t.Fatalf("Purchase failed: %v", err)
 	}
 
-	// Buyer has 20, creator has 30, buyer is entitled
+	// Buyer has 20, creator has 21 (30 price → 9 platform fee → 21 pool), buyer is entitled
 	wBuyer, _ := svc.GetWallet(ctx, buyerID)
 	wCreator, _ := svc.GetWallet(ctx, creatorID)
-	if wBuyer.PurchasedCoins != 20 || wCreator.PurchasedCoins != 30 {
+	if wBuyer.PurchasedCoins != 20 || wCreator.PurchasedCoins != 21 {
 		t.Fatalf("pre-takedown balance wrong: buyer=%d, creator=%d", wBuyer.PurchasedCoins, wCreator.PurchasedCoins)
 	}
 
@@ -411,5 +412,60 @@ func TestFR_X2_PurchasedChaptersStayUnlocked_NoDoubleCharge(t *testing.T) {
 	w2, _ := svc.GetWallet(ctx, buyerID)
 	if w2.PurchasedCoins != 60 {
 		t.Errorf("expected balance to stay 60 (no double charge), got %d", w2.PurchasedCoins)
+	}
+}
+
+func TestWebEconomy_ListLedgerEntitlementsAndEarnings(t *testing.T) {
+	ctx := context.Background()
+	svc := commerce.NewService()
+
+	buyerID := "web-buyer"
+	creatorID := "web-creator"
+	_, _ = svc.TopUp(ctx, buyerID, 100, commerce.CoinPurchased, "stripe_test_web", "web-topup-1")
+
+	res, err := svc.PurchaseChapter(ctx, commerce.PurchaseRequest{
+		UserID:         buyerID,
+		StoryID:        "web-story",
+		ChapterID:      "web-story-ch-4",
+		Price:          30,
+		CreatorSplits:  []commerce.CreatorSplit{{CreatorID: creatorID, Percentage: 100}},
+		IdempotencyKey: "web-purchase-1",
+	})
+	if err != nil {
+		t.Fatalf("PurchaseChapter failed: %v", err)
+	}
+
+	ledger := svc.ListLedger(ctx, buyerID)
+	if len(ledger) != 3 {
+		t.Fatalf("expected 3 ledger entries, got %d", len(ledger))
+	}
+	if ledger[0].Type != commerce.LedgerPlatformFee || ledger[0].Amount != 9 {
+		t.Errorf("unexpected newest ledger entry: %+v", ledger[0])
+	}
+	if ledger[1].Type != commerce.LedgerPurchaseDebit || ledger[1].Amount != -30 {
+		t.Errorf("unexpected purchase debit entry: %+v", ledger[1])
+	}
+	if ledger[2].Type != commerce.LedgerTopUp || ledger[2].Amount != 100 {
+		t.Errorf("unexpected top-up ledger entry: %+v", ledger[2])
+	}
+
+	ents := svc.ListEntitlements(ctx, buyerID)
+	if len(ents) != 1 || ents[0].ChapterID != "web-story-ch-4" {
+		t.Fatalf("unexpected entitlements: %+v", ents)
+	}
+
+	total, earnings := svc.GetCreatorEarnings(ctx, creatorID)
+	if total != 21 || len(earnings) != 1 {
+		t.Fatalf("expected 21 coins across 1 earning, got %d across %d", total, len(earnings))
+	}
+
+	if err := svc.ReversePurchaseOnTakedown(ctx, res.Purchase.ID, "web-takedown-1"); err != nil {
+		t.Fatalf("ReversePurchaseOnTakedown failed: %v", err)
+	}
+	if ents := svc.ListEntitlements(ctx, buyerID); len(ents) != 0 {
+		t.Errorf("expected revoked entitlement to disappear, got %d", len(ents))
+	}
+	if total, earnings := svc.GetCreatorEarnings(ctx, creatorID); total != 0 || len(earnings) != 0 {
+		t.Errorf("expected clawed-back earnings to disappear, got %d across %d", total, len(earnings))
 	}
 }

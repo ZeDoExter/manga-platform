@@ -7,7 +7,6 @@ import (
 
 	"manga-platform/pkg/imagestore"
 	"manga-platform/services/catalog"
-	"manga-platform/services/commerce"
 	"manga-platform/services/identity"
 )
 
@@ -41,14 +40,27 @@ type ReadChapterResponse struct {
 	AdPolicy       AdPolicy          `json:"ad_policy"`
 }
 
+type Catalog interface {
+	GetChapter(ctx context.Context, chapterID string) (*catalog.Chapter, error)
+	GetStory(ctx context.Context, storyID string) (*catalog.Story, error)
+}
+
+type Commerce interface {
+	CheckEntitlement(ctx context.Context, userID, chapterID string) (bool, error)
+}
+
+type Identity interface {
+	CanEditStory(userID, storyOwnerID string, storyTeamIDs []string) (bool, error)
+}
+
 type Service struct {
-	catalog  *catalog.Service
-	commerce *commerce.Service
-	identity *identity.Service
+	catalog  Catalog
+	commerce Commerce
+	identity Identity
 	storage  imagestore.ImageStore
 }
 
-func NewService(cat *catalog.Service, com *commerce.Service, id *identity.Service, store imagestore.ImageStore) *Service {
+func NewService(cat Catalog, com Commerce, id Identity, store imagestore.ImageStore) *Service {
 	return &Service{
 		catalog:  cat,
 		commerce: com,

@@ -22,14 +22,19 @@ const (
 	CoinBonus     CoinType = "bonus"     // Promo/daily check-in, never counts as creator revenue (FR-E5)
 )
 
+// PlatformFeePct is the platform's cut of every purchased-coin sale (70/30 creator/platform split).
+// The creators' CreatorSplit percentages divide the remaining 70%, so they must still sum to 100%.
+const PlatformFeePct = 30
+
 // LedgerType defines categories of ledger transactions (FR-M2, FR-M3, FR-M6).
 type LedgerType string
 
 const (
-	LedgerTopUp           LedgerType = "topup"
-	LedgerPurchaseDebit   LedgerType = "purchase_debit"
-	LedgerCreatorEarning  LedgerType = "creator_earning"
-	LedgerRefundCredit    LedgerType = "refund_credit"
+	LedgerTopUp            LedgerType = "topup"
+	LedgerPurchaseDebit    LedgerType = "purchase_debit"
+	LedgerCreatorEarning   LedgerType = "creator_earning"
+	LedgerPlatformFee      LedgerType = "platform_fee"
+	LedgerRefundCredit     LedgerType = "refund_credit"
 	LedgerTakedownClawback LedgerType = "takedown_clawback"
 )
 

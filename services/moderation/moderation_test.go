@@ -49,10 +49,10 @@ func TestFR_D2_And_FR_M6_ModerationTakedownWorkflow(t *testing.T) {
 		t.Fatalf("purchase failed: %v", err)
 	}
 
-	// Verify pre-takedown state
+	// Verify pre-takedown state (platform takes 30% first: creator gets 70% of 40 = 28)
 	buyerWallet, _ := com.GetWallet(ctx, buyer.ID)
 	creatorWallet, _ := com.GetWallet(ctx, creator.ID)
-	if buyerWallet.PurchasedCoins != 60 || creatorWallet.PurchasedCoins != 40 {
+	if buyerWallet.PurchasedCoins != 60 || creatorWallet.PurchasedCoins != 28 {
 		t.Fatalf("unexpected balance before takedown: buyer=%d, creator=%d", buyerWallet.PurchasedCoins, creatorWallet.PurchasedCoins)
 	}
 

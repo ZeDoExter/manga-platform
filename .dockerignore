@@ -1,0 +1,9 @@
+.git
+.gitignore
+.tiltbuild
+docs
+*.pdf
+web
+node_modules
+.DS_Store
+Thumbs.db

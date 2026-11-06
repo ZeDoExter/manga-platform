@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 )
@@ -21,20 +22,20 @@ type PurchaseRequest struct {
 
 // PurchaseResult contains the outcome of a successful purchase transaction.
 type PurchaseResult struct {
-	Purchase    *Purchase
-	Entitlement *Entitlement
-	Earnings    []*CreatorEarning
+	Purchase    *Purchase         `json:"purchase"`
+	Entitlement *Entitlement      `json:"entitlement"`
+	Earnings    []*CreatorEarning `json:"earnings"`
 }
 
 // Service provides ACID, idempotent commerce operations (FR-M1..M4, FR-M6, NFR-Money-1).
 type Service struct {
 	mu           sync.Mutex
-	ledgers      map[string]*LedgerEntry     // key: idempotency_key
-	ledgerList   []*LedgerEntry              // append-only log
-	wallets      map[string]*Wallet          // key: user_id
-	purchases    map[string]*Purchase        // key: purchase_id
-	purchasesKey map[string]*Purchase        // key: user_id + ":" + chapter_id
-	entitlements map[string]*Entitlement     // key: user_id + ":" + chapter_id
+	ledgers      map[string]*LedgerEntry      // key: idempotency_key
+	ledgerList   []*LedgerEntry               // append-only log
+	wallets      map[string]*Wallet           // key: user_id
+	purchases    map[string]*Purchase         // key: purchase_id
+	purchasesKey map[string]*Purchase         // key: user_id + ":" + chapter_id
+	entitlements map[string]*Entitlement      // key: user_id + ":" + chapter_id
 	earnings     map[string][]*CreatorEarning // key: purchase_id
 }
 
@@ -257,12 +258,28 @@ func (s *Service) PurchaseChapter(ctx context.Context, req PurchaseRequest) (*Pu
 	}
 	s.entitlements[userChapKey] = entitlement
 
-	// Split earnings among creator team (FR-M4)
+	// Split earnings among creator team (FR-M4): platform takes its fee first,
+	// then the creators' split percentages divide the remaining 70%.
 	// Note: Per FR-E5, bonus coins never count as creator revenue; only purchased coins generate payout.
 	var earningsList []*CreatorEarning
 	if purchasedToDebit > 0 && len(req.CreatorSplits) > 0 {
+		feeCoins := (purchasedToDebit * PlatformFeePct) / 100
+		creatorPool := purchasedToDebit - feeCoins
+		if feeCoins > 0 {
+			feeEntry := &LedgerEntry{
+				ID:             generateID("ledge"),
+				UserID:         req.UserID,
+				Type:           LedgerPlatformFee,
+				CoinType:       CoinPurchased,
+				Amount:         feeCoins,
+				ReferenceID:    purchaseID,
+				IdempotencyKey: fmt.Sprintf("%s:platform", purchaseID),
+				CreatedAt:      time.Now(),
+			}
+			s.ledgerList = append(s.ledgerList, feeEntry)
+		}
 		for _, split := range req.CreatorSplits {
-			creatorCoins := (purchasedToDebit * int64(split.Percentage)) / 100
+			creatorCoins := (creatorPool * int64(split.Percentage)) / 100
 			if creatorCoins > 0 {
 				earning := &CreatorEarning{
 					ID:          generateID("earn"),
@@ -398,4 +415,63 @@ func (s *Service) CheckEntitlement(ctx context.Context, userID, chapterID string
 		return false, nil
 	}
 	return ent.RevokedAt == nil, nil
+}
+
+// ListLedger returns a user's ledger entries in reverse chronological order.
+func (s *Service) ListLedger(ctx context.Context, userID string) []*LedgerEntry {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	entries := make([]*LedgerEntry, 0)
+	for i := len(s.ledgerList) - 1; i >= 0; i-- {
+		entry := s.ledgerList[i]
+		if entry.UserID != userID {
+			continue
+		}
+		c := *entry
+		entries = append(entries, &c)
+	}
+	return entries
+}
+
+// ListEntitlements returns a user's active chapter entitlements.
+func (s *Service) ListEntitlements(ctx context.Context, userID string) []*Entitlement {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	entitlements := make([]*Entitlement, 0)
+	for _, ent := range s.entitlements {
+		if ent.UserID != userID || ent.RevokedAt != nil {
+			continue
+		}
+		c := *ent
+		entitlements = append(entitlements, &c)
+	}
+	sort.Slice(entitlements, func(i, j int) bool {
+		return entitlements[i].GrantedAt.After(entitlements[j].GrantedAt)
+	})
+	return entitlements
+}
+
+// GetCreatorEarnings returns a creator's non-clawed earnings and their total.
+func (s *Service) GetCreatorEarnings(ctx context.Context, creatorID string) (int64, []*CreatorEarning) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	total := int64(0)
+	entries := make([]*CreatorEarning, 0)
+	for _, list := range s.earnings {
+		for _, earning := range list {
+			if earning.CreatorID != creatorID || earning.ClawedBack {
+				continue
+			}
+			c := *earning
+			entries = append(entries, &c)
+			total += earning.CoinsEarned
+		}
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].CreatedAt.After(entries[j].CreatedAt)
+	})
+	return total, entries
 }

@@ -41,18 +41,22 @@ build:
   image: docker:24.0.5
   services:
     - docker:24.0.5-dind
+  parallel:
+    matrix:
+      - SERVICE: [identity, catalog, commerce, reader, moderation, community, server]
   before_script:
     - |
       if [ -n "$CI_REGISTRY_USER" ]; then
         echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
       fi
   script:
-    - echo "Building container image..."
-    - docker build -t ${CI_REGISTRY_IMAGE:-manga-platform}:${CI_COMMIT_SHORT_SHA} -t ${CI_REGISTRY_IMAGE:-manga-platform}:latest .
+    - echo "Building container image for ${SERVICE}..."
+    - IMAGE="${CI_REGISTRY_IMAGE:-manga-platform}/${SERVICE}"
+    - docker build --build-arg SERVICE=${SERVICE} -t ${IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${IMAGE}:latest .
     - |
       if [ -n "$CI_REGISTRY_USER" ]; then
-        docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}
-        docker push ${CI_REGISTRY_IMAGE}:latest
+        docker push ${IMAGE}:${CI_COMMIT_SHORT_SHA}
+        docker push ${IMAGE}:latest
       fi
 
 # Production Deployment
