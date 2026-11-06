@@ -110,11 +110,13 @@ func shipLog(service, traceID, method, path string, status int, ms int64) {
 				"scopeLogs": []any{map[string]any{
 					"scope": map[string]any{"name": "manga-platform/httpapi"},
 					"logRecords": []any{map[string]any{
-						"timeUnixNano":    time.Now().UnixNano(),
-						"severityText":    "INFO",
-						"body":            map[string]any{"stringValue": string(raw)},
-						"traceId":         traceID,
+						"timeUnixNano":         time.Now().UnixNano(),
 						"observedTimeUnixNano": time.Now().UnixNano(),
+						"severityText":         "INFO",
+						"body":                 map[string]any{"stringValue": string(raw)},
+						"attributes": []any{
+							map[string]any{"key": "trace_id", "value": map[string]any{"stringValue": traceID}},
+						},
 					}},
 				}},
 			}},

@@ -43,11 +43,11 @@ data:
         metrics:
           receivers: [otlp]
           processors: [resource, batch]
-          exporters: [otlphttp/openobserve]
+          exporters: [otlphttp/openobserve, debug]
         logs:
           receivers: [otlp]
           processors: [resource, batch]
-          exporters: [otlphttp/openobserve]
+          exporters: [otlphttp/openobserve, debug]
 ---
 apiVersion: apps/v1
 kind: Deployment
