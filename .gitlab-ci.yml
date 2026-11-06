@@ -51,7 +51,7 @@ build:
       fi
   script:
     - echo "Building container image for ${SERVICE}..."
-    - IMAGE="${CI_REGISTRY_IMAGE:-manga-platform}-${SERVICE}"
+    - IMAGE="${CI_REGISTRY_IMAGE:-manga-platform}/${SERVICE}"
     - docker build --build-arg SERVICE=${SERVICE} -t ${IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${IMAGE}:latest .
     - |
       if [ -n "$CI_REGISTRY_USER" ]; then
