@@ -5,6 +5,8 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /build
 
+ARG SERVICE=server
+
 # Install security certificates & build dependencies
 RUN apk add --no-cache ca-certificates git
 
@@ -18,8 +20,8 @@ COPY . .
 # Build statically linked binary without debug bloat
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-s -w" \
-    -o /bin/manga-platform \
-    ./cmd/server
+    -o /bin/service \
+    ./cmd/${SERVICE}
 
 # Stage 2: Minimal Runtime
 FROM alpine:3.20
@@ -29,12 +31,9 @@ RUN adduser -D -u 10001 -g appuser appuser && \
     apk add --no-cache ca-certificates tzdata
 
 WORKDIR /app
-COPY --from=builder /bin/manga-platform /app/manga-platform
+COPY --from=builder /bin/service /app/service
 
 USER appuser:appuser
 EXPOSE 8080
 
-HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-    CMD ["/app/manga-platform", "--help"] || exit 0
-
-ENTRYPOINT ["/app/manga-platform"]
+ENTRYPOINT ["/app/service"]

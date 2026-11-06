@@ -12,6 +12,9 @@ import (
 var (
 	ErrStoryNotFound   = errors.New("story not found")
 	ErrChapterNotFound = errors.New("chapter not found")
+	ErrStoryExists     = errors.New("story already exists")
+	ErrChapterExists   = errors.New("chapter already exists")
+	ErrInvalidID       = errors.New("id cannot be empty")
 	ErrInvalidSplit    = errors.New("creator split must sum to 100%")
 	ErrInvalidPrice    = errors.New("chapter price cannot be negative")
 	ErrInvalidTitle    = errors.New("title cannot be empty")
@@ -77,9 +80,9 @@ func (c *Chapter) IsFree() bool {
 
 type Service struct {
 	mu            sync.RWMutex
-	stories       map[string]*Story     // key: story_id
-	chapters      map[string]*Chapter   // key: chapter_id
-	storyChapters map[string][]string   // key: story_id -> []chapter_id
+	stories       map[string]*Story   // key: story_id
+	chapters      map[string]*Chapter // key: chapter_id
+	storyChapters map[string][]string // key: story_id -> []chapter_id
 }
 
 func NewService() *Service {
@@ -98,6 +101,18 @@ func generateID(prefix string) string {
 
 // CreateStory registers a new story with creator splits (FR-C1, FR-C3).
 func (s *Service) CreateStory(ctx context.Context, ownerID string, storyType StoryType, title, synopsis string, tags []string, splits []CreatorSplit) (*Story, error) {
+	return s.createStory(ctx, "", ownerID, storyType, title, synopsis, tags, splits)
+}
+
+// CreateStoryWithID registers a story with a caller-assigned ID for idempotent syncs.
+func (s *Service) CreateStoryWithID(ctx context.Context, id, ownerID string, storyType StoryType, title, synopsis string, tags []string, splits []CreatorSplit) (*Story, error) {
+	if id == "" {
+		return nil, ErrInvalidID
+	}
+	return s.createStory(ctx, id, ownerID, storyType, title, synopsis, tags, splits)
+}
+
+func (s *Service) createStory(ctx context.Context, id, ownerID string, storyType StoryType, title, synopsis string, tags []string, splits []CreatorSplit) (*Story, error) {
 	if title == "" {
 		return nil, ErrInvalidTitle
 	}
@@ -116,8 +131,12 @@ func (s *Service) CreateStory(ctx context.Context, ownerID string, storyType Sto
 		splits = []CreatorSplit{{CreatorID: ownerID, Percentage: 100}}
 	}
 
+	if id == "" {
+		id = generateID("story")
+	}
+
 	story := &Story{
-		ID:            generateID("story"),
+		ID:            id,
 		OwnerID:       ownerID,
 		Type:          storyType,
 		Title:         title,
@@ -130,6 +149,9 @@ func (s *Service) CreateStory(ctx context.Context, ownerID string, storyType Sto
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if _, exists := s.stories[story.ID]; exists {
+		return nil, ErrStoryExists
+	}
 	s.stories[story.ID] = story
 	return story, nil
 }
@@ -147,6 +169,18 @@ func (s *Service) GetStory(ctx context.Context, storyID string) (*Story, error) 
 
 // CreateChapter adds a chapter to a story (FR-C2).
 func (s *Service) CreateChapter(ctx context.Context, storyID string, orderIndex int, title string, priceCoins int64, pageKeys []string, novelText string, autoUnlockAt *time.Time) (*Chapter, error) {
+	return s.createChapter(ctx, "", storyID, orderIndex, title, priceCoins, pageKeys, novelText, autoUnlockAt)
+}
+
+// CreateChapterWithID adds a chapter with a caller-assigned ID for idempotent syncs.
+func (s *Service) CreateChapterWithID(ctx context.Context, id, storyID string, orderIndex int, title string, priceCoins int64, pageKeys []string, novelText string, autoUnlockAt *time.Time) (*Chapter, error) {
+	if id == "" {
+		return nil, ErrInvalidID
+	}
+	return s.createChapter(ctx, id, storyID, orderIndex, title, priceCoins, pageKeys, novelText, autoUnlockAt)
+}
+
+func (s *Service) createChapter(ctx context.Context, id, storyID string, orderIndex int, title string, priceCoins int64, pageKeys []string, novelText string, autoUnlockAt *time.Time) (*Chapter, error) {
 	if title == "" {
 		return nil, ErrInvalidTitle
 	}
@@ -161,8 +195,15 @@ func (s *Service) CreateChapter(ctx context.Context, storyID string, orderIndex 
 		return nil, ErrStoryNotFound
 	}
 
+	if id == "" {
+		id = generateID("chap")
+	}
+	if _, exists := s.chapters[id]; exists {
+		return nil, ErrChapterExists
+	}
+
 	chap := &Chapter{
-		ID:           generateID("chap"),
+		ID:           id,
 		StoryID:      storyID,
 		OrderIndex:   orderIndex,
 		Title:        title,
@@ -188,6 +229,27 @@ func (s *Service) GetChapter(ctx context.Context, chapterID string) (*Chapter, e
 		return nil, ErrChapterNotFound
 	}
 	return chap, nil
+}
+
+// UpdateChapter refreshes the editable metadata used by the web sync.
+func (s *Service) UpdateChapter(ctx context.Context, chapterID, title string, priceCoins int64) (*Chapter, error) {
+	if title == "" {
+		return nil, ErrInvalidTitle
+	}
+	if priceCoins < 0 {
+		return nil, ErrInvalidPrice
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	chap, exists := s.chapters[chapterID]
+	if !exists {
+		return nil, ErrChapterNotFound
+	}
+	chap.Title = title
+	chap.PriceCoins = priceCoins
+	c := *chap
+	return &c, nil
 }
 
 // SetChapterStatus updates status (e.g. StatusTakenDown on moderation takedown FR-D1, FR-D2).

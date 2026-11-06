@@ -10,8 +10,6 @@ import (
 
 	"manga-platform/pkg/imagestore"
 	"manga-platform/services/catalog"
-	"manga-platform/services/commerce"
-	"manga-platform/services/identity"
 )
 
 var (
@@ -28,16 +26,29 @@ type AuditLog struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type Catalog interface {
+	GetChapter(ctx context.Context, chapterID string) (*catalog.Chapter, error)
+	SetChapterStatus(ctx context.Context, chapterID string, status catalog.ContentStatus) error
+}
+
+type Commerce interface {
+	ReversePurchaseOnTakedown(ctx context.Context, purchaseID string, takedownID string) error
+}
+
+type Identity interface {
+	SetBanStatus(ctx context.Context, targetUserID string, banned bool) error
+}
+
 type Service struct {
 	mu        sync.RWMutex
-	catalog   *catalog.Service
-	commerce  *commerce.Service
-	identity  *identity.Service
+	catalog   Catalog
+	commerce  Commerce
+	identity  Identity
 	storage   imagestore.ImageStore
 	auditLogs []*AuditLog
 }
 
-func NewService(cat *catalog.Service, com *commerce.Service, id *identity.Service, store imagestore.ImageStore) *Service {
+func NewService(cat Catalog, com Commerce, id Identity, store imagestore.ImageStore) *Service {
 	return &Service{
 		catalog:   cat,
 		commerce:  com,

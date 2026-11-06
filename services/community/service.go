@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"manga-platform/services/catalog"
-	"manga-platform/services/commerce"
 )
 
 type PostCommentRequest struct {
@@ -22,17 +21,25 @@ type PostCommentRequest struct {
 	Body       string
 }
 
-type Service struct {
-	mu           sync.RWMutex
-	comments     map[string]*Comment       // key: comment_id
-	byChapter    map[string][]*Comment     // key: chapter_id -> slice in chronological order
-	byStory      map[string][]*Comment     // key: story_id -> slice in chronological order
-	blockedWords []string
-	catalog      *catalog.Service
-	commerce     *commerce.Service
+type Catalog interface {
+	GetChapter(ctx context.Context, chapterID string) (*catalog.Chapter, error)
 }
 
-func NewService(cat *catalog.Service, com *commerce.Service) *Service {
+type Commerce interface {
+	CheckEntitlement(ctx context.Context, userID, chapterID string) (bool, error)
+}
+
+type Service struct {
+	mu           sync.RWMutex
+	comments     map[string]*Comment   // key: comment_id
+	byChapter    map[string][]*Comment // key: chapter_id -> slice in chronological order
+	byStory      map[string][]*Comment // key: story_id -> slice in chronological order
+	blockedWords []string
+	catalog      Catalog
+	commerce     Commerce
+}
+
+func NewService(cat Catalog, com Commerce) *Service {
 	return &Service{
 		comments:     make(map[string]*Comment),
 		byChapter:    make(map[string][]*Comment),

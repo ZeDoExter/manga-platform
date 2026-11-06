@@ -1,0 +1,147 @@
+services:
+  identity:
+    build:
+      context: .
+      args:
+        SERVICE: identity
+    image: manga-identity:dev
+    environment:
+      PORT: "8081"
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  catalog:
+    build:
+      context: .
+      args:
+        SERVICE: catalog
+    image: manga-catalog:dev
+    environment:
+      PORT: "8082"
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8082/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  commerce:
+    build:
+      context: .
+      args:
+        SERVICE: commerce
+    image: manga-commerce:dev
+    environment:
+      PORT: "8083"
+    ports:
+      - "8083:8083"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8083/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  reader:
+    build:
+      context: .
+      args:
+        SERVICE: reader
+    image: manga-reader:dev
+    environment:
+      PORT: "8084"
+      CATALOG_URL: "http://catalog:8082"
+      COMMERCE_URL: "http://commerce:8083"
+      IDENTITY_URL: "http://identity:8081"
+      CDN_BASE_URL: "https://img.yourmanga.com"
+      HMAC_SECRET: "dev-only-hmac-secret-change-me"
+    ports:
+      - "8084:8084"
+    depends_on:
+      catalog:
+        condition: service_healthy
+      commerce:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8084/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  moderation:
+    build:
+      context: .
+      args:
+        SERVICE: moderation
+    image: manga-moderation:dev
+    environment:
+      PORT: "8085"
+      CATALOG_URL: "http://catalog:8082"
+      COMMERCE_URL: "http://commerce:8083"
+      IDENTITY_URL: "http://identity:8081"
+      CDN_BASE_URL: "https://img.yourmanga.com"
+      HMAC_SECRET: "dev-only-hmac-secret-change-me"
+    ports:
+      - "8085:8085"
+    depends_on:
+      catalog:
+        condition: service_healthy
+      commerce:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8085/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  community:
+    build:
+      context: .
+      args:
+        SERVICE: community
+    image: manga-community:dev
+    environment:
+      PORT: "8086"
+      CATALOG_URL: "http://catalog:8082"
+      COMMERCE_URL: "http://commerce:8083"
+    ports:
+      - "8086:8086"
+    depends_on:
+      catalog:
+        condition: service_healthy
+      commerce:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8086/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  gateway:
+    build:
+      context: .
+      args:
+        SERVICE: server
+    image: manga-gateway:dev
+    environment:
+      PORT: "8080"
+      READER_URL: "http://reader:8084"
+    ports:
+      - "8080:8080"
+    depends_on:
+      reader:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
