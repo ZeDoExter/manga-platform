@@ -87,10 +87,12 @@ func (s *statusWriter) WriteHeader(code int) {
 	s.ResponseWriter.WriteHeader(code)
 }
 
-// logShipper forwards JSON access logs to the OTLP/HTTP logs endpoint.
+// logShipper forwards JSON access logs straight to OpenObserve's JSON ingest
+// API (OOLOG_URL like "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json").
 // Fire-and-forget with a short timeout; failures only print locally.
-var logShipURL = os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-
+// OOLOG_AUTH holds "user:pass" for basic auth (empty = no auth header).
+var logShipURL = os.Getenv("OOLOG_URL")
+var logShipAuth = os.Getenv("OOLOG_AUTH")
 func shipLog(service, traceID, method, path string, status int, ms int64) {
 	line := map[string]any{
 		"level": "info", "service": service, "trace_id": traceID,
@@ -102,33 +104,18 @@ func shipLog(service, traceID, method, path string, status int, ms int64) {
 		return
 	}
 	go func() {
-		body, _ := json.Marshal(map[string]any{
-			"resourceLogs": []any{map[string]any{
-				"resource": map[string]any{"attributes": []any{
-					map[string]any{"key": "service.name", "value": map[string]any{"stringValue": service}},
-				}},
-				"scopeLogs": []any{map[string]any{
-					"scope": map[string]any{"name": "manga-platform/httpapi"},
-					"logRecords": []any{map[string]any{
-						"timeUnixNano":         time.Now().UnixNano(),
-						"observedTimeUnixNano": time.Now().UnixNano(),
-						"severityNumber":       9,
-						"severityText":         "INFO",
-						"body":                 map[string]any{"stringValue": string(raw)},
-						"attributes": []any{
-							map[string]any{"key": "trace_id", "value": map[string]any{"stringValue": traceID}},
-						},
-					}},
-				}},
-			}},
-		})
+		body, _ := json.Marshal([]any{line})
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		req, err := http.NewRequestWithContext(ctx, "POST", "http://"+logShipURL+"/v1/logs", bytes.NewReader(body))
+		req, err := http.NewRequestWithContext(ctx, "POST", logShipURL, bytes.NewReader(body))
 		if err != nil {
 			return
 		}
 		req.Header.Set("Content-Type", "application/json")
+		if logShipAuth != "" {
+			user, pass, _ := bytes.Cut([]byte(logShipAuth), []byte(":"))
+			req.SetBasicAuth(string(user), string(pass))
+		}
 		resp, err := http.DefaultClient.Do(req)
 		if err == nil {
 			resp.Body.Close()
