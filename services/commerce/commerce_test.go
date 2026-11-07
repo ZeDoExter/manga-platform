@@ -435,18 +435,22 @@ func TestWebEconomy_ListLedgerEntitlementsAndEarnings(t *testing.T) {
 		t.Fatalf("PurchaseChapter failed: %v", err)
 	}
 
+	// Buyer ledger: topup + purchase debit only. The platform fee lives on
+	// the platform account, never on the buyer (FR-M4).
 	ledger := svc.ListLedger(ctx, buyerID)
-	if len(ledger) != 3 {
-		t.Fatalf("expected 3 ledger entries, got %d", len(ledger))
+	if len(ledger) != 2 {
+		t.Fatalf("expected 2 ledger entries, got %d", len(ledger))
 	}
-	if ledger[0].Type != commerce.LedgerPlatformFee || ledger[0].Amount != 9 {
+	if ledger[0].Type != commerce.LedgerPurchaseDebit || ledger[0].Amount != -30 {
 		t.Errorf("unexpected newest ledger entry: %+v", ledger[0])
 	}
-	if ledger[1].Type != commerce.LedgerPurchaseDebit || ledger[1].Amount != -30 {
-		t.Errorf("unexpected purchase debit entry: %+v", ledger[1])
+	if ledger[1].Type != commerce.LedgerTopUp || ledger[1].Amount != 100 {
+		t.Errorf("unexpected top-up ledger entry: %+v", ledger[1])
 	}
-	if ledger[2].Type != commerce.LedgerTopUp || ledger[2].Amount != 100 {
-		t.Errorf("unexpected top-up ledger entry: %+v", ledger[2])
+
+	platformLedger := svc.ListLedger(ctx, commerce.PlatformUserID)
+	if len(platformLedger) != 1 || platformLedger[0].Type != commerce.LedgerPlatformFee || platformLedger[0].Amount != 9 {
+		t.Fatalf("expected 1 platform-fee entry of 9, got %+v", platformLedger)
 	}
 
 	ents := svc.ListEntitlements(ctx, buyerID)

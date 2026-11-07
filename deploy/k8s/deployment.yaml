@@ -113,6 +113,11 @@ spec:
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
               value: "root@example.com:Complexpass#123"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-auth
+                  key: DATABASE_URL
           livenessProbe:
             httpGet:
               path: /healthz
@@ -183,6 +188,11 @@ spec:
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
               value: "root@example.com:Complexpass#123"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-auth
+                  key: DATABASE_URL
           livenessProbe:
             httpGet:
               path: /healthz

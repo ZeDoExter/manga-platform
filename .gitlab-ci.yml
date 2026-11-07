@@ -23,9 +23,18 @@ lint:
 test:
   stage: test
   image: golang:1.25-alpine
+  services:
+    - name: postgres:16-alpine
+      alias: postgres
+  variables:
+    POSTGRES_USER: manga
+    POSTGRES_PASSWORD: manga-demo-pw
+    POSTGRES_DB: manga
+    TEST_DATABASE_URL: postgres://manga:manga-demo-pw@postgres:5432/manga?sslmode=disable
   script:
     - echo "Running unit and integration tests..."
     - go test -v -coverprofile=coverage.out ./...
+    - go test -tags integration ./services/catalog/ ./services/commerce/
     - COVERAGE=$(go test -cover ./services/commerce/... | grep -o "[0-9.]*%" | tr -d "%")
     - echo "Commerce service test coverage $COVERAGE percent"
     - awk -v c="$COVERAGE" 'BEGIN { if (c + 0 < 80) { print "FAILED_COVERAGE_BELOW_80"; exit 1 } print "PASSED_COVERAGE_OK" }'

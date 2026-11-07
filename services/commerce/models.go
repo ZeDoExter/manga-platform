@@ -70,7 +70,6 @@ const (
 	PurchaseReversed PurchaseStatus = "reversed"
 )
 
-// Purchase records an unlocked chapter transaction (FR-M3).
 type Purchase struct {
 	ID                    string         `json:"id"`
 	UserID                string         `json:"user_id"`
@@ -79,6 +78,7 @@ type Purchase struct {
 	TotalCoins            int64          `json:"total_coins"`
 	PurchasedCoinsDebited int64          `json:"purchased_coins_debited"`
 	BonusCoinsDebited     int64          `json:"bonus_coins_debited"`
+	IdempotencyKey        string         `json:"idempotency_key"`
 	Status                PurchaseStatus `json:"status"`
 	CreatedAt             time.Time      `json:"created_at"`
 	ReversedAt            *time.Time     `json:"reversed_at,omitempty"`
