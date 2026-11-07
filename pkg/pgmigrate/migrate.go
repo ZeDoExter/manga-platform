@@ -3,6 +3,7 @@
 package pgmigrate
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"embed"
@@ -17,6 +18,13 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// legacyChecksum hashes raw bytes (pre-normalization) for DBs migrated
+// before CRLF normalization landed.
+func legacyChecksum(raw []byte) string {
+	sum := sha256.Sum256(raw)
+	return hex.EncodeToString(sum[:])
+}
 
 // lockKey must be unique per database. Any stable int64 works.
 const lockKey int64 = 20261107
@@ -79,15 +87,18 @@ func Up(ctx context.Context, pool *pgxpool.Pool, files embed.FS, dir string) err
 		if err != nil {
 			return fmt.Errorf("migrate: read %s: %w", name, err)
 		}
-		sum := sha256.Sum256(raw)
+		// Normalize CRLF so Windows checkouts hash the same as LF ones.
+		normalized := bytes.ReplaceAll(raw, []byte("\r\n"), []byte("\n"))
+		sum := sha256.Sum256(normalized)
 		checksum := hex.EncodeToString(sum[:])
 
 		if prev, ok := applied[name]; ok {
-			if prev != checksum {
+			if prev != checksum && prev != legacyChecksum(raw) {
 				return fmt.Errorf("migrate: %s was modified after apply (checksum mismatch) — add a new file instead", name)
 			}
 			continue
 		}
+
 
 		start := time.Now()
 		tx, err := conn.Begin(ctx)

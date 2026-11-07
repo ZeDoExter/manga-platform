@@ -117,8 +117,25 @@ spec:
   selector:
     app.kubernetes.io/name: gateway
 ---
-# Only reader is safe to scale today: catalog/commerce/identity/moderation/
-# community keep state in memory. Add DB-backed stores before scaling those.
+apiVersion: v1
+kind: Service
+metadata:
+  name: library
+  labels:
+    app.kubernetes.io/name: library
+    app.kubernetes.io/part-of: manga-platform
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: library
+---
+# Scale-safe today: reader (stateless) + catalog/commerce/library (PG-backed).
+# identity/moderation/community still keep state in memory.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

@@ -151,6 +151,26 @@ services:
       timeout: 3s
       retries: 20
 
+  library:
+    build:
+      context: .
+      args:
+        SERVICE: library
+    image: manga-library:dev
+    environment:
+      PORT: "8087"
+      DATABASE_URL: "postgres://manga:manga-demo-pw@postgres:5432/manga?sslmode=disable"
+    ports:
+      - "8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8087/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   gateway:
     build:
       context: .
