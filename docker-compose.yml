@@ -1,4 +1,21 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: manga
+      POSTGRES_PASSWORD: manga-demo-pw
+      POSTGRES_DB: manga
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U manga -d manga"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   identity:
     build:
       context: .
@@ -23,6 +40,10 @@ services:
     image: manga-catalog:dev
     environment:
       PORT: "8082"
+      DATABASE_URL: "postgres://manga:manga-demo-pw@postgres:5432/manga?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "8082:8082"
     healthcheck:
@@ -39,6 +60,10 @@ services:
     image: manga-commerce:dev
     environment:
       PORT: "8083"
+      DATABASE_URL: "postgres://manga:manga-demo-pw@postgres:5432/manga?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "8083:8083"
     healthcheck:
@@ -145,3 +170,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+
+volumes:
+  pgdata:
