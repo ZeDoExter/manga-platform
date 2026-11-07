@@ -52,7 +52,7 @@ build:
     - docker:24.0.5-dind
   parallel:
     matrix:
-      - SERVICE: [identity, catalog, commerce, reader, moderation, community, server]
+      - SERVICE: [identity, catalog, commerce, reader, moderation, community, library, server]
   before_script:
     - |
       if [ -n "$CI_REGISTRY_USER" ]; then

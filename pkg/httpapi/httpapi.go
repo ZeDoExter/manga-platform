@@ -123,6 +123,28 @@ func shipLog(service, traceID, method, path string, status int, ms int64) {
 	}()
 }
 
+// corsAllowOrigins comes from CORS_ALLOW_ORIGINS (comma-separated, * default for demo).
+var corsAllowOrigins = os.Getenv("CORS_ALLOW_ORIGINS")
+
+// CORS answers preflights and tags responses so browsers can call services directly.
+func CORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		allow := corsAllowOrigins
+		if allow == "" {
+			allow = "*"
+		}
+		w.Header().Set("Access-Control-Allow-Origin", allow)
+		w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-User-ID, X-User-Role")
+		w.Header().Set("Access-Control-Max-Age", "86400")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func Logging(service string, next http.Handler) http.Handler {
 	hm := metricsFor(service)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -166,7 +188,7 @@ func Run(service string, handler http.Handler) {
 	addr := net.JoinHostPort("0.0.0.0", strconv.Itoa(port))
 	srv := &http.Server{
 		Addr:         addr,
-		Handler:      Logging(service, otelhttp.NewHandler(handler, service)),
+		Handler:      CORS(Logging(service, otelhttp.NewHandler(handler, service))),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
