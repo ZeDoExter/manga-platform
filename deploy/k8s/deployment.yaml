@@ -606,3 +606,84 @@ spec:
             limits:
               cpu: "250m"
               memory: "128Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: media
+  labels:
+    app.kubernetes.io/name: media
+    app.kubernetes.io/part-of: manga-platform
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: media
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: media
+        app.kubernetes.io/part-of: manga-platform
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: media
+          image: manga-media:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "8080"
+            - name: MEDIA_LOCAL_DIR
+              value: "/data/images"
+            - name: MEDIA_MAX_CONCURRENT
+              value: "2"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "otel-collector.observability.svc.cluster.local:4318"
+            - name: OOLOG_URL
+              value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
+            - name: OOLOG_AUTH
+              value: "root@example.com:Complexpass#123"
+          volumeMounts:
+            - name: images
+              mountPath: /data/images
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 2
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+      volumes:
+        - name: images
+          persistentVolumeClaim:
+            claimName: media-images

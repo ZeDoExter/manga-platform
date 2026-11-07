@@ -134,8 +134,34 @@ spec:
   selector:
     app.kubernetes.io/name: library
 ---
-# Scale-safe today: reader (stateless) + catalog/commerce/library (PG-backed).
-# identity/moderation/community still keep state in memory.
+apiVersion: v1
+kind: Service
+metadata:
+  name: media
+  labels:
+    app.kubernetes.io/name: media
+    app.kubernetes.io/part-of: manga-platform
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: media
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-images
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: { storage: 10Gi }
+---
+# Scale-safe: reader (stateless) + catalog/commerce/library (PG-backed).
+# identity/moderation/community keep state in memory; media uses a PVC.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

@@ -14,7 +14,7 @@ variables:
 # Code Quality & Static Analysis
 lint:
   stage: lint
-  image: golang:1.25-alpine
+  image: golang:1.26-alpine
   script:
     - echo "Running go vet..."
     - go vet ./...
@@ -22,7 +22,7 @@ lint:
 # Automated Tests & Coverage Gate
 test:
   stage: test
-  image: golang:1.25-alpine
+  image: golang:1.26-alpine
   services:
     - name: postgres:16-alpine
       alias: postgres
@@ -52,7 +52,7 @@ build:
     - docker:24.0.5-dind
   parallel:
     matrix:
-      - SERVICE: [identity, catalog, commerce, reader, moderation, community, library, server]
+      - SERVICE: [identity, catalog, commerce, reader, moderation, community, library, media, server]
   before_script:
     - |
       if [ -n "$CI_REGISTRY_USER" ]; then

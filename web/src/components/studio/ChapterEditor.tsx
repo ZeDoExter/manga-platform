@@ -10,7 +10,8 @@ import { cx, fmtNum, uid, words } from "@/lib/util";
 import { useApp } from "@/lib/store";
 import { Empty, Icon } from "../ui";
 import { MangaPageSvg, type PageStyle } from "../MangaPage";
-import { CreatorGate, PRESET_LABEL, PreviewOverlay, StatusChip, fileToDataUrl } from "./common";
+import { CreatorGate, PRESET_LABEL, PreviewOverlay, StatusChip } from "./common";
+import { uploadAll } from "@/lib/media-api";
 
 export function ChapterEditor({ storyId, chapterId }: { storyId: string; chapterId: string }) {
   return (
@@ -30,7 +31,7 @@ function Loader({ storyId, chapterId }: { storyId: string; chapterId: string }) 
 }
 
 function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
-  const { act, toast, now } = useApp();
+  const { act, toast, now, state } = useApp();
   const visual = isVisual(story.type);
   const [title, setTitle] = useState(ch.title);
   const [num, setNum] = useState(String(ch.number));
@@ -113,11 +114,20 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
   const upload = async (fl: FileList | null) => {
     if (!fl?.length) return;
     setBusy(true);
+    const files = Array.from(fl).slice(0, 12);
     const added: StudioPage[] = [];
-    for (const f of Array.from(fl).slice(0, 12)) {
-      try { added.push({ id: uid("pg"), kind: "upload", src: await fileToDataUrl(f, 900, 0.75) }); } catch { toast(`Skipped ${f.name}`, "warn"); }
-    }
+    let failed = 0;
+    await uploadAll(files, state.accountId, story.id, ch.id, 3, (f, res) => {
+      if (res instanceof Error) {
+        failed++;
+        toast(`Skipped ${f.name}: ${res.message}`, "warn");
+      } else {
+        if (res.animated_dropped) toast(`${f.name}: animation dropped (first frame kept)`, "warn");
+        added.push({ id: uid("pg"), kind: "upload", src: res.key });
+      }
+    });
     if (added.length) { setPages([...pages, ...added]); toast(`${added.length} page${added.length > 1 ? "s" : ""} uploaded ✓`); }
+    if (failed) toast(`${failed} file${failed > 1 ? "s" : ""} rejected`, "warn");
     setBusy(false);
   };
   const cur = pages[Math.min(sel, pages.length - 1)];

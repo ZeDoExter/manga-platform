@@ -97,6 +97,28 @@ func (s *LocalStore) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
+func (s *LocalStore) ListPrefix(_ context.Context, prefix string) ([]string, error) {
+	cleaned, err := CleanKey(prefix)
+	if err != nil {
+		return nil, err
+	}
+	dir := filepath.Join(s.baseDir, filepath.FromSlash(cleaned))
+	entries, err := os.ReadDir(dir)
+	if errors.Is(err, os.ErrNotExist) {
+		return []string{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	out := []string{}
+	for _, e := range entries {
+		if !e.IsDir() {
+			out = append(out, cleaned+"/"+e.Name())
+		}
+	}
+	return out, nil
+}
+
 func (s *LocalStore) SignURL(ctx context.Context, key string, expires time.Duration) (string, error) {
 	return BuildSignedURL(s.baseURL, key, expires, s.secret)
 }
