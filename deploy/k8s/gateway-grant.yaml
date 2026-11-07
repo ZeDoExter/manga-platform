@@ -1,0 +1,17 @@
+# Allows HTTPRoute in default to route (via ExternalName) to OpenObserve.
+# Actually the ExternalName resolves in-cluster DNS; this grant documents
+# the intent and is required if we switch to a direct cross-namespace ref.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-obs
+  namespace: observability
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: default
+  to:
+    - group: ""
+      kind: Service
+      name: openobserve

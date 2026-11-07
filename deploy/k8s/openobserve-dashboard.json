@@ -1,0 +1,26 @@
+{
+  "title": "Manga Platform — Service Health",
+  "description": "Request rate, latency, and errors per service. Import via Dashboards > Import.",
+  "panels": [
+    {
+      "title": "Requests / sec by service",
+      "type": "line",
+      "query": "SELECT histogram(_timestamp, '1m') AS t, service_name, count(*) AS rps FROM \"default\" WHERE type = 'metric' GROUP BY t, service_name ORDER BY t"
+    },
+    {
+      "title": "p95 latency (ms) by service",
+      "type": "line",
+      "query": "SELECT histogram(_timestamp, '1m') AS t, service_name, approx_percentile(duration, 0.95) AS p95 FROM \"default\" GROUP BY t, service_name ORDER BY t"
+    },
+    {
+      "title": "Error rate (5xx) by service",
+      "type": "bar",
+      "query": "SELECT service_name, count(*) AS errors FROM \"manga-logs\" WHERE status >= 500 GROUP BY service_name ORDER BY errors DESC"
+    },
+    {
+      "title": "Slowest traces (top 10)",
+      "type": "table",
+      "query": "SELECT trace_id, service_name, operation_name, duration FROM \"default\" ORDER BY duration DESC LIMIT 10"
+    }
+  ]
+}
