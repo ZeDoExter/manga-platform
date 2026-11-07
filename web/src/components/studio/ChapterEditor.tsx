@@ -11,7 +11,7 @@ import { useApp } from "@/lib/store";
 import { Empty, Icon } from "../ui";
 import { MangaPageSvg, type PageStyle } from "../MangaPage";
 import { CreatorGate, PRESET_LABEL, PreviewOverlay, StatusChip } from "./common";
-import { uploadAll } from "@/lib/media-api";
+import { uploadAll, uploadArchive } from "@/lib/media-api";
 
 export function ChapterEditor({ storyId, chapterId }: { storyId: string; chapterId: string }) {
   return (
@@ -114,10 +114,35 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
   const upload = async (fl: FileList | null) => {
     if (!fl?.length) return;
     setBusy(true);
-    const files = Array.from(fl).slice(0, 12);
+    const files = Array.from(fl);
+    // Single .zip/.rar goes to the batch endpoint; images use parallel singles.
+    const archive = files.length === 1 && /\.(zip|rar)$/i.test(files[0].name) ? files[0] : null;
+    if (archive) {
+      try {
+        const items = await uploadArchive(archive, state.accountId, story.id, ch.id);
+        const added: StudioPage[] = [];
+        let failed = 0;
+        for (const it of items) {
+          if (it.result) {
+            if (it.result.animated_dropped) toast(`${it.name}: animation dropped`, "warn");
+            added.push({ id: uid("pg"), kind: "upload", src: it.result.key });
+          } else {
+            failed++;
+          }
+        }
+        if (added.length) { setPages([...pages, ...added]); toast(`${added.length} pages from ${archive.name} ✓`); }
+        if (failed) toast(`${failed} entries skipped (not JPG/PNG or too large)`, "warn");
+      } catch (e) {
+        toast(e instanceof Error ? e.message : "Archive upload failed", "warn");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    const imgs = files.filter((f) => !/\.(zip|rar)$/i.test(f.name)).slice(0, 12);
     const added: StudioPage[] = [];
-    let failed = 0;
-    await uploadAll(files, state.accountId, story.id, ch.id, 3, (f, res) => {
+    let failed = files.length - imgs.length;
+    await uploadAll(imgs, state.accountId, story.id, ch.id, 3, (f, res) => {
       if (res instanceof Error) {
         failed++;
         toast(`Skipped ${f.name}: ${res.message}`, "warn");
@@ -170,8 +195,8 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span className="label">Add a placeholder page</span>
                   {(Object.keys(PRESET_LABEL) as PagePreset[]).map((p) => <button key={p} className="chip !px-3 !py-1.5" onClick={() => addPreset(p)}>+ {PRESET_LABEL[p]}</button>)}
-                  <input ref={files} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} aria-label="Upload manga pages" />
-                  <button className="btn btn-sm ml-auto" onClick={() => files.current?.click()} disabled={busy}><Icon name="upload" size={13} /> {busy ? "Processing…" : "Upload pages"}</button>
+                  <input ref={files} type="file" accept="image/*,.zip,.rar" multiple className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} aria-label="Upload manga pages or a zip/rar archive" />
+                  <button className="btn btn-sm ml-auto" onClick={() => files.current?.click()} disabled={busy}><Icon name="upload" size={13} /> {busy ? "Processing…" : "Upload pages / zip"}</button>
                 </div>
                 {pages.length === 0 ? <Empty icon="image" title="No pages yet" text="Add placeholder frames or upload your own artwork (JPG/PNG)." /> : (
                   <div className="scroll-x flex gap-3 pb-2">

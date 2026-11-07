@@ -79,6 +79,43 @@ func main() {
 		}
 	})
 
+	// POST /uploads/batch?story_id=&chapter_id= — multipart "file" (.zip/.rar).
+	// Same auth. Returns per-page results in natural filename order.
+	mux.HandleFunc("POST /uploads/batch", func(w http.ResponseWriter, r *http.Request) {
+		_, role := userFromHeader(r)
+		if role != "uploader" && role != "admin" {
+			httpapi.Fail(w, http.StatusForbidden, "uploader role required")
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, media.MaxZipBytes+1024)
+		if err := r.ParseMultipartForm(media.MaxZipBytes + 1024); err != nil {
+			httpapi.Fail(w, http.StatusRequestEntityTooLarge, "archive too large")
+			return
+		}
+		f, hdr, err := r.FormFile("file")
+		if err != nil {
+			httpapi.Fail(w, http.StatusBadRequest, "missing file field")
+			return
+		}
+		defer f.Close()
+
+		res, err := svc.UploadBatch(r.Context(), f, hdr.Filename, r.URL.Query().Get("story_id"), r.URL.Query().Get("chapter_id"))
+		switch {
+		case err == nil:
+			httpapi.JSON(w, http.StatusCreated, res)
+		case errors.Is(err, media.ErrZipTooLarge):
+			httpapi.Fail(w, http.StatusRequestEntityTooLarge, err.Error())
+		case errors.Is(err, media.ErrNotAZip), errors.Is(err, media.ErrZipTooMany):
+			httpapi.Fail(w, http.StatusBadRequest, err.Error())
+		default:
+			if r.Context().Err() != nil {
+				httpapi.Fail(w, http.StatusServiceUnavailable, "server busy")
+				return
+			}
+			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
+		}
+	})
+
 	// POST /confirm — move tmp/ upload to stories/ path after chapter save.
 	mux.HandleFunc("POST /confirm", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
