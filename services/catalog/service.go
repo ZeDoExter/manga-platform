@@ -5,6 +5,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"time"
+
+	"manga-platform/pkg/sanitize"
 )
 
 // Service holds validation + business rules; persistence goes through Store.
@@ -108,7 +110,7 @@ func (s *Service) createChapter(ctx context.Context, id, storyID string, orderIn
 	}
 	chap := &Chapter{
 		ID: id, StoryID: storyID, OrderIndex: orderIndex, Title: title,
-		PriceCoins: priceCoins, PageKeys: pageKeys, NovelText: novelText,
+		PriceCoins: priceCoins, PageKeys: pageKeys, NovelText: sanitize.NovelHTML(novelText),
 		Status: StatusPublished, AutoUnlockAt: autoUnlockAt, CreatedAt: time.Now(),
 	}
 	if err := s.store.InsertChapter(ctx, chap); err != nil {

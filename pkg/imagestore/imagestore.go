@@ -29,6 +29,12 @@ type ImageStore interface {
 	SignURL(ctx context.Context, key string, expires time.Duration) (string, error)
 }
 
+// PrefixLister is an optional ImageStore extension for bulk prefix deletion
+// (takedown wipes stories/{story}/{chapter}/). Memory and Local implement it;
+// R2 uses lifecycle rules + explicit keys instead.
+type PrefixLister interface {
+	ListPrefix(ctx context.Context, prefix string) ([]string, error)
+}
 // CleanKey validates and normalizes an object key to prevent path traversal.
 func CleanKey(key string) (string, error) {
 	cleaned := strings.Trim(key, "/ ")

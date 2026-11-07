@@ -72,6 +72,18 @@ func (m *MemoryStore) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
+func (m *MemoryStore) ListPrefix(_ context.Context, prefix string) ([]string, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	out := []string{}
+	for k := range m.objects {
+		if len(k) >= len(prefix) && k[:len(prefix)] == prefix {
+			out = append(out, k)
+		}
+	}
+	return out, nil
+}
+
 func (m *MemoryStore) SignURL(ctx context.Context, key string, expires time.Duration) (string, error) {
 	return BuildSignedURL(m.baseURL, key, expires, m.secret)
 }
