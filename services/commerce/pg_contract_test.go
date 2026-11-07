@@ -106,6 +106,26 @@ func TestPG_Contract_MoneyFlow(t *testing.T) {
 	if ok {
 		t.Fatal("entitlement should be revoked")
 	}
+
+	// Re-purchase after reversal exercises the already-entitled + rebuy path.
+	if _, err := svc.PurchaseChapter(ctx, commerce.PurchaseRequest{
+		UserID: buyer, StoryID: "story-1", ChapterID: res.Purchase.ChapterID,
+		Price:          40,
+		CreatorSplits:  []commerce.CreatorSplit{{CreatorID: creator, Percentage: 100}},
+		IdempotencyKey: uniq("rebuy"),
+	}); err != nil {
+		t.Fatalf("rebuy after reversal: %v", err)
+	}
+	if ents := svc.ListEntitlements(ctx, buyer); len(ents) != 1 {
+		t.Fatalf("expected 1 entitlement after rebuy, got %d", len(ents))
+	}
+	if total, list := svc.GetCreatorEarnings(ctx, creator); total <= 0 || len(list) == 0 {
+		t.Fatalf("expected creator earnings after rebuy, got %d across %d", total, len(list))
+	}
+	// Second reversal is a no-op (idempotent).
+	if err := svc.ReversePurchaseOnTakedown(ctx, res.Purchase.ID, uniq("td2")); err != nil {
+		t.Fatalf("second reversal: %v", err)
+	}
 }
 
 // TestPG_Contract_NoDoubleSpend hammers one wallet from 50 goroutines.
