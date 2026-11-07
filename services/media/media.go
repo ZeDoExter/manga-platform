@@ -7,16 +7,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"image"
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
 	"io"
-	"net/http"
 	"strings"
 
-	"github.com/gen2brain/webp"
-	"golang.org/x/image/draw"
 	"manga-platform/pkg/imagestore"
 )
 
@@ -24,8 +17,11 @@ var (
 	ErrTooLarge       = errors.New("image exceeds 10MB")
 	ErrTooManyPixels  = errors.New("image exceeds 40 megapixels")
 	ErrTooTall        = errors.New("image taller than 16000px (webtoon strips must be split client-side)")
-	ErrUnsupportedFmt = errors.New("unsupported image format (need JPEG, PNG, GIF, or WebP)")
+	ErrUnsupportedFmt = errors.New("unsupported image format (need JPEG or PNG)")
 	ErrInvalidKey     = errors.New("invalid image key")
+	ErrNotAZip        = errors.New("not a zip archive")
+	ErrZipTooLarge    = errors.New("zip exceeds 50MB or 500MB unpacked")
+	ErrZipTooMany     = errors.New("zip exceeds 100 images")
 )
 
 const (
@@ -34,6 +30,9 @@ const (
 	MaxWidth       = 1600
 	MaxHeight      = 16000
 	WebPQuality    = 80
+	MaxZipBytes    = 50 << 20
+	MaxZipUnpacked = 500 << 20
+	MaxZipFiles    = 100
 )
 
 // Service resizes uploads to WebP and stores them under content-hash keys.
@@ -80,54 +79,12 @@ func (s *Service) Upload(ctx context.Context, r io.Reader, storyID, chapterID st
 		return nil, ErrTooLarge
 	}
 
-	// Magic bytes, not client headers.
-	ct := http.DetectContentType(raw)
-	animated := false
-	switch {
-	case strings.HasPrefix(ct, "image/jpeg"), strings.HasPrefix(ct, "image/png"),
-		strings.HasPrefix(ct, "image/webp"):
-	case strings.HasPrefix(ct, "image/gif"):
-		animated = true // first frame only
-	default:
-		return nil, fmt.Errorf("%w: detected %s", ErrUnsupportedFmt, ct)
-	}
-
-	// Header-only dimension check before full decode (anti decompression-bomb).
-	cfg, _, err := image.DecodeConfig(bytes.NewReader(raw))
+	out, w, h, animated, err := processOne(raw)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrUnsupportedFmt, err)
-	}
-	if int64(cfg.Width)*int64(cfg.Height) > MaxPixels {
-		return nil, ErrTooLarge
-	}
-	if cfg.Height > MaxHeight {
-		return nil, ErrTooTall
+		return nil, err
 	}
 
-	img, _, err := image.Decode(bytes.NewReader(raw))
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrUnsupportedFmt, err)
-	}
-
-	// Downscale only (never upscale), preserving aspect ratio.
-	bounds := img.Bounds()
-	w, h := bounds.Dx(), bounds.Dy()
-	if w > MaxWidth {
-		nh := h * MaxWidth / w
-		dst := image.NewRGBA(image.Rect(0, 0, MaxWidth, nh))
-		draw.CatmullRom.Scale(dst, dst.Bounds(), img, bounds, draw.Over, nil)
-		img, w, h = dst, MaxWidth, nh
-	}
-	if h > MaxHeight {
-		return nil, ErrTooTall
-	}
-
-	var out bytes.Buffer
-	if err := webp.Encode(&out, img, webp.Options{Quality: WebPQuality}); err != nil {
-		return nil, fmt.Errorf("webp encode: %w", err)
-	}
-
-	sum := sha256.Sum256(out.Bytes())
+	sum := sha256.Sum256(out)
 	hash := hex.EncodeToString(sum[:])
 	var key string
 	if storyID != "" && chapterID != "" {
@@ -136,12 +93,12 @@ func (s *Service) Upload(ctx context.Context, r io.Reader, storyID, chapterID st
 		key = fmt.Sprintf("tmp/%s.webp", hash)
 	}
 
-	if err := s.store.Put(ctx, key, bytes.NewReader(out.Bytes()), int64(out.Len()), "image/webp"); err != nil {
+	if err := s.store.Put(ctx, key, bytes.NewReader(out), int64(len(out)), "image/webp"); err != nil {
 		return nil, err
 	}
 	return &UploadResult{
 		Key: key, Width: w, Height: h,
-		SizeBytes: int64(out.Len()), ContentType: "image/webp", Animated: animated,
+		SizeBytes: int64(len(out)), ContentType: "image/webp", Animated: animated,
 	}, nil
 }
 

@@ -19,6 +19,8 @@ export async function uploadImage(
   const form = new FormData();
   form.append('file', file);
   const qs = storyID && chapterID
+    ? `?story_id=${encodeURIComponent(storyID)}&chapter_id=${encodeURIComponent(chapterID)}`
+    : '';
   // XHR for upload progress (fetch lacks it).
   const { promise, resolve, reject } = Promise.withResolvers<UploadResult>();
   const xhr = new XMLHttpRequest();
@@ -63,6 +65,40 @@ export async function uploadAll(
   });
   await Promise.all(workers);
   return out;
+}
+
+export interface BatchItem {
+  index: number;
+  name: string;
+  result?: UploadResult;
+  error?: string;
+}
+
+// uploadArchive sends one .zip/.rar; server returns pages in natural order.
+export async function uploadArchive(
+  file: File, userID: string, storyID: string, chapterID: string,
+  onProgress?: (pct: number) => void,
+): Promise<BatchItem[]> {
+  const { promise, resolve, reject } = Promise.withResolvers<BatchItem[]>();
+  const form = new FormData();
+  form.append('file', file, file.name);
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', `${BASE}/uploads/batch?story_id=${encodeURIComponent(storyID)}&chapter_id=${encodeURIComponent(chapterID)}`);
+  xhr.setRequestHeader('X-User-ID', userID);
+  xhr.setRequestHeader('X-User-Role', 'uploader');
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+  };
+  xhr.onload = () => {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      resolve(JSON.parse(xhr.responseText) as BatchItem[]);
+    } else {
+      reject(new Error(xhr.responseText.slice(0, 200) || `batch upload -> ${xhr.status}`));
+    }
+  };
+  xhr.onerror = () => reject(new Error('batch upload failed'));
+  xhr.send(form);
+  return promise;
 }
 
 export async function confirmUpload(tmpKey: string, storyID: string, chapterID: string): Promise<string> {
