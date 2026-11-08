@@ -75,12 +75,27 @@ The same sequence is covered at the service level by
 Goal: show real RPS/latency/CPU numbers on stage, and show the system
 autoscale in front of the audience.
 
-### Tooling (open work — none of this exists yet)
+### Tooling
 
-- **k6** — HTTP load generator, scriptable in JS, outputs to OpenObserve/Prometheus for live graphs during the demo.
+- **k6** — `load/read-heavy.js` (50 VUs, 5 min: 1m ramp + 3m sustain + 1m down).
 - **Go `net/http/pprof`** — not wired into any service yet; when added, pull a profile before/during/after load to show where time goes.
 - **`kubectl top pods` + OpenObserve dashboard** — live CPU and memory per pod during the run (this part works today).
-- **HPA (Horizontal Pod Autoscaler)** — configured on `reader` (min 1, max 4, CPU 70%). `catalog`/`commerce`/`library` are PG-backed and scale-safe now; `identity`/`moderation`/`community` stay at one replica until their stores land.
+- **HPA (Horizontal Pod Autoscaler)** — `manga-reader-hpa` on `reader` (min 1, max 4, CPU 70%). All 9 Go services are PG-backed and scale-safe now.
+
+### Measured results (2026-11-08, AKS B2s x2, via `https://api.dootoon.store`)
+
+| Metric | Value | Target | Pass |
+|---|---|---|---|
+| Requests | 10,599 total, ~35 RPS @ 50 VUs | — | — |
+| p95 latency | 251ms | < 300ms | ✅ |
+| p90 / median | 195ms / 82ms | — | — |
+| Error rate | 0.00% (0/10,599) | < 1% | ✅ |
+| HPA | reader 1 → 2 replicas live during load | scale up | ✅ |
+| Peak pod CPU | catalog 132m, gateway 122m, reader ~65m each | — | — |
+| Pod memory | 6-14Mi per Go pod, web 45Mi | — | ✅ |
+
+PG session lookup measured separately at 0.1ms (`EXPLAIN ANALYZE`, PK index) —
+Redis stays out per the no-Redis ADR: no measured hotspot justifies the extra pod + flush/merge design.
 
 ### Scenarios
 
