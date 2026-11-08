@@ -401,20 +401,20 @@ export function LivingRoom({
       )}
 
       {/* Merged zone bubbles stack vertically — no overlap */}
-      <div className="pointer-events-none fixed bottom-24 left-3 top-24 z-[48] flex w-64 flex-col justify-center gap-2 sm:left-6 sm:w-72" aria-hidden="true">
+      <div className="pointer-events-none fixed bottom-24 left-3 top-24 z-[48] flex w-44 flex-col justify-center gap-1.5 sm:left-6 sm:w-52" aria-hidden="true">
         {floaters.slice(-4).map((f) => (
           <div
             key={f.id}
-            className="flex max-w-full items-center gap-2 rounded-2xl border-2 border-[#15120f] bg-[#fbf8f1]/95 px-3 py-1.5 text-xs font-bold text-[#15120f] shadow-[3px_3px_0_#15120f] backdrop-blur-xs"
+            className="flex max-w-full items-center gap-1.5 rounded-xl border border-[#15120f] bg-[#fbf8f1]/95 px-2 py-1 text-[0.7rem] font-bold text-[#15120f] shadow-[2px_2px_0_#15120f] backdrop-blur-xs"
             style={{
               animation: "echo-rise 8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
               outline: f.mine ? "2px solid var(--accent)" : undefined,
             }}
           >
-            <span className="shrink-0 text-base leading-none">{f.emoji}</span>
+            <span className="shrink-0 text-sm leading-none">{f.emoji}</span>
             <div className="min-w-0 leading-tight">
               <div className="truncate font-extrabold text-[#15120f]">“{f.text}”</div>
-              {f.sub && <div className="font-mono text-[0.6rem] font-semibold text-[#7a7064]">{f.sub}</div>}
+              {f.sub && <div className="truncate font-mono text-[0.55rem] font-semibold text-[#7a7064]">{f.sub}</div>}
             </div>
           </div>
         ))}
