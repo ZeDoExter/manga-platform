@@ -52,8 +52,8 @@ export default function AdminPage() {
         economyApi.creatorEarnings("ren-akitsuki").catch(() => ({ total_coins: 0, entries: [] })),
         economyApi.creatorEarnings("creator-1").catch(() => ({ total_coins: 0, entries: [] })),
       ]);
-      setLogs(audit);
-      setLiveCreatorRevenue((renEarnings.total_coins ?? 0) + (creator1Earnings.total_coins ?? 0));
+      setLogs(Array.isArray(audit) ? audit : []);
+      setLiveCreatorRevenue(Number(renEarnings.total_coins ?? 0) + Number(creator1Earnings.total_coins ?? 0));
     } catch (e) {
       toast(e instanceof Error ? e.message : "Failed to load admin metrics", "warn");
     } finally {

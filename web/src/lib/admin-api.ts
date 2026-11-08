@@ -42,5 +42,6 @@ export async function banUser(adminID: string, targetID: string, reason: string)
 
 export async function fetchAuditLogs(): Promise<AuditLog[]> {
   const res = await req('/audit-logs');
-  return (await res.json()) as AuditLog[];
+  const data = (await res.json().catch(() => [])) as AuditLog[] | null;
+  return Array.isArray(data) ? data : [];
 }

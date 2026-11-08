@@ -32,7 +32,7 @@ func (p *PGStore) ListAuditLogs(ctx context.Context) ([]*AuditLog, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*AuditLog
+	out := make([]*AuditLog, 0)
 	for rows.Next() {
 		l := &AuditLog{}
 		if err := rows.Scan(&l.ID, &l.AdminID, &l.Action, &l.TargetID, &l.Reason, &l.CreatedAt); err != nil {
