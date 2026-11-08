@@ -29,7 +29,7 @@ spec:
       containers:
         - name: identity
           image: manga-identity:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
@@ -104,7 +104,7 @@ spec:
       containers:
         - name: catalog
           image: manga-catalog:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
@@ -179,7 +179,7 @@ spec:
       containers:
         - name: commerce
           image: manga-commerce:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
@@ -254,7 +254,7 @@ spec:
       containers:
         - name: reader
           image: manga-reader:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
@@ -338,7 +338,7 @@ spec:
       containers:
         - name: moderation
           image: manga-moderation:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
@@ -427,7 +427,7 @@ spec:
       containers:
         - name: community
           image: manga-community:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
@@ -506,7 +506,7 @@ spec:
       containers:
         - name: gateway
           image: manga-gateway:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
@@ -578,7 +578,7 @@ spec:
       containers:
         - name: library
           image: manga-library:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
@@ -653,7 +653,7 @@ spec:
       containers:
         - name: media
           image: manga-media:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
