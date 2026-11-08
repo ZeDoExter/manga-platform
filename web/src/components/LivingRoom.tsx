@@ -359,7 +359,7 @@ export function LivingRoom({
           })}
           {hv && hover !== null && (
             <div
-              style={{ top: `calc(8px + ${Math.min(0.92, Math.max(0.08, hv.pct)) * 100}% * 0.96)` }}
+              className="pointer-events-none absolute right-5 w-52 -translate-y-1/2 rounded-md border-2 border-line bg-card p-2.5 text-ink shadow-[3px_3px_0_var(--shadow)]"
             >
               <div className="flex items-center gap-1.5 text-sm font-extrabold">
                 <span>{ECHO_EMOJI[hv.kind]}</span>
