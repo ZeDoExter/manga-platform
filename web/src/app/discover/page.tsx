@@ -1,6 +1,6 @@
 import { DiscoverView } from "@/components/DiscoverView";
 
-export const metadata = { title: "Discover — TSUZUKU" };
+export const metadata = { title: "Discover — DOOTOON" };
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
 

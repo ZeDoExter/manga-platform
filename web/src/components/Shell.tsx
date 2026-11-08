@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useApp } from "@/lib/store";
 import { useEconomy } from "@/lib/economy-store";
 import { DEMO_IDS, ACCOUNT_MAP } from "@/data/accounts";
+import { useSession, signOut } from "@/lib/auth-client";
 import { suggest } from "@/lib/search";
 import { cx } from "@/lib/util";
 import { TOP10 } from "@/data/stories";
@@ -13,12 +14,10 @@ import { Avatar, Icon } from "./ui";
 import { Cover } from "./Cover";
 import type { Story } from "@/lib/types";
 
-const LINKS = [
+const PUBLIC_LINKS = [
   { href: "/", label: "Home", icon: "home" },
   { href: "/discover", label: "Discover", icon: "compass" },
   { href: "/library", label: "Library", icon: "library" },
-  { href: "/studio", label: "Studio", icon: "pen" },
-  { href: "/admin", label: "Admin", icon: "lock" },
 ];
 
 function isActive(path: string, href: string) {
@@ -61,6 +60,7 @@ export function Shell({ children }: { children: ReactNode }) {
 function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
   const { account, state, act, me } = useApp();
   const { balance } = useEconomy();
+  const { data: session } = useSession();
   const [menu, setMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -75,20 +75,26 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
     };
   }, [menu]);
   const night = state.theme === "night";
-  const isCreator = account.role === "creator";
+  const isCreator = account.role === "creator" || account.role === "admin";
+  const isAdmin = account.role === "admin";
+  const navLinks = [
+    ...PUBLIC_LINKS,
+    ...(isCreator ? [{ href: "/studio", label: "Studio", icon: "pen" }] : []),
+    ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: "lock" }] : []),
+  ];
   return (
     <header className="sticky top-0 z-[100] border-b-2 border-line bg-paper/90 backdrop-blur-md">
       <div className="wrap flex h-16 items-center gap-3">
-        <Link href="/" className="group flex items-center gap-2.5" aria-label="TSUZUKU home">
-          <span className="grid size-10 -rotate-3 place-items-center border-2 border-line bg-accent font-display text-xl text-white shadow-[3px_3px_0_var(--shadow)] transition-transform group-hover:rotate-0">つ</span>
+        <Link href="/" className="group flex items-center gap-2.5" aria-label="DOOTOON home">
+          <span className="grid size-10 -rotate-3 place-items-center border-2 border-line bg-accent font-display text-xl text-white shadow-[3px_3px_0_var(--shadow)] transition-transform group-hover:rotate-0" style={{ fontFamily: "var(--font-thai)" }}>ด</span>
           <span className="hidden leading-none sm:block">
-            <span className="h-display block text-[1.35rem]">TSUZUKU</span>
-            <span className="label block !text-[0.55rem] !tracking-[0.3em]">to be continued</span>
+            <span className="h-display block text-[1.35rem]">DOOTOON</span>
+            <span className="label block !text-[0.55rem] !tracking-[0.3em]" style={{ fontFamily: "var(--font-thai)" }}>ดูตูน</span>
           </span>
         </Link>
 
         <nav className="ml-4 hidden items-center gap-1 xl:flex" aria-label="Primary">
-          {LINKS.map((l) => (
+          {navLinks.map((l) => (
             <Link key={l.href} href={l.href} className={cx("rounded-md border-2 px-3 py-1.5 text-sm font-bold transition-all", isActive(path, l.href) ? "border-line bg-ink text-paper shadow-[2px_2px_0_var(--accent)]" : "border-transparent hover:border-line hover:bg-card")}>
               {l.label}
             </Link>
@@ -117,40 +123,75 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
             <Avatar account={account} style={me.profile.avatar} size={34} />
             <span className="hidden text-left leading-tight md:block">
               <span className="block text-xs font-extrabold">{account.name.split(" ")[0]}</span>
-              <span className={cx("block font-mono text-[0.58rem] font-bold uppercase tracking-wider", isCreator ? "text-accent" : "text-accent2")}>{isCreator ? "Uploader" : "Reader"}</span>
+              <span className={cx("block font-mono text-[0.58rem] font-bold uppercase tracking-wider", isAdmin ? "text-hl" : isCreator ? "text-accent" : "text-accent2")}>{isAdmin ? "Admin" : isCreator ? "Uploader" : "Reader"}</span>
             </span>
             <Icon name="down" size={14} />
           </button>
           {menu && (
             <div role="menu" className="panel anim-pop absolute right-0 top-[calc(100%+10px)] z-[110] w-72 p-2">
-              <div className="label px-2 pb-1 pt-1">Demo accounts · switch instantly</div>
-              {DEMO_IDS.map((id) => {
-                const a = ACCOUNT_MAP[id];
-                const on = id === account.id;
-                return (
-                  <button key={id} role="menuitem" onClick={() => { act.switchAccount(id); setMenu(false); }} className={cx("flex w-full items-center gap-3 rounded-md border-2 p-2 text-left transition-colors", on ? "border-line bg-paper2" : "border-transparent hover:border-line hover:bg-paper2")}>
-                    <Avatar account={a} style={state.data[id]?.profile.avatar} size={36} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-extrabold">{a.name}</span>
-                      <span className="block truncate text-xs text-muted">{a.role === "creator" ? "Uploader · Creator Studio" : "Reader · Personal library"}</span>
-                    </span>
-                    {on ? <Icon name="check" size={16} className="text-accent" /> : <span className={cx("chip !text-[0.55rem]", a.role === "creator" && "chip-on")}>{a.role === "creator" ? "UP" : "RD"}</span>}
+              {session?.user ? (
+                <div className="mb-2 rounded-md border-2 border-line bg-paper2 p-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-xs font-extrabold">{session.user.name}</span>
+                    <span className="chip chip-on !text-[0.55rem]">Signed in</span>
+                  </div>
+                  <div className="truncate font-mono text-[0.65rem] text-muted">{session.user.email}</div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await signOut();
+                      act.switchAccount("mika");
+                      setMenu(false);
+                    }}
+                    className="btn btn-sm mt-2 w-full justify-center"
+                  >
+                    Sign out
                   </button>
-                );
-              })}
-              <div className="my-2 border-t-2 border-dashed border-line/30" />
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMenu(false)}
+                  className="btn btn-accent mb-2 flex w-full items-center justify-center gap-2 !py-2 text-xs font-extrabold"
+                >
+                  <Icon name="user" size={14} /> Sign in / Google
+                </Link>
+              )}
               <Link href="/wallet" onClick={() => setMenu(false)} role="menuitem" className="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-bold hover:bg-paper2">
                 <Icon name="coin" size={16} /> Wallet <span className="ml-auto font-mono text-xs font-extrabold">{balance.toLocaleString()}</span>
               </Link>
               <Link href="/profile" onClick={() => setMenu(false)} role="menuitem" className="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-bold hover:bg-paper2">
                 <Icon name="user" size={16} /> My profile
               </Link>
-              <Link href="/studio" onClick={() => setMenu(false)} role="menuitem" className="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-bold hover:bg-paper2">
-                <Icon name="pen" size={16} /> Creator Studio {!isCreator && <span className="chip ml-auto !text-[0.55rem]">uploaders</span>}
-              </Link>
-              <button role="menuitem" onClick={() => { act.resetDemo(); setMenu(false); }} className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm font-bold text-muted hover:bg-paper2">
-                <Icon name="shuffle" size={16} /> Reset demo data
-              </button>
+              {isCreator && (
+                <Link href="/studio" onClick={() => setMenu(false)} role="menuitem" className="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-bold hover:bg-paper2">
+                  <Icon name="pen" size={16} /> Creator Studio
+                </Link>
+              )}
+              {isAdmin && (
+                <Link href="/admin" onClick={() => setMenu(false)} role="menuitem" className="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-bold text-accent hover:bg-paper2">
+                  <Icon name="lock" size={16} /> Admin Dashboard
+                </Link>
+              )}
+              <details className="mt-2 border-t-2 border-dashed border-line/30 pt-2">
+                <summary className="label cursor-pointer px-2 py-1 select-none">Switch role (Reader / Creator / Admin)</summary>
+                <div className="mt-1 space-y-1">
+                  {DEMO_IDS.map((id) => {
+                    const a = ACCOUNT_MAP[id];
+                    const on = id === account.id;
+                    return (
+                      <button key={id} role="menuitem" onClick={() => { act.switchAccount(id); setMenu(false); }} className={cx("flex w-full items-center gap-2.5 rounded-md border-2 p-1.5 text-left transition-colors", on ? "border-line bg-paper2" : "border-transparent hover:border-line hover:bg-paper2")}>
+                        <Avatar account={a} style={state.data[id]?.profile.avatar} size={28} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-xs font-extrabold">{a.name}</span>
+                          <span className="block truncate text-[0.65rem] text-muted">{a.role === "admin" ? "Admin · KPI & Moderation" : a.role === "creator" ? "Uploader · Creator Studio" : "Reader · Library"}</span>
+                        </span>
+                        {on ? <Icon name="check" size={14} className="text-accent" /> : <span className={cx("chip !text-[0.52rem]", a.role !== "reader" && "chip-on")}>{a.role === "admin" ? "ADM" : a.role === "creator" ? "UP" : "RD"}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </details>
             </div>
           )}
         </div>
@@ -161,12 +202,16 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
 
 function BottomNav({ path }: { path: string }) {
   const { account } = useApp();
-  const creator = account.role === "creator";
+  const creator = account.role === "creator" || account.role === "admin";
   const items = [
     { href: "/", label: "Home", icon: "home" },
     { href: "/discover", label: "Discover", icon: "compass" },
     { href: "/library", label: "Library", icon: "library" },
-    creator ? { href: "/studio", label: "Studio", icon: "pen" } : { href: "/profile", label: "Me", icon: "user" },
+    account.role === "admin"
+      ? { href: "/admin", label: "Admin", icon: "lock" }
+      : creator
+        ? { href: "/studio", label: "Studio", icon: "pen" }
+        : { href: "/profile", label: "Me", icon: "user" },
   ];
   return (
     <nav className="fixed inset-x-0 bottom-0 z-[100] grid grid-cols-4 border-t-2 border-line bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden" aria-label="Mobile">
@@ -191,9 +236,9 @@ function Footer() {
       <div className="tone-lg absolute inset-0 opacity-30" style={{ ["--tone" as string]: "rgba(255,255,255,.12)" }} />
       <div className="wrap relative grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
-          <div className="h-display text-6xl text-accent md:text-8xl">つづく</div>
+          <div className="h-display text-6xl text-accent md:text-8xl">DOOTOON</div>
           <p className="mt-3 max-w-sm text-sm text-paper/70">
-            TSUZUKU is a fictional next-generation reading universe. Every story, creator, review and analytic you see is generated sample content — publishing and analytics are simulations stored in your browser.
+            DOOTOON is a next-generation reading platform for manga, manhwa, and light novels — supporting creators directly through instant chapter unlocks and transparent revenue splits.
           </p>
         </div>
         {[
@@ -214,7 +259,7 @@ function Footer() {
         ))}
       </div>
       <div className="wrap relative mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-paper/20 pt-5 font-mono text-[0.7rem] text-paper/50">
-        <span>© 2026 TSUZUKU — a demo platform. No real content was harmed.</span>
+        <span>© 2026 DOOTOON · All rights reserved.</span>
         <span>Press ⌘K / “/” to search anywhere</span>
       </div>
     </footer>
@@ -256,7 +301,8 @@ function Palette({ open, onClose }: { open: boolean; onClose: () => void }) {
       { id: "p-home", label: "Home", sub: "Go to", icon: "home", run: go("/") },
       { id: "p-disc", label: "Discover", sub: "Advanced search & filters", icon: "compass", run: go("/discover") },
       { id: "p-lib", label: "Smart Library", sub: "Collections, bookmarks, history", icon: "library", run: go("/library") },
-      { id: "p-stu", label: "Creator Studio", sub: "Publish & manage stories", icon: "pen", run: go("/studio") },
+      ...(account.role === "creator" || account.role === "admin" ? [{ id: "p-stu", label: "Creator Studio", sub: "Publish & manage stories", icon: "pen", run: go("/studio") }] : []),
+      ...(account.role === "admin" ? [{ id: "p-adm", label: "Admin Dashboard", sub: "KPIs, revenue & moderation", icon: "lock", run: go("/admin") }] : []),
       { id: "p-me", label: "My profile", sub: account.role === "creator" ? "Uploader profile" : "Reader profile", icon: "user", run: go("/profile") },
     ];
     const actions: PItem[] = [

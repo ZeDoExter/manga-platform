@@ -306,7 +306,7 @@ function Chapters({ story }: { story: Story }) {
 
 /* ------------------------------ reviews ------------------------------ */
 function Reviews({ story }: { story: Story }) {
-  const { me, act, now, toast } = useApp();
+  const { me, act, now, toast, account } = useApp();
   const creator = CREATOR_MAP[story.creator];
   const seeded = useMemo(() => seedReviews(story, creator?.name ?? "the author"), [story, creator]);
   const dist = ratingDist(story);
@@ -314,6 +314,20 @@ function Reviews({ story }: { story: Story }) {
   const [rating, setRating] = useState(me.ratings[story.id] ?? 0);
   const [text, setText] = useState(mine?.text ?? "");
   const [helpful, setHelpful] = useState<Set<string>>(new Set());
+  const [remoteComments, setRemoteComments] = useState<{ id: string; user: string; userId: string; rating: number; text: string; at: number }[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/community?storyId=${encodeURIComponent(story.id)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (alive && d?.comments) setRemoteComments(d.comments);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [story.id, mine?.at]);
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
       <div className="space-y-5">
@@ -344,6 +358,17 @@ function Reviews({ story }: { story: Story }) {
             <p className="mt-2 text-sm leading-relaxed">{mine.text}</p>
           </li>
         )}
+        {remoteComments.filter((c) => c.userId !== account.id).map((r) => (
+          <li key={r.id} className="panel-flat p-4">
+            <div className="flex items-center gap-2">
+              <span className="grid size-8 place-items-center rounded-full border-2 border-line bg-paper2 text-xs font-extrabold">{(r.user[0] ?? "R").toUpperCase()}</span>
+              <b className="text-sm">{r.user}</b>
+              <Stars value={r.rating} size={13} />
+              <span className="ml-auto font-mono text-[0.68rem] text-muted">{fmtAgo(r.at, now)}</span>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-ink2">{r.text}</p>
+          </li>
+        ))}
         {seeded.map((r) => (
           <li key={r.id} className="panel-flat p-4">
             <div className="flex items-center gap-2">

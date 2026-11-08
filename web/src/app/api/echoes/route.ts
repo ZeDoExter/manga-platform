@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
+import { chapterKey } from "@/lib/economy";
 
 export const dynamic = "force-dynamic";
 
+const COMMUNITY_URL = (process.env.COMMUNITY_URL ?? "http://localhost:8086").replace(/\/+$/, "");
+const CATALOG_URL = (process.env.CATALOG_URL ?? "http://localhost:8082").replace(/\/+$/, "");
+
+type EchoKind = "fire" | "tears" | "gasp" | "heart" | "mind" | "laugh" | "cry" | "think";
+
 type MockEchoRow = {
-  id: number;
+  id: string | number;
   storyId: string;
   chapter: number;
   pct: number;
-  kind: "fire" | "tears" | "gasp" | "heart" | "mind";
+  kind: EchoKind;
   author: string;
   createdAt: string;
 };
@@ -29,15 +35,53 @@ function getStore(): MockEchoRow[] {
   return globalThis.__mockEchoesStore;
 }
 
+interface CommunityComment {
+  id: string;
+  story_id: string;
+  chapter_id: string;
+  user_id: string;
+  author_name: string;
+  body: string;
+  created_at: string;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const story = searchParams.get("story");
   const ch = Number(searchParams.get("ch") ?? "1");
   const store = getStore();
-  const rows = story
+  const localRows = story
     ? store.filter((e) => e.storyId === story && e.chapter === ch).slice(-40)
     : store.slice(-40);
-  return NextResponse.json({ echoes: rows });
+
+  if (story) {
+    try {
+      const cid = chapterKey(story, ch);
+      const res = await fetch(`${COMMUNITY_URL}/chapters/${encodeURIComponent(cid)}/comments?limit=40`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const page = (await res.json()) as { comments?: CommunityComment[] };
+        const remoteRows: MockEchoRow[] = (page.comments ?? []).map((c) => {
+          const m = /^\[echo:([a-z]+):([0-9.]+)\]/.exec(c.body);
+          return {
+            id: c.id,
+            storyId: story,
+            chapter: ch,
+            pct: m ? Math.max(0, Math.min(1, parseFloat(m[2]))) : 0.5,
+            kind: (m ? m[1] : "heart") as EchoKind,
+            author: c.author_name || c.user_id,
+            createdAt: c.created_at,
+          };
+        });
+        return NextResponse.json({ echoes: [...localRows, ...remoteRows].slice(-50) });
+      }
+    } catch {
+      // Fall back to local store when community service is unreachable
+    }
+  }
+
+  return NextResponse.json({ echoes: localRows });
 }
 
 export async function POST(request: Request) {
@@ -46,12 +90,15 @@ export async function POST(request: Request) {
     const storyId = typeof body?.storyId === "string" ? body.storyId.slice(0, 80) : "hollow-moon-courier";
     const chapter = Number(body?.chapter) || 1;
     const pct = Math.max(0, Math.min(1, Number(body?.pct) || 0));
-    const kind = ["fire", "tears", "gasp", "heart", "mind"].includes(body?.kind) ? body.kind : "heart";
-    const author = typeof body?.author === "string" && body.author.trim() ? body.author.trim().slice(0, 40) : "reader";
+    const kind = ["fire", "tears", "gasp", "heart", "mind", "laugh", "cry", "think"].includes(body?.kind)
+      ? body.kind
+      : "heart";
+    const author =
+      typeof body?.author === "string" && body.author.trim() ? body.author.trim().slice(0, 40) : "reader";
 
     const store = getStore();
     const created: MockEchoRow = {
-      id: (store[store.length - 1]?.id ?? 0) + 1,
+      id: `local-${Date.now()}`,
       storyId,
       chapter,
       pct,
@@ -62,6 +109,44 @@ export async function POST(request: Request) {
     store.push(created);
     if (store.length > 200) {
       store.splice(0, store.length - 200);
+    }
+
+    // Forward to Go community service (best-effort)
+    try {
+      const cid = chapterKey(storyId, chapter);
+      // Ensure story & free chapter 1 exist in catalog so community check passes
+      await fetch(`${CATALOG_URL}/stories`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: storyId,
+          owner_id: "ren-akitsuki",
+          type: "manga",
+          title: storyId,
+          synopsis: "",
+          tags: [],
+          splits: [{ creator_id: "ren-akitsuki", percentage: 100 }],
+        }),
+      }).catch(() => {});
+      await fetch(`${CATALOG_URL}/stories/${encodeURIComponent(storyId)}/chapters`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: cid, order_index: chapter, title: `Chapter ${chapter}`, price_coins: 0 }),
+      }).catch(() => {});
+
+      await fetch(`${COMMUNITY_URL}/comments`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          story_id: storyId,
+          chapter_id: cid,
+          user_id: author,
+          author_name: author,
+          body: `[echo:${kind}:${pct.toFixed(3)}]`,
+        }),
+      });
+    } catch {
+      // Community service offline: local echo already stored
     }
 
     return NextResponse.json({ ok: true, echo: created });

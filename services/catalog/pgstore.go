@@ -169,3 +169,52 @@ func (p *PGStore) SetChapterStatus(ctx context.Context, chapterID string, status
 	}
 	return nil
 }
+
+func (p *PGStore) ListStories(ctx context.Context) ([]*Story, error) {
+	rows, err := p.pool.Query(ctx, `SELECT id FROM catalog.stories ORDER BY created_at DESC LIMIT 200`)
+	if err != nil {
+		return nil, err
+	}
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	out := make([]*Story, 0, len(ids))
+	for _, id := range ids {
+		s, err := p.GetStory(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, nil
+}
+
+func (p *PGStore) ListChaptersByStory(ctx context.Context, storyID string) ([]*Chapter, error) {
+	rows, err := p.pool.Query(ctx, `
+		SELECT id, story_id, order_index, title, price_coins, page_keys, novel_text, status, auto_unlock_at, created_at
+		FROM catalog.chapters WHERE story_id = $1 ORDER BY order_index ASC`, storyID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*Chapter
+	for rows.Next() {
+		c := &Chapter{}
+		if err := rows.Scan(&c.ID, &c.StoryID, &c.OrderIndex, &c.Title, &c.PriceCoins, &c.PageKeys,
+			&c.NovelText, &c.Status, &c.AutoUnlockAt, &c.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}

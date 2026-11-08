@@ -1,7 +1,7 @@
 // Client for the media service (image upload/resize/WebP).
 // Role travels via X-User-Role (gateway injects it in prod).
 
-const BASE = process.env.NEXT_PUBLIC_MEDIA_URL ?? 'http://localhost:8088';
+const BASE = process.env.NEXT_PUBLIC_MEDIA_URL ?? '/api/media';
 
 export interface UploadResult {
   key: string;

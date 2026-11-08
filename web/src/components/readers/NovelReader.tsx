@@ -175,8 +175,8 @@ export function NovelReader({ story, chapter, title, nav, paragraphs, preview, o
           )}
 
           <div className="mt-20 rounded-lg border-2 p-6 text-center" style={{ borderColor: th.edge }}>
-            <div className="font-display text-3xl">つづく</div>
-            <div className="mt-1 font-mono text-xs uppercase tracking-widest" style={{ color: th.mute }}>to be continued</div>
+            <div className="th-display text-3xl">ดูตูน</div>
+            <div className="mt-1 font-mono text-xs uppercase tracking-widest" style={{ color: th.mute }}>ตอนต่อไป</div>
             {!preview && <div className="mt-4 flex justify-center"><Stars value={me.ratings[story.id] ?? 0} size={26} onChange={(n) => act.setRating(story.id, n)} /></div>}
             <div className="mt-5 flex flex-col items-center gap-2.5">
               {next && !preview ? <Link href={`/read/${story.id}/${next}`} className="btn btn-accent !py-3.5">Next: Chapter {next} — {nav.titleOf(next)} <Icon name="arrow" size={15} /></Link> : preview ? <button className="btn" onClick={onClose}>Close preview</button> : <span className="text-sm" style={{ color: th.mute }}>You’re all caught up — new chapters soon.</span>}

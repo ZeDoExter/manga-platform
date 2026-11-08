@@ -25,7 +25,7 @@ function storyTitle(id: string, studio: StudioStory[]): string {
   return STORY_MAP[id]?.title ?? studio.find((s) => s.id === id)?.title ?? id;
 }
 
-const BONUS_EVENT = "tsuzuku-bonus";
+const BONUS_EVENT = "dootoon-bonus";
 
 function useBonusClaimed(key: string, today: string): [boolean, () => void] {
   const subscribe = useCallback((onChange: () => void) => {
@@ -60,7 +60,7 @@ export function WalletView() {
   const { wallet, ledger, entitlements, creatorEarnings, loading, error, balance, topUp, refresh } = useEconomy();
   const [busy, setBusy] = useState<string | null>(null);
   const params = useSearchParams();
-  const bonusKey = useMemo(() => `tsuzuku.bonus.${account.id}`, [account.id]);
+  const bonusKey = useMemo(() => `dootoon.bonus.${account.id}`, [account.id]);
   const today = new Date().toISOString().slice(0, 10);
   const [bonusClaimed, markBonusClaimed] = useBonusClaimed(bonusKey, today);
 

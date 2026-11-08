@@ -2,7 +2,7 @@
 // User identity travels via X-User-ID (gateway injects it in prod;
 // local dev uses the demo user below).
 
-const BASE = process.env.NEXT_PUBLIC_LIBRARY_URL ?? 'http://localhost:8087';
+const BASE = process.env.NEXT_PUBLIC_LIBRARY_URL ?? '/api/library';
 const GUEST_KEY = 'manga-guest-progress';
 
 export const DEMO_USER = 'demo-user-1';
@@ -52,7 +52,7 @@ export async function fetchContinue(userID: string): Promise<RemoteProgress[]> {
 
 export async function fetchFollows(userID: string): Promise<string[]> {
   const res = await req('/me/follows', userID);
-  const list = (await res.json()) as { story_id: string }[];
+  const list = ((await res.json()) as { story_id: string }[] | null) ?? [];
   return list.map((f) => f.story_id);
 }
 
@@ -60,6 +60,28 @@ export async function setFollow(userID: string, storyID: string, follow: boolean
   await req(`/follows/${encodeURIComponent(storyID)}`, userID, { method: follow ? 'PUT' : 'DELETE' });
 }
 
+export interface RemoteBookmark {
+  user_id: string;
+  chapter_id: string;
+  story_id: string;
+  created_at: string;
+}
+
+export async function fetchBookmarks(userID: string): Promise<RemoteBookmark[]> {
+  const res = await req('/me/bookmarks', userID);
+  return ((await res.json()) as RemoteBookmark[] | null) ?? [];
+}
+
+export async function addBookmarkRemote(userID: string, chapterID: string, storyID: string): Promise<void> {
+  await req(`/bookmarks/${encodeURIComponent(chapterID)}`, userID, {
+    method: 'PUT',
+    body: JSON.stringify({ story_id: storyID }),
+  });
+}
+
+export async function removeBookmarkRemote(userID: string, chapterID: string): Promise<void> {
+  await req(`/bookmarks/${encodeURIComponent(chapterID)}`, userID, { method: 'DELETE' });
+}
 export async function mergeGuest(userID: string, items: GuestItem[]): Promise<void> {
   if (items.length === 0) return;
   await req('/merge', userID, { method: 'POST', body: JSON.stringify({ items }) });

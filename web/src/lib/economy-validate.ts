@@ -48,7 +48,7 @@ function parseChapter(value: unknown): ChapterSync | null {
 export function parseAccessInput(value: unknown): AccessInput | null {
   if (!isRecord(value)) return null;
   const accountId = text(value.accountId, 160);
-  const role = value.role === "creator" ? "creator" : value.role === "reader" ? "reader" : null;
+  const role = value.role === "creator" || value.role === "admin" ? value.role : value.role === "reader" ? "reader" : null;
   const story = parseStory(value.story);
   const chapter = parseChapter(value.chapter);
   if (!accountId || !role || !story || !chapter) return null;

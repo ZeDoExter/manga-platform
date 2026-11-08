@@ -1,0 +1,49 @@
+# Cloud overlay: reuses base manifests, swaps registry + DATABASE_URL + secrets.
+# Usage: kubectl apply -k deploy/k8s/overlays/cloud
+# Requires: ACR images pushed, database-url + oolog-auth secrets created.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../deployment.yaml
+  - ../../service.yaml
+  - ../../gateway-prod.yaml
+  - ../../gateway-class.yaml
+  - ../../gateway-grant.yaml
+  - ../../observability.yaml
+  - secret-provider.yaml
+
+# NOTE: postgres.yaml (StatefulSet) is intentionally excluded — cloud uses
+# Azure Database for PostgreSQL Flexible Server instead.
+
+images:
+  - name: manga-identity
+    newName: mangademoacr.azurecr.io/manga-identity
+    newTag: latest
+  - name: manga-catalog
+    newName: mangademoacr.azurecr.io/manga-catalog
+    newTag: latest
+  - name: manga-commerce
+    newName: mangademoacr.azurecr.io/manga-commerce
+    newTag: latest
+  - name: manga-reader
+    newName: mangademoacr.azurecr.io/manga-reader
+    newTag: latest
+  - name: manga-moderation
+    newName: mangademoacr.azurecr.io/manga-moderation
+    newTag: latest
+  - name: manga-community
+    newName: mangademoacr.azurecr.io/manga-community
+    newTag: latest
+  - name: manga-library
+    newName: mangademoacr.azurecr.io/manga-library
+    newTag: latest
+  - name: manga-media
+    newName: mangademoacr.azurecr.io/manga-media
+    newTag: latest
+  - name: manga-gateway
+    newName: mangademoacr.azurecr.io/manga-gateway
+    newTag: latest
+  - name: manga-web
+    newName: mangademoacr.azurecr.io/manga-web
+    newTag: latest

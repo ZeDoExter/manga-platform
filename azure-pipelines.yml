@@ -1,0 +1,210 @@
+# Azure DevOps pipeline for DOOTOON (manga-platform).
+# Parity with .gitlab-ci.yml: lint -> test (+coverage gate) -> build (ACR) -> deploy (AKS).
+# Triggers: all branches run lint+test; only master builds images and deploys to https://dootoon.store.
+# Required setup (one-time, see docs/agents/azure-devops.md):
+#   1. Azure DevOps project + repo (import from GitLab or move remote to Azure Repos).
+#   2. Service connection "dootoon-azure" (Azure Resource Manager, Workload Identity federation).
+#      Needs AcrPush on mangademoacr + Azure Kubernetes Service Cluster Admin on manga-demo-aks.
+#   3. Grant the pipeline permission to use the service connection when first run prompts.
+
+trigger:
+  branches:
+    include:
+      - master
+      - feat/*
+pr:
+  branches:
+    include:
+      - master
+
+variables:
+  goVersion: "1.26"
+  acrLoginServer: "mangademoacr.azurecr.io"
+  resourceGroup: "manga-demo-rg"
+  aksName: "manga-demo-aks"
+  serviceConnection: "dootoon-azure"
+  minCoverage: "80"
+
+stages:
+  - stage: Lint
+    displayName: "Lint (go vet)"
+    jobs:
+      - job: Lint
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: GoTool@0
+            inputs:
+              version: "$(goVersion)"
+          - script: go vet ./...
+            displayName: "go vet ./..."
+
+  - stage: Test
+    displayName: "Test (+ coverage gate)"
+    dependsOn: Lint
+    jobs:
+      - job: Test
+        pool:
+          vmImage: "ubuntu-latest"
+        services:
+          postgres:
+            image: postgres:16-alpine
+            env:
+              POSTGRES_USER: manga
+              POSTGRES_PASSWORD: manga-demo-pw
+              POSTGRES_DB: manga
+            ports:
+              - 5432:5432
+        variables:
+          POSTGRES_USER: manga
+          POSTGRES_PASSWORD: manga-demo-pw
+          POSTGRES_DB: manga
+          TEST_DATABASE_URL: postgres://manga:manga-demo-pw@localhost:5432/manga?sslmode=disable
+        steps:
+          - task: GoTool@0
+            inputs:
+              version: "$(goVersion)"
+          - script: |
+              go test -v -coverprofile=coverage.out ./...
+              go test -tags integration -coverprofile=coverage-pg.out ./services/catalog/ ./services/commerce/
+              COVERAGE=$(go test -cover -tags integration ./services/commerce/... | grep -o "[0-9.]*%" | tr -d "%")
+              echo "Commerce service test coverage (unit+integration) $COVERAGE percent"
+              awk -v c="$COVERAGE" -v min="$(minCoverage)" 'BEGIN { if (c + 0 < min + 0) { print "FAILED_COVERAGE_BELOW_THRESHOLD"; exit 1 } print "PASSED_COVERAGE_OK" }'
+            displayName: "go test + coverage gate"
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testRunner: JUnit
+              testResultsFiles: "**/TEST-*.xml"
+          - task: PublishCodeCoverageResults@2
+            condition: succeededOrFailed()
+            inputs:
+              summaryFileLocation: coverage.out
+
+  - stage: Build
+    displayName: "Build + push images to ACR"
+    dependsOn: Test
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    jobs:
+      - job: BuildGo
+        displayName: "Build Go services"
+        pool:
+          vmImage: "ubuntu-latest"
+        strategy:
+          matrix:
+            identity:
+              service: identity
+              image: manga-identity
+            catalog:
+              service: catalog
+              image: manga-catalog
+            commerce:
+              service: commerce
+              image: manga-commerce
+            reader:
+              service: reader
+              image: manga-reader
+            moderation:
+              service: moderation
+              image: manga-moderation
+            community:
+              service: community
+              image: manga-community
+            library:
+              service: library
+              image: manga-library
+            media:
+              service: media
+              image: manga-media
+            gateway:
+              service: server
+              image: manga-gateway
+        steps:
+          - task: Docker@2
+            displayName: "Build + push $(image)"
+            inputs:
+              containerRegistry: "$(serviceConnection)"
+              repository: "$(image)"
+              command: buildAndPush
+              Dockerfile: Dockerfile
+              buildContext: "$(Build.SourcesDirectory)"
+              arguments: "--build-arg SERVICE=$(service)"
+              tags: |
+                $(Build.SourceVersion)
+                latest
+      - job: BuildWeb
+        displayName: "Build Next.js web"
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: Docker@2
+            displayName: "Build + push manga-web"
+            inputs:
+              containerRegistry: "$(serviceConnection)"
+              repository: "manga-web"
+              command: buildAndPush
+              Dockerfile: web/Dockerfile
+              buildContext: "$(Build.SourcesDirectory)/web"
+              tags: |
+                $(Build.SourceVersion)
+                latest
+
+  - stage: Deploy
+    displayName: "Deploy to AKS (dootoon.store)"
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    jobs:
+      - deployment: DeployAKS
+        displayName: "Rolling update AKS"
+        pool:
+          vmImage: "ubuntu-latest"
+        environment: "production"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: Kubernetes@1
+                  displayName: "Get AKS credentials"
+                  inputs:
+                    connectionType: "Azure Resource Manager"
+                    azureSubscriptionEndpoint: "$(serviceConnection)"
+                    azureResourceGroup: "$(resourceGroup)"
+                    kubernetesCluster: "$(aksName)"
+                    command: "get"
+                    arguments: "nodes"
+                    secretType: "dockerRegistry"
+                    containerRegistryType: "Azure Container Registry"
+                - task: KubernetesManifest@1
+                  displayName: "Apply service + gateway"
+                  inputs:
+                    action: "deploy"
+                    connectionType: "Azure Resource Manager"
+                    azureSubscriptionEndpoint: "$(serviceConnection)"
+                    azureResourceGroup: "$(resourceGroup)"
+                    kubernetesCluster: "$(aksName)"
+                    namespace: "default"
+                    manifests: |
+                      deploy/k8s/service.yaml
+                      deploy/k8s/gateway-prod.yaml
+                - task: Kubernetes@1
+                  displayName: "Rollout restart all deployments"
+                  inputs:
+                    connectionType: "Azure Resource Manager"
+                    azureSubscriptionEndpoint: "$(serviceConnection)"
+                    azureResourceGroup: "$(resourceGroup)"
+                    kubernetesCluster: "$(aksName)"
+                    command: "rollout"
+                    arguments: "restart deployment/web deployment/catalog deployment/commerce deployment/reader deployment/library deployment/community deployment/moderation deployment/media deployment/identity deployment/gateway"
+                    secretType: "dockerRegistry"
+                    containerRegistryType: "Azure Container Registry"
+                - task: Kubernetes@1
+                  displayName: "Rollout status web"
+                  inputs:
+                    connectionType: "Azure Resource Manager"
+                    azureSubscriptionEndpoint: "$(serviceConnection)"
+                    azureResourceGroup: "$(resourceGroup)"
+                    kubernetesCluster: "$(aksName)"
+                    command: "rollout"
+                    arguments: "status deployment/web --timeout=180s"
+                    secretType: "dockerRegistry"
+                    containerRegistryType: "Azure Container Registry"

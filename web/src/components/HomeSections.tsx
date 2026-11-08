@@ -218,7 +218,7 @@ export function StudioBanner() {
       <div className="relative grid items-center gap-6 text-[#15120f] md:grid-cols-[1fr_auto]">
         <div>
           <div className="font-mono text-xs font-bold uppercase tracking-[0.2em]">For creators</div>
-          <h3 className="h-display mt-2 text-3xl md:text-5xl">Your story deserves a “to be continued.”</h3>
+          <h3 className="h-display mt-2 text-3xl md:text-5xl">Your story deserves a “ตอนต่อไป.”</h3>
           <p className="mt-3 max-w-xl font-semibold text-[#15120f]/80">Draft chapters, drop in manga pages, schedule releases, and watch simulated reader analytics respond to every choice. Everything saves in your browser.</p>
         </div>
         <div className="flex flex-wrap gap-3">

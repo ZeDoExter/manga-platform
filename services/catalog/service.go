@@ -85,6 +85,16 @@ func (s *Service) GetStory(ctx context.Context, storyID string) (*Story, error) 
 	return s.store.GetStory(ctx, storyID)
 }
 
+// ListStories returns all stories in the catalog.
+func (s *Service) ListStories(ctx context.Context) ([]*Story, error) {
+	return s.store.ListStories(ctx)
+}
+
+// ListChaptersByStory returns all chapters of a story ordered by order_index.
+func (s *Service) ListChaptersByStory(ctx context.Context, storyID string) ([]*Chapter, error) {
+	return s.store.ListChaptersByStory(ctx, storyID)
+}
+
 // CreateChapter adds a chapter to a story (FR-C2).
 func (s *Service) CreateChapter(ctx context.Context, storyID string, orderIndex int, title string, priceCoins int64, pageKeys []string, novelText string, autoUnlockAt *time.Time) (*Chapter, error) {
 	return s.createChapter(ctx, "", storyID, orderIndex, title, priceCoins, pageKeys, novelText, autoUnlockAt)
