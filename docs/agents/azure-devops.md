@@ -10,26 +10,18 @@ Triggers: every branch runs Lint+Test; `master` also builds ACR images and deplo
    (use a GitLab PAT with `read_repository` if prompted), OR push locally:
    `git remote add azure <azure-repos-clone-url> && git push azure --all`
 
-## 2. Service connection `dootoon-azure`
+## 2. Service connections (done via CLI)
 
-Project Settings → Service connections → New → Azure Resource Manager →
-Workload Identity federation → Subscription "Azure for Students":
-
-- Scope: resource group `manga-demo-rg`
-- Name: `dootoon-azure`
-- Grant access permission to all pipelines: ON
-
-Role assignments needed (on `manga-demo-rg` or the specific resources):
-
-| Role | Target | Why |
+| Name | Type | Used by |
 |---|---|---|
-| `AcrPush` | `mangademoacr` | Docker@2 buildAndPush |
-| `Azure Kubernetes Service Cluster Admin Role` | `manga-demo-aks` | Kubernetes@1 + KubernetesManifest@1 deploy |
+| `dootoon-azure` | Azure Resource Manager (SP `dootoon-ado-federated`) | Kubernetes@1 + KubernetesManifest@1 deploy |
+| `dootoon-acr` | Docker Registry (`mangademoacr.azurecr.io`) | Docker@2 buildAndPush |
 
-## 3. Create the pipeline
+Roles on the SP: Contributor on `manga-demo-rg` + `AcrPush` on `mangademoacr` +
+`Azure Kubernetes Service Cluster Admin Role` on `manga-demo-aks`.
+Both endpoints approved for all pipelines (`pipelinepermissions` PATCH).
 
-Pipelines → New pipeline → Azure Repos Git → `manga-platform` →
-Existing Azure Pipelines YAML file → `/azure-pipelines.yml` → Run.
+## 3. Pipeline `manga-platform-ci` (definition id 1, yaml `/azure-pipelines.yml`)
 
 - Branch runs (feat/*): Lint + Test only.
 - Merge to `master`: full run ending at `https://dootoon.store`.
