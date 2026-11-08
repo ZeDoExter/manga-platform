@@ -135,6 +135,7 @@ stages:
           runOnce:
             deploy:
               steps:
+                - checkout: self
                 - task: AzureCLI@2
                   displayName: "Pin images to build SHA + rollout"
                   inputs:
