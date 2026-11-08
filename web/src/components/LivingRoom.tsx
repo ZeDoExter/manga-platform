@@ -190,10 +190,11 @@ export function LivingRoom({
         const z = Math.min(9, Math.floor(Math.max(0, Math.min(1, pct)) * 10));
         const b = hitZones.get(z) ?? { kinds: {}, total: 0 };
         for (const [kind, count] of Object.entries(counts)) {
+          if (kind === "paid") continue;
           b.kinds[kind] = (b.kinds[kind] ?? 0) + count;
           b.total += count;
         }
-        hitZones.set(z, b);
+        if (b.total > 0) hitZones.set(z, b);
       }
     }
     if (hitZones.size === 0) return;
@@ -201,8 +202,8 @@ export function LivingRoom({
     const fresh = [...hitZones.entries()].filter(([z]) => now - (cooldowns.current.get(z + 100) ?? 0) > 5000);
     if (fresh.length === 0) return;
     for (const [z] of fresh) cooldowns.current.set(z + 100, now);
-    // Show BOTH: paid comment (actual text) + merged echo bubble side by side.
-    // They stack vertically so nothing overlaps.
+    // ONE bubble: if a paid comment sits in these zones, show its text.
+    // Otherwise show the top echo kind + total. Never both.
     const pageNow = totalPages > 0 ? Math.max(1, Math.min(totalPages, Math.floor(progress * totalPages) + 1)) : 0;
     const paidHere = feed
       .filter((c) => Math.abs(c.page - pageNow) <= 1)
@@ -219,13 +220,14 @@ export function LivingRoom({
         },
         8000,
       );
+      return;
     }
     let best = { kind: "fire" as EchoKind, total: 0 };
     let grand = 0;
     for (const [, b] of fresh) {
       grand += b.total;
       const top = Object.entries(b.kinds).sort((a, c) => c[1] - a[1])[0];
-      if (top && top[1] > (b.kinds[best.kind] ?? 0) && b.total >= best.total) {
+      if (top && b.total >= best.total) {
         best = { kind: top[0] as EchoKind, total: b.total };
       }
     }
@@ -309,10 +311,7 @@ export function LivingRoom({
             return merged.slice(0, 30);
           });
           const fresh = rows.filter((c) => Date.now() - c.at < 60000 && !seenPaid.current.has(c.id));
-          for (const c of fresh) {
-            seenPaid.current.add(c.id);
-            pushFloater({ emoji: "💬", text: c.text, sub: `@${c.user} · 🪙${c.coins} · p.${c.page}`, x: 4, y: 40 + Math.random() * 20 }, 3000);
-          }
+          for (const c of fresh) seenPaid.current.add(c.id);
         })
         .catch(() => {});
     };
@@ -354,8 +353,9 @@ export function LivingRoom({
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string; id?: string };
       if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Paid comment failed");
-      if (data.id) seenPaid.current.add(data.id);
-      pushFloater({ emoji: "💬", text, sub: `@${state.accountId} · 🪙${coins} · p.${page}`, x: 4, y: 44, mine: true }, 3000);
+      const cid = data.id ?? `mine-${Date.now()}`;
+      seenPaid.current.add(cid);
+      setFeed((prev) => [{ id: cid, user: state.accountId, text, coins, page, at: Date.now(), mine: true }, ...prev].slice(0, 30));
       setPaidText("");
       toast(`Comment posted · 🪙${coins}`, "ok");
     } catch (err) {
