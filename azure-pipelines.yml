@@ -76,7 +76,7 @@ stages:
             condition: succeededOrFailed()
             inputs:
               codeCoverageTool: Go
-              summaryFileLocation: coverage.out
+              summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage.out"
 
   - stage: Build
     displayName: "Build + push images to ACR"
