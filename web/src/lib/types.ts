@@ -72,7 +72,7 @@ export interface Story {
 export interface Account {
   id: string;
   name: string;
-  role: "reader" | "creator" | "admin";
+  role: "guest" | "reader" | "creator" | "admin";
   bio: string;
   location: string;
   joined: string;

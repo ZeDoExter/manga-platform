@@ -76,7 +76,7 @@ function catalogStoryType(type: StorySync["type"]): "manga" | "novel" {
 }
 
 function readerRole(role: AccessInput["role"]): string {
-  return role === "creator" ? "uploader" : "reader";
+  return role === "creator" ? "uploader" : role === "guest" ? "guest" : "reader";
 }
 
 function safePrice(price: number): number {

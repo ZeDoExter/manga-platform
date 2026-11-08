@@ -3,11 +3,17 @@ import { CREATORS, STORIES } from "./stories";
 import { rng, shuffle } from "@/lib/util";
 import { chapterTitle, defaultPages } from "@/lib/content";
 
+export const GUEST_ACCOUNT: Account = {
+  id: "guest", name: "Guest", role: "guest", bio: "Browsing without an account.",
+  location: "DOOTOON", joined: "2026", tagline: "Sign in to save your library.",
+  colors: ["#8d889b", "#e8e1d1"], glyph: "?", followers: 0, following: 0,
+};
+
 export const READERS: Account[] = [
+  GUEST_ACCOUNT,
   { id: "mika", name: "Mika Tanabe", role: "reader", location: "Osaka, JP", joined: "Mar 2023", glyph: "月", colors: ["#0b1033", "#ffd27a"], followers: 2841, following: 213, tagline: "Night-shift nurse. Reader of unsent letters.", bio: "Night-shift nurse who reads on the last train home. Collector of quiet mysteries, slow burns and anything with a bell in it. Will absolutely cry at chapter 88." },
   { id: "theo", name: "Theo Marchetti", role: "reader", location: "Turin, IT", joined: "Jul 2022", glyph: "刀", colors: ["#09090f", "#00e5c7"], followers: 912, following: 330, tagline: "Cyberpunk, dread, and cold brew.", bio: "Embedded-systems engineer who reads sci-fi action and slow dread. Keeps a spreadsheet of every fight scene he's rated. Mecha apologist." },
   { id: "juno-park", name: "Juno Park", role: "reader", location: "Seoul, KR", joined: "Jan 2023", glyph: "夜", colors: ["#2b0f2e", "#ff4fa3"], followers: 5320, following: 140, tagline: "Villainess enthusiast.", bio: "Webtoon addict, ratings spreadsheet keeper." },
-  { id: "sakura-v", name: "Sakura V.", role: "reader", location: "Lisbon, PT", joined: "Sep 2022", glyph: "桜", colors: ["#ffe3d6", "#ff7a59"], followers: 1410, following: 88, tagline: "Cozy-first, tragedy-second.", bio: "Cozy stories and cold tea." },
   { id: "dmitri-k", name: "Dmitri K.", role: "reader", location: "Tallinn, EE", joined: "Feb 2024", glyph: "理", colors: ["#14080b", "#b3122f"], followers: 640, following: 52, tagline: "Theory-crafter.", bio: "Reads mysteries backwards." },
   { id: "amara-o", name: "Amara O.", role: "reader", location: "Lagos, NG", joined: "Dec 2022", glyph: "海", colors: ["#062a3a", "#1aa6b7"], followers: 2210, following: 97, tagline: "Maps, myths and marathon reads.", bio: "Marathon reader of epic web novels." },
   { id: "leo-fontaine", name: "Leo Fontaine", role: "reader", location: "Lyon, FR", joined: "May 2023", glyph: "灯", colors: ["#1b2a49", "#f4a259"], followers: 388, following: 41, tagline: "Rain-and-romance.", bio: "Lighthouse romance fan." },
@@ -208,10 +214,10 @@ export function makeInitialState(now: number): AppState {
   ];
 
   return {
-    accountId: "mika",
+    accountId: "guest",
     theme: "paper",
     prefs: DEFAULT_PREFS,
-    data: { mika, theo, "ren-akitsuki": ren },
+    data: { guest: emptyData("Guest"), mika, theo, "ren-akitsuki": ren },
     studio,
     announcements,
     echoes: {},

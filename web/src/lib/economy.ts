@@ -93,7 +93,7 @@ export interface ChapterSync {
 
 export interface AccessInput {
   accountId: string;
-  role: "reader" | "creator" | "admin";
+  role: "guest" | "reader" | "creator" | "admin";
   story: StorySync;
   chapter: ChapterSync;
 }

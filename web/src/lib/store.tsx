@@ -301,7 +301,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const data = s.data[id] ? s.data : { ...s.data, [id]: genReaderData(id, Date.now()) };
           return { ...s, accountId: id, data };
         });
-        toast(`Switched to ${a.name} — ${a.role === "admin" ? "Admin" : a.role === "creator" ? "Uploader" : "Reader"} view`, "info");
+        toast(`Switched to ${a.name} — ${a.role === "admin" ? "Admin" : a.role === "creator" ? "Uploader" : a.role === "guest" ? "Guest" : "Reader"} view`, "info");
       },
       setTheme(t) {
         setState((s) => ({ ...s, theme: t }));
@@ -453,7 +453,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const activeAccount = useMemo<Account>(() => {
-    if (sessionAccount && (state.accountId === sessionAccount.id || state.accountId === "mika")) {
+    if (sessionAccount && (state.accountId === sessionAccount.id || state.accountId === "guest")) {
       return sessionAccount;
     }
     if (ACCOUNT_MAP[state.accountId]) return ACCOUNT_MAP[state.accountId];
@@ -474,7 +474,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         verified: true,
       };
     }
-    return ACCOUNT_MAP["mika"];
+    return ACCOUNT_MAP["guest"];
   }, [sessionAccount, state.accountId, state.data]);
 
   const value = useMemo<Ctx>(
