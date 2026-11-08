@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ECHO_EMOJI, ECHO_LABEL, type Echo, type EchoKind } from "@/lib/content";
 import { useApp } from "@/lib/store";
 import { cx, fmtNum } from "@/lib/util";
@@ -83,22 +83,19 @@ export function LivingRoom({
   }, [storyId, ch, preview]);
 
   // Heatmap: per-page emoji counters (persistent, SoundCloud peaks).
+  const refreshHeat = useCallback(() => {
+    if (preview || totalPages < 1) return;
+    fetch(`/api/echoes/heatmap?storyId=${encodeURIComponent(storyId)}&ch=${ch}&pages=${totalPages}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j?.heat && setHeat(j.heat))
+      .catch(() => {});
+  }, [storyId, ch, totalPages, preview]);
   useEffect(() => {
     if (preview || totalPages < 1) return;
-    let alive = true;
-    const load = () => {
-      fetch(`/api/echoes/heatmap?storyId=${encodeURIComponent(storyId)}&ch=${ch}&pages=${totalPages}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((j) => alive && j?.heat && setHeat(j.heat))
-        .catch(() => {});
-    };
-    load();
-    const t = setInterval(load, 15000);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
-  }, [storyId, ch, totalPages, preview]);
+    refreshHeat();
+    const t = setInterval(refreshHeat, 15000);
+    return () => clearInterval(t);
+  }, [refreshHeat, storyId, ch, totalPages, preview]);
 
   const echoes: Echo[] = useMemo(
     () => [
@@ -345,8 +342,8 @@ export function LivingRoom({
       const cid = data.id ?? `mine-${Date.now()}`;
       seenPaid.current.add(cid);
       setFeed((prev) => [{ id: cid, user: state.accountId, text, coins, page, at: Date.now(), mine: true }, ...prev].slice(0, 30));
+      refreshHeat();
       setPaidText("");
-      toast(`Comment posted · 🪙${coins}`, "ok");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Paid comment failed", "warn");
     } finally {
