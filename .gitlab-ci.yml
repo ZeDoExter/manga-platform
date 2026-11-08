@@ -29,9 +29,14 @@ test:
     POSTGRES_USER: manga
     POSTGRES_PASSWORD: manga-demo-pw
     POSTGRES_DB: manga
-    TEST_DATABASE_URL: postgres://manga:manga-demo-pw@postgres:5432/manga?sslmode=disable
   script:
-    - echo "Running unit and integration tests..."
+    - echo "Running unit and integration tests on AKS Runner..."
+    - |
+      if nc -z localhost 5432 2>/dev/null; then
+        export TEST_DATABASE_URL="postgres://manga:manga-demo-pw@localhost:5432/manga?sslmode=disable"
+      else
+        export TEST_DATABASE_URL="postgres://manga:manga-demo-pw@postgres:5432/manga?sslmode=disable"
+      fi
     - go test -v -coverprofile=coverage.out ./...
     - go test -tags integration -coverprofile=coverage-pg.out ./services/catalog/ ./services/commerce/
     - COVERAGE=$(go test -cover -tags integration ./services/commerce/... | grep -o "[0-9.]*%" | tr -d "%")
@@ -43,55 +48,36 @@ test:
       - coverage.out
     expire_in: 7 days
 
-# Container Image Build
+# Container Image Build (Kaniko in-cluster build -> Azure Container Registry)
 build:
   stage: build
-  image: docker:24.0.5
-  parallel:
-    matrix:
-      - SERVICE: [identity, catalog, commerce, reader, moderation, community, library, media, server, web]
-  before_script:
-    - |
-      if [ -n "$ACR_PASSWORD" ]; then
-        echo "$ACR_PASSWORD" | docker login mangademoacr.azurecr.io -u "${ACR_USERNAME:-mangademoacr}" --password-stdin
-      elif [ -n "$CI_REGISTRY_USER" ]; then
-        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-      fi
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
   script:
-    - |
-      if [ "$SERVICE" = "web" ]; then
-        IMAGE="mangademoacr.azurecr.io/manga-web"
-        docker build -t ${IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${IMAGE}:latest ./web
-      else
-        IMAGE_NAME="$SERVICE"
-        if [ "$SERVICE" = "server" ]; then IMAGE_NAME="gateway"; fi
-        IMAGE="mangademoacr.azurecr.io/manga-${IMAGE_NAME}"
-        docker build --build-arg SERVICE=${SERVICE} -t ${IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${IMAGE}:latest .
-      fi
+    - mkdir -p /kaniko/.docker
     - |
       if [ -n "$ACR_PASSWORD" ]; then
-        docker push ${IMAGE}:${CI_COMMIT_SHORT_SHA}
-        docker push ${IMAGE}:latest
+        AUTH=$(printf "%s:%s" "${ACR_USERNAME:-mangademoacr}" "$ACR_PASSWORD" | base64 | tr -d '\n')
+        printf '{"auths":{"mangademoacr.azurecr.io":{"auth":"%s"}}}' "$AUTH" > /kaniko/.docker/config.json
+        /kaniko/executor --context "${CI_PROJECT_DIR}/web" --dockerfile "${CI_PROJECT_DIR}/web/Dockerfile" --destination "mangademoacr.azurecr.io/manga-web:${CI_COMMIT_SHORT_SHA}" --destination "mangademoacr.azurecr.io/manga-web:latest" --cache=true
+      else
+        /kaniko/executor --context "${CI_PROJECT_DIR}/web" --dockerfile "${CI_PROJECT_DIR}/web/Dockerfile" --no-push
       fi
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
 
-# Production Deployment
+# Production Deployment (In-cluster AKS rollout via gitlab-runner ServiceAccount)
 deploy:
   stage: deploy
   image:
     name: bitnami/kubectl:latest
     entrypoint: [""]
   script:
-    - echo "Executing rolling update deployment to AKS (dootoon.store)..."
-    - |
-      if [ -n "$KUBECONFIG_B64" ]; then
-        mkdir -p ~/.kube
-        echo "$KUBECONFIG_B64" | base64 -d > ~/.kube/config
-        kubectl apply -f deploy/k8s/service.yaml
-        kubectl apply -f deploy/k8s/gateway-prod.yaml
-        kubectl rollout restart deployment/web deployment/catalog deployment/commerce deployment/reader deployment/library deployment/community deployment/moderation deployment/media deployment/identity deployment/gateway
-        kubectl rollout status deployment/web --timeout=180s
-      else
-        kubectl apply --dry-run=client -f deploy/k8s/service.yaml -f deploy/k8s/deployment.yaml
-      fi
+    - echo "Rolling out latest images to AKS (https://dootoon.store)..."
+    - kubectl apply -f deploy/k8s/service.yaml
+    - kubectl apply -f deploy/k8s/gateway-prod.yaml
+    - kubectl rollout restart deployment/web deployment/catalog deployment/commerce deployment/reader deployment/library deployment/community deployment/moderation deployment/media deployment/identity deployment/gateway
+    - kubectl rollout status deployment/web --timeout=180s
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
