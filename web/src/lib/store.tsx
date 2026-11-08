@@ -95,8 +95,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!state.hydrated || !session?.user) return;
     const u = session.user;
     const id = (u.email.split("@")[0] ?? u.id).replace(/[^a-z0-9_-]/gi, "-").toLowerCase() || u.id;
-    const role: "reader" | "creator" =
-      "role" in u && u.role === "creator" ? "creator" : "reader";
+    const role: "reader" | "creator" | "admin" =
+      "role" in u && (u.role === "creator" || u.role === "admin") ? u.role : "reader";
     const acc: Account = {
       id,
       name: u.name || u.email.split("@")[0] || "Reader",
@@ -288,7 +288,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const data = s.data[id] ? s.data : { ...s.data, [id]: genReaderData(id, Date.now()) };
           return { ...s, accountId: id, data };
         });
-        toast(`Switched to ${a.name} — ${a.role === "creator" ? "Uploader" : "Reader"} view`, "info");
+        toast(`Switched to ${a.name} — ${a.role === "admin" ? "Admin" : a.role === "creator" ? "Uploader" : "Reader"} view`, "info");
       },
       setTheme(t) {
         setState((s) => ({ ...s, theme: t }));

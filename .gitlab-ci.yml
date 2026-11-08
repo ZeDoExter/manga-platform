@@ -8,9 +8,8 @@ default:
   interruptible: true
 
 variables:
-  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_CERTDIR: ""
   MIN_COVERAGE: "80"
-
 # Code Quality & Static Analysis
 lint:
   stage: lint
@@ -48,22 +47,29 @@ test:
 build:
   stage: build
   image: docker:24.0.5
-  services:
-    - docker:24.0.5-dind
   parallel:
     matrix:
-      - SERVICE: [identity, catalog, commerce, reader, moderation, community, library, media, server]
+      - SERVICE: [identity, catalog, commerce, reader, moderation, community, library, media, server, web]
   before_script:
     - |
-      if [ -n "$CI_REGISTRY_USER" ]; then
+      if [ -n "$ACR_PASSWORD" ]; then
+        echo "$ACR_PASSWORD" | docker login mangademoacr.azurecr.io -u "${ACR_USERNAME:-mangademoacr}" --password-stdin
+      elif [ -n "$CI_REGISTRY_USER" ]; then
         echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
       fi
   script:
-    - echo "Building container image for ${SERVICE}..."
-    - IMAGE="${CI_REGISTRY_IMAGE:-manga-platform}/${SERVICE}"
-    - docker build --build-arg SERVICE=${SERVICE} -t ${IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${IMAGE}:latest .
     - |
-      if [ -n "$CI_REGISTRY_USER" ]; then
+      if [ "$SERVICE" = "web" ]; then
+        IMAGE="mangademoacr.azurecr.io/manga-web"
+        docker build -t ${IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${IMAGE}:latest ./web
+      else
+        IMAGE_NAME="$SERVICE"
+        if [ "$SERVICE" = "server" ]; then IMAGE_NAME="gateway"; fi
+        IMAGE="mangademoacr.azurecr.io/manga-${IMAGE_NAME}"
+        docker build --build-arg SERVICE=${SERVICE} -t ${IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${IMAGE}:latest .
+      fi
+    - |
+      if [ -n "$ACR_PASSWORD" ]; then
         docker push ${IMAGE}:${CI_COMMIT_SHORT_SHA}
         docker push ${IMAGE}:latest
       fi
@@ -75,7 +81,17 @@ deploy:
     name: bitnami/kubectl:latest
     entrypoint: [""]
   script:
-    - echo "Executing rolling update deployment to Kubernetes..."
-    - echo "Validating deployment manifests..."
+    - echo "Executing rolling update deployment to AKS (dootoon.store)..."
+    - |
+      if [ -n "$KUBECONFIG_B64" ]; then
+        mkdir -p ~/.kube
+        echo "$KUBECONFIG_B64" | base64 -d > ~/.kube/config
+        kubectl apply -f deploy/k8s/service.yaml
+        kubectl apply -f deploy/k8s/gateway-prod.yaml
+        kubectl rollout restart deployment/web deployment/catalog deployment/commerce deployment/reader deployment/library deployment/community deployment/moderation deployment/media deployment/identity deployment/gateway
+        kubectl rollout status deployment/web --timeout=180s
+      else
+        kubectl apply --dry-run=client -f deploy/k8s/service.yaml -f deploy/k8s/deployment.yaml
+      fi
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'

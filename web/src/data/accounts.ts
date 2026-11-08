@@ -12,11 +12,12 @@ export const READERS: Account[] = [
   { id: "amara-o", name: "Amara O.", role: "reader", location: "Lagos, NG", joined: "Dec 2022", glyph: "海", colors: ["#062a3a", "#1aa6b7"], followers: 2210, following: 97, tagline: "Maps, myths and marathon reads.", bio: "Marathon reader of epic web novels." },
   { id: "leo-fontaine", name: "Leo Fontaine", role: "reader", location: "Lyon, FR", joined: "May 2023", glyph: "灯", colors: ["#1b2a49", "#f4a259"], followers: 388, following: 41, tagline: "Rain-and-romance.", bio: "Lighthouse romance fan." },
   { id: "yuki-s", name: "Yuki S.", role: "reader", location: "Sapporo, JP", joined: "Oct 2021", glyph: "雪", colors: ["#10263d", "#6bb4d8"], followers: 1900, following: 120, tagline: "Music & school-club stories.", bio: "Plays violin, reads about violinists." },
+  { id: "admin-1", name: "System Admin", role: "admin", location: "Bangkok, TH", joined: "Jan 2026", glyph: "守", colors: ["#15120f", "#ff4a22"], followers: 0, following: 0, tagline: "Platform moderation & operations.", bio: "DOOTOON trust, safety, and revenue operations." },
 ];
 
 export const ACCOUNTS: Account[] = [...READERS, ...CREATORS];
 export const ACCOUNT_MAP: Record<string, Account> = Object.fromEntries(ACCOUNTS.map((a) => [a.id, a]));
-export const DEMO_IDS = ["mika", "theo", "ren-akitsuki"];
+export const DEMO_IDS = ["mika", "ren-akitsuki", "admin-1"];
 
 export interface AppState {
   accountId: string;
