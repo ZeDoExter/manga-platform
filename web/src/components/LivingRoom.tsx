@@ -32,6 +32,7 @@ export interface LivingRoomProps {
   mood: Mood;
   progress: number;
   onJump: (pct: number) => void;
+  totalPages?: number;
   onScrollTop: () => void;
   onOpenChapters?: () => void;
   bookmarked?: boolean;
@@ -56,6 +57,7 @@ export function LivingRoom({
   mood,
   progress,
   onJump,
+  totalPages = 0,
   onScrollTop,
   onOpenChapters,
   bookmarked,
@@ -74,6 +76,8 @@ export function LivingRoom({
   const base = useMemo(() => getEchoes(storyId, ch, mood), [storyId, ch, mood]);
   const mine = state.echoes[key] ?? [];
   const [shared, setShared] = useState<{ pct: number; kind: EchoKind; author: string }[]>([]);
+  const [heat, setHeat] = useState<Record<string, Record<string, number>>>({});
+  const seenPaid = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (preview) return;
@@ -86,6 +90,24 @@ export function LivingRoom({
       alive = false;
     };
   }, [storyId, ch, preview]);
+
+  // Heatmap: per-page emoji counters (persistent, SoundCloud peaks).
+  useEffect(() => {
+    if (preview || totalPages < 1) return;
+    let alive = true;
+    const load = () => {
+      fetch(`/api/echoes/heatmap?storyId=${encodeURIComponent(storyId)}&ch=${ch}&pages=${totalPages}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => alive && j?.heat && setHeat(j.heat))
+        .catch(() => {});
+    };
+    load();
+    const t = setInterval(load, 15000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [storyId, ch, totalPages, preview]);
 
   const echoes: Echo[] = useMemo(
     () => [
@@ -101,16 +123,19 @@ export function LivingRoom({
   const [hover, setHover] = useState<number | null>(null);
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [open, setOpen] = useState(false);
+  const [paidText, setPaidText] = useState("");
+  const [paidCoins, setPaidCoins] = useState(5);
+  const [paidBusy, setPaidBusy] = useState(false);
   const prevProg = useRef<number>(progress);
   const cooldowns = useRef<Map<number, number>>(new Map());
   const fid = useRef(0);
 
-  const pushFloater = (item: Omit<Floater, "id">) => {
+  const pushFloater = (item: Omit<Floater, "id">, ttlMs = 3400) => {
     const id = ++fid.current;
     setFloaters((f) => [...f.slice(-15), { ...item, id }]);
     setTimeout(() => {
       setFloaters((f) => f.filter((x) => x.id !== id));
-    }, 3400);
+    }, ttlMs);
   };
 
   useEffect(() => {
@@ -200,6 +225,73 @@ export function LivingRoom({
     });
     toast(`${ECHO_EMOJI[kind]} Echo left at ${Math.round(progress * 100)}%`);
   };
+  // Paid comments live feed: poll every 5s, flash new ones for 3s.
+  useEffect(() => {
+    if (preview) return;
+    let alive = true;
+    const poll = () => {
+      fetch(`/api/comments/paid?storyId=${encodeURIComponent(storyId)}&ch=${ch}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (!alive || !j?.comments) return;
+          const rows = j.comments as { id: string; user: string; text: string; coins: number; page: number; at: number }[];
+          const fresh = rows.filter((c) => Date.now() - c.at < 60000 && !seenPaid.current.has(c.id));
+          for (const c of fresh) {
+            seenPaid.current.add(c.id);
+            pushFloater({ emoji: "💬", text: c.text, sub: `@${c.user} · 🪙${c.coins} · p.${c.page}`, x: 4, y: 40 + Math.random() * 20 }, 3000);
+          }
+        })
+        .catch(() => {});
+    };
+    poll();
+    const t = setInterval(poll, 5000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [storyId, ch, preview]);
+
+  const sendPaid = async () => {
+    const text = paidText.trim();
+    if (!text) {
+      toast("Write something first", "warn");
+      return;
+    }
+    if (state.accountId === "guest") {
+      toast("Please sign in to post paid comments", "warn");
+      return;
+    }
+    const coins = Math.max(5, Math.min(1000, Math.floor(paidCoins) || 5));
+    const page = totalPages > 0 ? Math.max(1, Math.min(totalPages, Math.floor(progress * totalPages) + 1)) : 1;
+    setPaidBusy(true);
+    try {
+      const res = await fetch("/api/comments/paid", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          storyId,
+          chapter: ch,
+          page,
+          userId: state.accountId,
+          authorName: state.accountId,
+          text,
+          coins,
+          idempotencyKey: `${state.accountId}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; id?: string };
+      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Paid comment failed");
+      if (data.id) seenPaid.current.add(data.id);
+      pushFloater({ emoji: "💬", text, sub: `@${state.accountId} · 🪙${coins} · p.${page}`, x: 4, y: 44, mine: true }, 3000);
+      setPaidText("");
+      toast(`Comment posted · 🪙${coins}`, "ok");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Paid comment failed", "warn");
+    } finally {
+      setPaidBusy(false);
+    }
+  };
+
 
   const hv = hover !== null ? echoes[hover] : null;
 
@@ -235,9 +327,38 @@ export function LivingRoom({
               </button>
             );
           })}
+          {/* Persistent heatmap peaks (SoundCloud-style): per-page top emoji + count */}
+          {totalPages > 0 && Object.entries(heat).map(([pageStr, counts]) => {
+            const page = Number(pageStr);
+            const entries = Object.entries(counts);
+            if (!entries.length) return null;
+            const [topKind, topCount] = entries.sort((a, b) => b[1] - a[1])[0];
+            const total = entries.reduce((a, [, c]) => a + c, 0);
+            const pct = Math.min(1, Math.max(0, (page - 0.5) / totalPages));
+            const intensity = Math.min(1, total / 20);
+            return (
+              <button
+                key={`heat-${page}`}
+                onClick={() => onJump(pct)}
+                aria-label={`Page ${page}: ${total} reactions, top ${topKind}`}
+                title={`p.${page} · ${entries.map(([k, c]) => `${k}×${c}`).join(" ")}`}
+                className="pointer-events-auto absolute right-[15px] grid -translate-y-1/2 place-items-center rounded-full border-2 border-line bg-hl text-[10px] leading-none shadow transition-transform hover:z-20 hover:scale-150"
+                style={{
+                  top: `calc(8px + ${pct * 100}% * 0.96)`,
+                  width: 20 + intensity * 10,
+                  height: 20 + intensity * 10,
+                  opacity: 0.75 + intensity * 0.25,
+                }}
+              >
+                <span>{ECHO_EMOJI[topKind as EchoKind] ?? "💬"}</span>
+                <span className="absolute -bottom-1 -right-1 grid min-w-4 place-items-center rounded-full border border-line bg-ink px-0.5 font-mono text-[0.55rem] font-bold text-paper">
+                  {total > 99 ? "99+" : total}
+                </span>
+              </button>
+            );
+          })}
           {hv && hover !== null && (
             <div
-              className="pointer-events-none absolute right-5 w-52 -translate-y-1/2 rounded-md border-2 border-line bg-card p-2.5 text-ink shadow-[3px_3px_0_var(--shadow)]"
               style={{ top: `calc(8px + ${Math.min(0.92, Math.max(0.08, hv.pct)) * 100}% * 0.96)` }}
             >
               <div className="flex items-center gap-1.5 text-sm font-extrabold">
@@ -404,6 +525,52 @@ export function LivingRoom({
                       <span className="font-mono text-[0.55rem] font-bold uppercase">{k}</span>
                     </button>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Card 3: Paid comments (donate-to-post, min 5 coins) */}
+            {!preview && (
+              <div className="panel anim-pop w-full p-3.5" style={{ animationDelay: "80ms" }}>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="label flex items-center gap-1.5 !text-[#15120f]">
+                    <Icon name="coin" size={12} className="text-accent" /> Paid comment · min 🪙5
+                  </span>
+                </div>
+                <input
+                  value={paidText}
+                  onChange={(e) => setPaidText(e.target.value.slice(0, 140))}
+                  placeholder={state.accountId === "guest" ? "Sign in to comment…" : "Say it loud — shows for 3s…"}
+                  maxLength={140}
+                  className="w-full rounded-md border-2 border-line bg-paper px-2.5 py-2 text-xs font-semibold outline-none placeholder:text-muted focus:bg-hl/20"
+                />
+                <div className="mt-2 flex items-center gap-1.5">
+                  {[5, 10, 20, 50].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setPaidCoins(n)}
+                      aria-pressed={paidCoins === n}
+                      className={cx("chip !text-[0.65rem]", paidCoins === n && "chip-on")}
+                    >
+                      🪙{n}
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    min={5}
+                    max={1000}
+                    value={paidCoins}
+                    onChange={(e) => setPaidCoins(Math.max(5, Math.min(1000, Number(e.target.value) || 5)))}
+                    className="ml-auto w-20 rounded-md border-2 border-line bg-paper px-2 py-1 font-mono text-xs font-bold outline-none"
+                    aria-label="Coins to donate"
+                  />
+                  <button
+                    onClick={sendPaid}
+                    disabled={paidBusy}
+                    className="btn btn-accent !py-1.5 !text-xs"
+                  >
+                    {paidBusy ? "…" : "Send"}
+                  </button>
                 </div>
               </div>
             )}

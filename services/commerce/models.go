@@ -36,6 +36,7 @@ const (
 	LedgerPlatformFee      LedgerType = "platform_fee"
 	LedgerRefundCredit     LedgerType = "refund_credit"
 	LedgerTakedownClawback LedgerType = "takedown_clawback"
+	LedgerTipFee           LedgerType = "tip_fee"
 )
 
 // LedgerEntry is an immutable, append-only row backing wallet balances (FR-M2).

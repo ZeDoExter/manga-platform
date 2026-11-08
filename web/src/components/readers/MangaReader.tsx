@@ -126,14 +126,23 @@ export function MangaReader({ story, chapter, title, nav, content, preview, onCl
     if (!el || mode !== "scroll") return;
     let last = el.scrollTop;
     let frame = 0;
+    let hideTimer = 0;
     const run = () => {
       frame = 0;
       const t = el.scrollTop;
       const max = el.scrollHeight - el.clientHeight;
       if (max > 0) setScrollPct(Math.round(Math.min(1, Math.max(0, t / max)) * 200) / 200);
       if (Math.abs(t - last) > 14) {
-        setChrome(t < last || t < 80);
+        const show = t < last || t < 80;
         last = t;
+        if (show) {
+          clearTimeout(hideTimer);
+          setChrome(true);
+          // Linger 2s after scroll-up so the bar survives a quick scroll-down.
+          hideTimer = window.setTimeout(() => { hideTimer = 0; setChrome(false); }, 2000);
+        } else if (!hideTimer) {
+          setChrome(false);
+        }
       }
     };
     const h = () => {
@@ -142,7 +151,8 @@ export function MangaReader({ story, chapter, title, nav, content, preview, onCl
     el.addEventListener("scroll", h, { passive: true });
     return () => {
       el.removeEventListener("scroll", h);
-      if (frame) cancelAnimationFrame(frame);
+      cancelAnimationFrame(frame);
+      clearTimeout(hideTimer);
     };
   }, [mode]);
 
@@ -299,6 +309,7 @@ export function MangaReader({ story, chapter, title, nav, content, preview, onCl
         mood={story.mood}
         progress={liveProgress}
         onJump={onJumpPct}
+        totalPages={total}
         onScrollTop={scrollToTop}
         onOpenChapters={() => setPicker(true)}
         bookmarked={!!bm}

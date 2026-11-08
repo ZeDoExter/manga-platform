@@ -62,6 +62,73 @@ func (s *Service) TopUp(ctx context.Context, userID string, amount int64, coinTy
 	return out, err
 }
 
+// MinTipCoins is the minimum donate-to-comment amount (paid comments).
+const MinTipCoins = 5
+
+// Tip debits coins as a platform-kept posting fee (paid comments).
+// Unlike purchases, 100% goes to the platform (no creator split).
+func (s *Service) Tip(ctx context.Context, userID string, amount int64, refID, idempotencyKey string) (*LedgerEntry, error) {
+	if amount < MinTipCoins {
+		return nil, ErrInvalidAmount
+	}
+	var out *LedgerEntry
+	err := s.store.WithTxUser(ctx, []string{userID, PlatformUserID}, func(tx Tx) error {
+		if existing, err := tx.FindLedgerByKey(ctx, PlatformUserID, idempotencyKey+":platform"); err != nil {
+			return err
+		} else if existing != nil {
+			out = existing
+			return nil
+		}
+		purchased, bonus, err := tx.SumBalances(ctx, userID)
+		if err != nil {
+			return err
+		}
+		if purchased+bonus < amount {
+			return ErrInsufficientBalance
+		}
+		// Debit bonus first, then purchased.
+		remaining := amount
+		now := time.Now()
+		tipID := generateID("tip")
+		if bonus > 0 {
+			take := min64(bonus, remaining)
+			if err := tx.AppendLedger(ctx, &LedgerEntry{
+				ID: generateID("ledge"), UserID: userID, Type: LedgerTipFee,
+				CoinType: CoinBonus, Amount: -take, ReferenceID: tipID,
+				IdempotencyKey: idempotencyKey + ":bonus", CreatedAt: now,
+			}); err != nil {
+				return err
+			}
+			remaining -= take
+		}
+		if remaining > 0 {
+			if err := tx.AppendLedger(ctx, &LedgerEntry{
+				ID: generateID("ledge"), UserID: userID, Type: LedgerTipFee,
+				CoinType: CoinPurchased, Amount: -remaining, ReferenceID: tipID,
+				IdempotencyKey: idempotencyKey + ":purchased", CreatedAt: now,
+			}); err != nil {
+				return err
+			}
+		}
+		out = &LedgerEntry{
+			ID: generateID("ledge"), UserID: PlatformUserID, Type: LedgerTipFee,
+			CoinType: CoinPurchased, Amount: amount, ReferenceID: tipID,
+			IdempotencyKey: idempotencyKey + ":platform", CreatedAt: now,
+		}
+		if refID != "" {
+			out.ReferenceID = refID
+		}
+		return tx.AppendLedger(ctx, out)
+	})
+	return out, err
+}
+
+func min64(a, b int64) int64 {
+	if a < b {
+		return a
+	}
+	return b
+}
 // GetWallet returns current coin balances for a user (derived from ledger).
 func (s *Service) GetWallet(ctx context.Context, userID string) (Wallet, error) {
 	var w Wallet

@@ -82,6 +82,13 @@ type ReversePurchaseRequest struct {
 	TakedownID string `json:"takedown_id"`
 }
 
+type TipRequest struct {
+	UserID         string `json:"user_id"`
+	Amount         int64  `json:"amount"`
+	ReferenceID    string `json:"reference_id"`
+	IdempotencyKey string `json:"idempotency_key"`
+}
+
 type EntitlementResponse struct {
 	Entitled bool `json:"entitled"`
 }

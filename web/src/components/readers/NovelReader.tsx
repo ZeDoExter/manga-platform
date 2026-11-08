@@ -70,20 +70,28 @@ export function NovelReader({ story, chapter, title, nav, paragraphs, preview, o
     if (!el) return;
     let raf = 0;
     let last = el.scrollTop;
+    let hideTimer = 0;
     const h = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         onScroll();
         const t = el.scrollTop;
         if (Math.abs(t - last) > 24) {
-          setChrome(t < last || t < 100);
+          const show = t < last || t < 100;
           last = t;
+          if (show) {
+            clearTimeout(hideTimer);
+            setChrome(true);
+            hideTimer = window.setTimeout(() => { hideTimer = 0; setChrome(false); }, 2000);
+          } else if (!hideTimer) {
+            setChrome(false);
+          }
         }
       });
     };
     el.addEventListener("scroll", h, { passive: true });
     onScroll();
-    return () => { el.removeEventListener("scroll", h); cancelAnimationFrame(raf); };
+    return () => { el.removeEventListener("scroll", h); cancelAnimationFrame(raf); clearTimeout(hideTimer); };
   }, [onScroll, body]);
 
   /* save + resume */
@@ -195,6 +203,7 @@ export function NovelReader({ story, chapter, title, nav, paragraphs, preview, o
         mood={story.mood}
         progress={pct}
         onJump={jump}
+        totalPages={body.length}
         onScrollTop={scrollToTop}
         onOpenChapters={() => setPicker(true)}
         bookmarked={!!bmFor(focusIdx)}

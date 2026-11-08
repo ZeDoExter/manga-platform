@@ -49,6 +49,26 @@ func main() {
 		}
 	})
 
+	mux.HandleFunc("POST /tips", func(w http.ResponseWriter, r *http.Request) {
+		var req api.TipRequest
+		if err := httpapi.Decode(r, &req); err != nil {
+			httpapi.Fail(w, http.StatusBadRequest, "invalid request body")
+			return
+		}
+
+		entry, err := svc.Tip(r.Context(), req.UserID, req.Amount, req.ReferenceID, req.IdempotencyKey)
+		switch {
+		case err == nil:
+			httpapi.JSON(w, http.StatusOK, entry)
+		case errors.Is(err, commerce.ErrInvalidAmount):
+			httpapi.Fail(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, commerce.ErrInsufficientBalance):
+			httpapi.Fail(w, http.StatusPaymentRequired, err.Error())
+		default:
+			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
+		}
+	})
+
 	mux.HandleFunc("GET /wallets/{userID}", func(w http.ResponseWriter, r *http.Request) {
 		wallet, err := svc.GetWallet(r.Context(), r.PathValue("userID"))
 		if err != nil {
