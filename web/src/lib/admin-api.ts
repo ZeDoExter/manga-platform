@@ -1,7 +1,7 @@
 // Client for the moderation service (takedown, ban, audit log).
 // Demo admin identity; prod would use the logged-in admin's session.
 
-const BASE = process.env.NEXT_PUBLIC_MODERATION_URL ?? 'http://localhost:8085';
+const BASE = process.env.NEXT_PUBLIC_MODERATION_URL ?? '/api/moderation';
 
 export const DEMO_ADMIN = 'admin-1';
 

@@ -31,6 +31,24 @@ func main() {
 	mux := http.NewServeMux()
 	httpapi.Health(mux)
 
+	mux.HandleFunc("GET /stories", func(w http.ResponseWriter, r *http.Request) {
+		list, err := svc.ListStories(r.Context())
+		if err != nil {
+			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		httpapi.JSON(w, http.StatusOK, list)
+	})
+
+	mux.HandleFunc("GET /stories/{id}/chapters", func(w http.ResponseWriter, r *http.Request) {
+		list, err := svc.ListChaptersByStory(r.Context(), r.PathValue("id"))
+		if err != nil {
+			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		httpapi.JSON(w, http.StatusOK, list)
+	})
+
 	mux.HandleFunc("POST /stories", func(w http.ResponseWriter, r *http.Request) {
 		var req api.CreateStoryRequest
 		if err := httpapi.Decode(r, &req); err != nil {

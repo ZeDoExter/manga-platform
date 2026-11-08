@@ -152,6 +152,23 @@ spec:
     app.kubernetes.io/name: media
 ---
 apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    app.kubernetes.io/name: web
+    app.kubernetes.io/part-of: manga-platform
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: web
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: media-images

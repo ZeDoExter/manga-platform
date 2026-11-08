@@ -22,11 +22,28 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
+  name: dootoon-web
+spec:
+  parentRefs:
+    - name: manga
+  hostnames: [dootoon.store]
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: web
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
   name: manga-api
 spec:
   parentRefs:
     - name: manga
-  hostnames: [dootoon.store, api.dootoon.store]
+  hostnames: [api.dootoon.store]
   rules:
     - matches:
         - path:

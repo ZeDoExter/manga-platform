@@ -6,7 +6,19 @@ import { ACCOUNT_MAP, DEFAULT_PREFS, emptyData, genReaderData, makeInitialState,
 import { STORIES, STORY_MAP } from "@/data/stories";
 import { studioToStory } from "./content";
 import { SSR_NOW, uid } from "./util";
-import { fetchContinue, mergeGuest, saveProgressRemote, type GuestItem } from "./library-api";
+import {
+  addBookmarkRemote,
+  fetchBookmarks,
+  fetchContinue,
+  fetchFollows,
+  mergeGuest,
+  removeBookmarkRemote,
+  saveProgressRemote,
+  setFollow,
+  type GuestItem,
+} from "./library-api";
+import { fetchRemoteCatalog, syncCatalogStory } from "./catalog-api";
+import { useSession } from "./auth-client";
 const KEY = "dootoon.v1";
 
 interface ToastItem {
@@ -76,6 +88,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setToasts((t) => [...t.slice(-3), { id, msg, kind }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
   }, []);
+  const { data: session } = useSession();
+
+  /* sync Better Auth session into active account */
+  useEffect(() => {
+    if (!state.hydrated || !session?.user) return;
+    const u = session.user;
+    const id = (u.email.split("@")[0] ?? u.id).replace(/[^a-z0-9_-]/gi, "-").toLowerCase() || u.id;
+    const role: "reader" | "creator" =
+      "role" in u && u.role === "creator" ? "creator" : "reader";
+    const acc: Account = {
+      id,
+      name: u.name || u.email.split("@")[0] || "Reader",
+      role,
+      bio: "Signed in via DOOTOON Auth.",
+      location: "DOOTOON",
+      joined: "2026",
+      tagline: u.email,
+      colors: role === "creator" ? ["#ff4a22", "#ffd43b"] : ["#3340ff", "#12b58b"],
+      glyph: (u.name?.[0] ?? u.email[0] ?? "ด").toUpperCase(),
+      followers: 0,
+      following: 0,
+      verified: true,
+    };
+    ACCOUNT_MAP[id] = acc;
+    setState((s) => {
+      if (s.accountId === id && s.data[id]) return s;
+      const data = s.data[id] ? s.data : { ...s.data, [id]: emptyData(acc.name) };
+      return { ...s, accountId: id, data };
+    });
+  }, [state.hydrated, session?.user]);
 
   /* hydrate from localStorage */
   useEffect(() => {
@@ -105,34 +147,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(next);
     // Pull remote progress (library service) and merge last-write-wins.
     const accountId = next.accountId;
-    void (async () => {
-      try {
-        const rows = await fetchContinue(accountId);
-        if (!rows.length) return;
-        setState((s) => {
-          const d = s.data[accountId] ?? emptyData("Reader");
-          const progress = { ...d.progress };
-          const history = [...d.history];
-          for (const r of rows) {
-            const at = new Date(r.updated_at).getTime() || 0;
-            const cur = progress[r.story_id];
-            // chapterID format: `${storyId}-ch-${chapter}`
-            const m = /-ch-(\d+)$/.exec(r.chapter_id);
-            const chapter = m ? parseInt(m[1], 10) : 1;
-            const pct = r.content_type === "novel" ? r.position / 10000 : 0;
-            if (!cur || at > cur.at) {
-              progress[r.story_id] = { chapter, pct, at };
-              if (!history.some((h) => h.storyId === r.story_id && h.chapter === chapter)) {
-                history.unshift({ storyId: r.story_id, chapter, at });
-              }
-            }
-          }
-          return { ...s, data: { ...s.data, [accountId]: { ...d, progress, history: history.slice(0, 60) } } };
-        });
-      } catch {
-        // Library offline: local state stands alone.
-      }
-    })();
     // Push any queued guest progress once (FR-L4), then clear.
     void (async () => {
       try {
@@ -150,7 +164,95 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // Keep the queue for next launch.
       }
     })();
+    // Pull remote catalog stories (catalog service) and merge into studio list.
+    void (async () => {
+      try {
+        const remote = await fetchRemoteCatalog();
+        if (!remote.length) return;
+        setState((s) => {
+          const byId = new Map(s.studio.map((x) => [x.id, x]));
+          for (const r of remote) {
+            if (!byId.has(r.id)) {
+              byId.set(r.id, r);
+            } else {
+              const cur = byId.get(r.id)!;
+              const chMap = new Map(cur.chapters.map((c) => [c.number, c]));
+              for (const rc of r.chapters) {
+                if (!chMap.has(rc.number)) chMap.set(rc.number, rc);
+              }
+              byId.set(r.id, { ...cur, chapters: Array.from(chMap.values()).sort((a, b) => b.number - a.number) });
+            }
+          }
+          return { ...s, studio: Array.from(byId.values()) };
+        });
+      } catch {
+        // Catalog offline: local stories stand alone.
+      }
+    })();
   }, []);
+
+  /* sync remote library state (continue reading, follows, bookmarks) per active account */
+  useEffect(() => {
+    if (!state.hydrated) return;
+    const accountId = state.accountId;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [rows, follows, bookmarks] = await Promise.all([
+          fetchContinue(accountId).catch(() => []),
+          fetchFollows(accountId).catch(() => []),
+          fetchBookmarks(accountId).catch(() => []),
+        ]);
+        if (cancelled || (!rows.length && !follows.length && !bookmarks.length)) return;
+        setState((s) => {
+          const d = s.data[accountId] ?? emptyData("Reader");
+          const progress = { ...d.progress };
+          const history = [...d.history];
+          for (const r of rows) {
+            const at = new Date(r.updated_at).getTime() || 0;
+            const cur = progress[r.story_id];
+            const m = /-ch-(\d+)$/.exec(r.chapter_id);
+            const chapter = m ? parseInt(m[1], 10) : 1;
+            const pct = r.content_type === "novel" ? r.position / 10000 : 0;
+            if (!cur || at > cur.at) {
+              progress[r.story_id] = { chapter, pct, at };
+              if (!history.some((h) => h.storyId === r.story_id && h.chapter === chapter)) {
+                history.unshift({ storyId: r.story_id, chapter, at });
+              }
+            }
+          }
+          const library = Array.from(new Set([...follows, ...d.library]));
+          const bmList = [...d.bookmarks];
+          for (const b of bookmarks) {
+            const m = /-ch-(\d+)$/.exec(b.chapter_id);
+            const chapter = m ? parseInt(m[1], 10) : 1;
+            if (!bmList.some((x) => x.storyId === b.story_id && x.chapter === chapter)) {
+              bmList.unshift({
+                id: b.chapter_id,
+                storyId: b.story_id,
+                chapter,
+                pct: 0,
+                label: `Saved chapter ${chapter}`,
+                at: new Date(b.created_at).getTime() || Date.now(),
+              });
+            }
+          }
+          return {
+            ...s,
+            data: {
+              ...s.data,
+              [accountId]: { ...d, progress, history: history.slice(0, 60), library, bookmarks: bmList },
+            },
+          };
+        });
+      } catch {
+        // Library offline: local state stands alone.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [state.hydrated, state.accountId]);
 
   /* persist */
   useEffect(() => {
@@ -198,6 +300,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const has = me().library.includes(storyId);
         upMe((d) => ({ ...d, library: has ? d.library.filter((x) => x !== storyId) : [storyId, ...d.library] }));
         toast(has ? "Removed from your library" : "Added to your library ✓", has ? "info" : "ok");
+        void setFollow(ref.current.accountId, storyId, !has).catch(() => {});
       },
       saveProgress(storyId, chapter, pct) {
         const at = Date.now();
@@ -218,12 +321,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ).catch(() => { /* offline: local state is source of truth */ });
       },
       addBookmark(storyId, chapter, pct, label) {
-        upMe((d) => ({ ...d, bookmarks: [{ id: uid("bm"), storyId, chapter, pct, label, at: Date.now() }, ...d.bookmarks] }));
+        const id = uid("bm");
+        upMe((d) => ({ ...d, bookmarks: [{ id, storyId, chapter, pct, label, at: Date.now() }, ...d.bookmarks] }));
         toast("Bookmark saved 🔖");
+        void addBookmarkRemote(ref.current.accountId, `${storyId}-ch-${chapter}`, storyId).catch(() => {});
       },
       removeBookmark(id) {
-        upMe((d) => ({ ...d, bookmarks: d.bookmarks.filter((b) => b.id !== id) }));
+        const cur = me().bookmarks;
+        const target = cur.find((b) => b.id === id);
+        const next = cur.filter((b) => b.id !== id);
+        upMe((d) => ({ ...d, bookmarks: next }));
         toast("Bookmark removed", "info");
+        if (target && !next.some((b) => b.storyId === target.storyId && b.chapter === target.chapter)) {
+          void removeBookmarkRemote(ref.current.accountId, `${target.storyId}-ch-${target.chapter}`).catch(() => {});
+        }
       },
       toggleFollow(accountId) {
         const has = me().following.includes(accountId);
@@ -233,6 +344,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addReview(storyId, rating, text) {
         upMe((d) => ({ ...d, reviews: [{ id: uid("rv"), storyId, rating, text, at: Date.now() }, ...d.reviews.filter((r) => r.storyId !== storyId)], ratings: { ...d.ratings, [storyId]: rating } }));
         toast("Review posted — thank you! ★");
+        const accId = ref.current.accountId;
+        const authorName = ref.current.data[accId]?.profile?.name || ACCOUNT_MAP[accId]?.name || accId;
+        void fetch("/api/community", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ storyId, userId: accId, authorName, rating, text }),
+        }).catch(() => {});
       },
       setRating(storyId, rating) {
         upMe((d) => ({ ...d, ratings: { ...d.ratings, [storyId]: rating } }));
@@ -260,9 +378,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
       createStory(st) {
         setState((s) => ({ ...s, studio: [st, ...s.studio] }));
+        void syncCatalogStory(st).catch(() => {});
       },
       updateStory(id, patch) {
-        upStory(id, (x) => ({ ...x, ...patch }));
+        upStory(id, (x) => {
+          const next = { ...x, ...patch };
+          void syncCatalogStory(next).catch(() => {});
+          return next;
+        });
       },
       deleteStory(id) {
         setState((s) => ({ ...s, studio: s.studio.filter((x) => x.id !== id) }));
@@ -272,7 +395,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         upStory(storyId, (x) => {
           const exists = x.chapters.some((c) => c.id === ch.id);
           const chapters = exists ? x.chapters.map((c) => (c.id === ch.id ? ch : c)) : [...x.chapters, ch];
-          return { ...x, chapters: chapters.sort((a, b) => b.number - a.number) };
+          const next = { ...x, chapters: chapters.sort((a, b) => b.number - a.number) };
+          void syncCatalogStory(next, ch).catch(() => {});
+          return next;
         });
       },
       deleteChapter(storyId, chapterId) {
@@ -302,7 +427,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const catalog = useMemo<Story[]>(() => {
     const extra = state.studio
-      .filter((s) => !s.mirror && s.status === "published")
+      .filter((s) => !s.mirror && s.status === "published" && !STORY_MAP[s.id])
       .map((s) => studioToStory(s, ACCOUNT_MAP[s.ownerId]));
     return [...STORIES, ...extra];
   }, [state.studio]);

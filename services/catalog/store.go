@@ -10,9 +10,11 @@ import (
 type Store interface {
 	InsertStory(ctx context.Context, s *Story) error
 	GetStory(ctx context.Context, storyID string) (*Story, error)
+	ListStories(ctx context.Context) ([]*Story, error)
 
 	InsertChapter(ctx context.Context, c *Chapter) error
 	GetChapter(ctx context.Context, chapterID string) (*Chapter, error)
+	ListChaptersByStory(ctx context.Context, storyID string) ([]*Chapter, error)
 	UpdateChapter(ctx context.Context, chapterID, title string, priceCoins int64) (*Chapter, error)
 	SetChapterStatus(ctx context.Context, chapterID string, status ContentStatus) error
 }

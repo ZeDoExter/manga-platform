@@ -102,3 +102,26 @@ func (m *MemoryStore) SetChapterStatus(_ context.Context, chapterID string, stat
 	c.Status = status
 	return nil
 }
+
+func (m *MemoryStore) ListStories(_ context.Context) ([]*Story, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	out := make([]*Story, 0, len(m.stories))
+	for _, s := range m.stories {
+		out = append(out, copyStory(s))
+	}
+	return out, nil
+}
+
+func (m *MemoryStore) ListChaptersByStory(_ context.Context, storyID string) ([]*Chapter, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	ids := m.storyChapters[storyID]
+	out := make([]*Chapter, 0, len(ids))
+	for _, id := range ids {
+		if c, ok := m.chapters[id]; ok {
+			out = append(out, copyChapter(c))
+		}
+	}
+	return out, nil
+}

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useApp } from "@/lib/store";
 import { useEconomy } from "@/lib/economy-store";
 import { DEMO_IDS, ACCOUNT_MAP } from "@/data/accounts";
+import { useSession, signOut } from "@/lib/auth-client";
 import { suggest } from "@/lib/search";
 import { cx } from "@/lib/util";
 import { TOP10 } from "@/data/stories";
@@ -61,6 +62,7 @@ export function Shell({ children }: { children: ReactNode }) {
 function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
   const { account, state, act, me } = useApp();
   const { balance } = useEconomy();
+  const { data: session } = useSession();
   const [menu, setMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -123,6 +125,34 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
           </button>
           {menu && (
             <div role="menu" className="panel anim-pop absolute right-0 top-[calc(100%+10px)] z-[110] w-72 p-2">
+              {session?.user ? (
+                <div className="mb-2 rounded-md border-2 border-line bg-paper2 p-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-xs font-extrabold">{session.user.name}</span>
+                    <span className="chip chip-on !text-[0.55rem]">Signed in</span>
+                  </div>
+                  <div className="truncate font-mono text-[0.65rem] text-muted">{session.user.email}</div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await signOut();
+                      act.switchAccount("mika");
+                      setMenu(false);
+                    }}
+                    className="btn btn-sm mt-2 w-full justify-center"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMenu(false)}
+                  className="btn btn-accent mb-2 flex w-full items-center justify-center gap-2 !py-2 text-xs font-extrabold"
+                >
+                  <Icon name="user" size={14} /> Sign in / Google
+                </Link>
+              )}
               <div className="label px-2 pb-1 pt-1">Demo accounts · switch instantly</div>
               {DEMO_IDS.map((id) => {
                 const a = ACCOUNT_MAP[id];
