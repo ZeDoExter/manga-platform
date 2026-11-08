@@ -19,7 +19,7 @@ import {
 } from "./library-api";
 import { fetchRemoteCatalog, syncCatalogStory } from "./catalog-api";
 import { useSession } from "./auth-client";
-const KEY = "dootoon.v1";
+const KEY = "dootoon.v2";
 
 interface ToastItem {
   id: number;

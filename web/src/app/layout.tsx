@@ -24,7 +24,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const themeScript = `try{var s=JSON.parse(localStorage.getItem('dootoon.v1')||'{}');if(s.theme){document.documentElement.dataset.theme=s.theme}}catch(e){}`;
+const themeScript = `try{var s=JSON.parse(localStorage.getItem('dootoon.v2')||localStorage.getItem('dootoon.v1')||'{}');if(s.theme){document.documentElement.dataset.theme=s.theme}}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
