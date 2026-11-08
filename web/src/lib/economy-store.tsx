@@ -113,6 +113,10 @@ export function EconomyProvider({ children }: { children: ReactNode }) {
 
   const topUp = useCallback(
     async (amount: number, coinType: CoinType = "purchased") => {
+      if (account.role === "guest") {
+        toast("Please sign in to top up coins", "warn");
+        throw new Error("Login required for top-up");
+      }
       const id = account.id;
       const idempotencyKey =
         coinType === "bonus"
@@ -125,11 +129,15 @@ export function EconomyProvider({ children }: { children: ReactNode }) {
       setError(null);
       toast(`${amount.toLocaleString()} ${coinType === "bonus" ? "bonus " : ""}coins added`, "ok");
     },
-    [account.id, toast],
+    [account.id, account.role, toast],
   );
 
   const buy = useCallback(
     async (input: PurchaseInput) => {
+      if (account.role === "guest") {
+        toast("Please sign in to unlock chapters", "warn");
+        throw new Error("Login required for purchase");
+      }
       const result = await economyApi.purchase(input);
       if (accountRef.current === input.accountId) {
         setWallet(result.wallet);
@@ -138,7 +146,7 @@ export function EconomyProvider({ children }: { children: ReactNode }) {
       }
       return result;
     },
-    [refresh],
+    [account.role, refresh],
   );
 
   const checkAccess = useCallback((input: AccessInput) => economyApi.access(input), []);

@@ -118,6 +118,9 @@ func (s *Service) createChapter(ctx context.Context, id, storyID string, orderIn
 	if id == "" {
 		id = generateID("chap")
 	}
+	if pageKeys == nil {
+		pageKeys = []string{}
+	}
 	chap := &Chapter{
 		ID: id, StoryID: storyID, OrderIndex: orderIndex, Title: title,
 		PriceCoins: priceCoins, PageKeys: pageKeys, NovelText: sanitize.NovelHTML(novelText),

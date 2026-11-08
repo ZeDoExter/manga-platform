@@ -86,7 +86,7 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
     <header className="sticky top-0 z-[100] border-b-2 border-line bg-paper/90 backdrop-blur-md">
       <div className="wrap flex h-16 items-center gap-3">
         <Link href="/" className="group flex items-center gap-2.5" aria-label="DOOTOON home">
-          <span className="grid size-10 -rotate-3 place-items-center border-2 border-line bg-accent font-display text-xl text-white shadow-[3px_3px_0_var(--shadow)] transition-transform group-hover:rotate-0" style={{ fontFamily: "var(--font-thai)" }}>ด</span>
+          <span className="grid size-12 -rotate-3 place-items-center border-2 border-line bg-accent font-display text-3xl text-white shadow-[3px_3px_0_var(--shadow)] transition-transform group-hover:rotate-0" style={{ fontFamily: "var(--font-thai)" }}>ด</span>
           <span className="hidden leading-none sm:block">
             <span className="h-display block text-[1.35rem]">DOOTOON</span>
             <span className="label block !text-[0.55rem] !tracking-[0.3em]" style={{ fontFamily: "var(--font-thai)" }}>ดูตูน</span>

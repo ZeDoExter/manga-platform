@@ -66,9 +66,10 @@ export function parsePurchaseInput(value: unknown): PurchaseInput | null {
 export function parseTopUpInput(value: unknown): { accountId: string; amount: number; coinType: CoinType; idempotencyKey: string } | null {
   if (!isRecord(value)) return null;
   const accountId = text(value.accountId, 160);
+  if (!accountId || accountId === "guest") return null;
   const amount = integer(value.amount, 1, 10000);
   const coinType = value.coinType === "bonus" ? "bonus" : value.coinType === "purchased" ? "purchased" : null;
   const idempotencyKey = text(value.idempotencyKey, 200);
-  if (!accountId || amount === null || !coinType || !idempotencyKey) return null;
+  if (amount === null || !coinType || !idempotencyKey) return null;
   return { accountId, amount, coinType, idempotencyKey };
 }

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const input = parseTopUpInput(await request.json().catch(() => null));
-  if (!input) return NextResponse.json({ error: "Invalid top-up request" }, { status: 400 });
+  if (!input) return NextResponse.json({ error: "Login required for top-up" }, { status: 401 });
   try {
     return NextResponse.json(await topUp(input));
   } catch (err) {
