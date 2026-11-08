@@ -32,7 +32,7 @@ stages:
     jobs:
       - job: Lint
         pool:
-          vmImage: "ubuntu-latest"
+          vmImage: "ubuntu-24.04"
         steps:
           - task: GoTool@0
             inputs:
@@ -46,7 +46,7 @@ stages:
     jobs:
       - job: Test
         pool:
-          vmImage: "ubuntu-latest"
+          vmImage: "ubuntu-24.04"
         services:
           postgres:
             image: postgres:16-alpine
@@ -72,14 +72,10 @@ stages:
               echo "Commerce service test coverage (unit+integration) $COVERAGE percent"
               awk -v c="$COVERAGE" -v min="$(minCoverage)" 'BEGIN { if (c + 0 < min + 0) { print "FAILED_COVERAGE_BELOW_THRESHOLD"; exit 1 } print "PASSED_COVERAGE_OK" }'
             displayName: "go test + coverage gate"
-          - task: PublishTestResults@2
-            condition: succeededOrFailed()
-            inputs:
-              testRunner: JUnit
-              testResultsFiles: "**/TEST-*.xml"
           - task: PublishCodeCoverageResults@2
             condition: succeededOrFailed()
             inputs:
+              codeCoverageTool: Go
               summaryFileLocation: coverage.out
 
   - stage: Build
@@ -87,68 +83,43 @@ stages:
     dependsOn: Test
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     jobs:
-      - job: BuildGo
-        displayName: "Build Go services"
+      - job: BuildAll
+        displayName: "Build all images (one agent, warm cache)"
         pool:
-          vmImage: "ubuntu-latest"
-        strategy:
-          matrix:
-            identity:
-              service: identity
-              image: manga-identity
-            catalog:
-              service: catalog
-              image: manga-catalog
-            commerce:
-              service: commerce
-              image: manga-commerce
-            reader:
-              service: reader
-              image: manga-reader
-            moderation:
-              service: moderation
-              image: manga-moderation
-            community:
-              service: community
-              image: manga-community
-            library:
-              service: library
-              image: manga-library
-            media:
-              service: media
-              image: manga-media
-            gateway:
-              service: server
-              image: manga-gateway
+          vmImage: "ubuntu-24.04"
         steps:
           - task: Docker@2
-            displayName: "Build + push $(image)"
+            displayName: "Login to ACR"
             inputs:
               containerRegistry: "$(acrConnection)"
-              repository: "$(image)"
-              command: buildAndPush
-              Dockerfile: Dockerfile
-              buildContext: "$(Build.SourcesDirectory)"
-              arguments: "--build-arg SERVICE=$(service)"
-              tags: |
-                $(Build.SourceVersion)
-                latest
-      - job: BuildWeb
-        displayName: "Build Next.js web"
-        pool:
-          vmImage: "ubuntu-latest"
-        steps:
-          - task: Docker@2
-            displayName: "Build + push manga-web"
-            inputs:
-              containerRegistry: "$(acrConnection)"
-              repository: "manga-web"
-              command: buildAndPush
-              Dockerfile: web/Dockerfile
-              buildContext: "$(Build.SourcesDirectory)/web"
-              tags: |
-                $(Build.SourceVersion)
-                latest
+              command: login
+          - script: |
+              set -euo pipefail
+              SHA="$(Build.SourceVersion)"
+              SHORT="${SHA:0:7}"
+              ACR="$(acrLoginServer)"
+              echo "##vso[task.setvariable variable=imageTag;isOutput=false]$SHORT"
+              for spec in \
+                "identity:identity:manga-identity" \
+                "catalog:catalog:manga-catalog" \
+                "commerce:commerce:manga-commerce" \
+                "reader:reader:manga-reader" \
+                "moderation:moderation:manga-moderation" \
+                "community:community:manga-community" \
+                "library:library:manga-library" \
+                "media:media:manga-media" \
+                "server:gateway:manga-gateway"; do
+                svc="${spec%%:*}"; rest="${spec#*:}"; dep="${rest%%:*}"; img="${rest##*:}"
+                echo "=== building $img (SERVICE=$svc) ==="
+                docker build --build-arg SERVICE="$svc" -t "$ACR/$img:$SHORT" -t "$ACR/$img:latest" -f Dockerfile .
+                docker push "$ACR/$img:$SHORT"
+                docker push "$ACR/$img:latest"
+              done
+              echo "=== building manga-web ==="
+              docker build -t "$ACR/manga-web:$SHORT" -t "$ACR/manga-web:latest" -f web/Dockerfile ./web
+              docker push "$ACR/manga-web:$SHORT"
+              docker push "$ACR/manga-web:latest"
+            displayName: "Build + push 10 images"
 
   - stage: Deploy
     displayName: "Deploy to AKS (dootoon.store)"
@@ -158,54 +129,39 @@ stages:
       - deployment: DeployAKS
         displayName: "Rolling update AKS"
         pool:
-          vmImage: "ubuntu-latest"
+          vmImage: "ubuntu-24.04"
         environment: "production"
         strategy:
           runOnce:
             deploy:
               steps:
-                - task: Kubernetes@1
-                  displayName: "Get AKS credentials"
+                - task: AzureCLI@2
+                  displayName: "Pin images to build SHA + rollout"
                   inputs:
-                    connectionType: "Azure Resource Manager"
-                    azureSubscriptionEndpoint: "$(serviceConnection)"
-                    azureResourceGroup: "$(resourceGroup)"
-                    kubernetesCluster: "$(aksName)"
-                    command: "get"
-                    arguments: "nodes"
-                    secretType: "dockerRegistry"
-                    containerRegistryType: "Azure Container Registry"
-                - task: KubernetesManifest@1
-                  displayName: "Apply service + gateway"
-                  inputs:
-                    action: "deploy"
-                    connectionType: "Azure Resource Manager"
-                    azureSubscriptionEndpoint: "$(serviceConnection)"
-                    azureResourceGroup: "$(resourceGroup)"
-                    kubernetesCluster: "$(aksName)"
-                    namespace: "default"
-                    manifests: |
-                      deploy/k8s/service.yaml
-                      deploy/k8s/gateway-prod.yaml
-                - task: Kubernetes@1
-                  displayName: "Rollout restart all deployments"
-                  inputs:
-                    connectionType: "Azure Resource Manager"
-                    azureSubscriptionEndpoint: "$(serviceConnection)"
-                    azureResourceGroup: "$(resourceGroup)"
-                    kubernetesCluster: "$(aksName)"
-                    command: "rollout"
-                    arguments: "restart deployment/web deployment/catalog deployment/commerce deployment/reader deployment/library deployment/community deployment/moderation deployment/media deployment/identity deployment/gateway"
-                    secretType: "dockerRegistry"
-                    containerRegistryType: "Azure Container Registry"
-                - task: Kubernetes@1
-                  displayName: "Rollout status web"
-                  inputs:
-                    connectionType: "Azure Resource Manager"
-                    azureSubscriptionEndpoint: "$(serviceConnection)"
-                    azureResourceGroup: "$(resourceGroup)"
-                    kubernetesCluster: "$(aksName)"
-                    command: "rollout"
-                    arguments: "status deployment/web --timeout=180s"
-                    secretType: "dockerRegistry"
-                    containerRegistryType: "Azure Container Registry"
+                    azureSubscription: "$(serviceConnection)"
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+                      SHORT="$(Build.SourceVersion)"
+                      SHORT="${SHORT:0:7}"
+                      ACR="$(acrLoginServer)"
+                      az aks get-credentials -g "$(resourceGroup)" -n "$(aksName)" --overwrite-existing
+                      kubectl apply -f deploy/k8s/service.yaml
+                      kubectl apply -f deploy/k8s/gateway-prod.yaml
+                      for pair in \
+                        "identity:manga-identity" \
+                        "catalog:manga-catalog" \
+                        "commerce:manga-commerce" \
+                        "reader:manga-reader" \
+                        "moderation:manga-moderation" \
+                        "community:manga-community" \
+                        "library:manga-library" \
+                        "media:manga-media" \
+                        "gateway:manga-gateway" \
+                        "web:manga-web"; do
+                        dep="${pair%%:*}"; img="${pair##*:}"
+                        kubectl -n default set image "deployment/$dep" "$dep=$ACR/$img:$SHORT"
+                      done
+                      kubectl -n default rollout status deployment/web --timeout=180s
+                      kubectl -n default get pods -l 'app.kubernetes.io/part-of=manga-platform' --no-headers | head -12
