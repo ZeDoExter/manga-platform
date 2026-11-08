@@ -110,8 +110,7 @@ export function LivingRoom({
     [mine, shared, state.accountId],
   );
 
-  // Zone clustering: merge echoes + heat into 10% bands (max 10 markers).
-  // Each zone shows the top emoji + total count — no more scattered dots.
+  // Zone clustering: heat (server truth) wins; local mine[] fills gaps only.
   const zones = useMemo(() => {
     const buckets: Record<number, { kinds: Record<string, number>; total: number; mine: boolean }> = {};
     const add = (pct: number, kind: string, count: number, isMine: boolean) => {
@@ -121,12 +120,21 @@ export function LivingRoom({
       buckets[z].total += count;
       if (isMine) buckets[z].mine = true;
     };
-    for (const e of echoes) add(e.pct, e.kind, e.count, !!e.mine);
-    if (totalPages > 0) {
-      for (const [pageStr, counts] of Object.entries(heat)) {
-        const pct = (Number(pageStr) - 0.5) / totalPages;
-        for (const [kind, count] of Object.entries(counts)) add(pct, kind, count, false);
+    const heatTotal = Object.values(heat).reduce((a, c) => a + Object.values(c).reduce((x, y) => x + y, 0), 0);
+    if (heatTotal > 0) {
+      // Server has data: use it exclusively (it already includes our echoes).
+      if (totalPages > 0) {
+        for (const [pageStr, counts] of Object.entries(heat)) {
+          const pct = (Number(pageStr) - 0.5) / totalPages;
+          for (const [kind, count] of Object.entries(counts)) {
+            if (kind === "paid") continue;
+            add(pct, kind, count, false);
+          }
+        }
       }
+    } else {
+      // Server empty/offline: fall back to local echoes.
+      for (const e of echoes) add(e.pct, e.kind, e.count, !!e.mine);
     }
     return Object.entries(buckets)
       .map(([z, b]) => {
@@ -172,30 +180,11 @@ export function LivingRoom({
 
     const minP = Math.min(prev, progress) - 0.016;
     const maxP = Math.max(prev, progress) + 0.016;
-    // Merge everything crossed into the zones they belong to, then show ONE
-    // bubble per zone (top emoji + label + total). Stays 5s, no stagger spam.
+    // Use the deduped zones memo: find zones whose center falls in scroll range.
     const hitZones = new Map<number, { kinds: Record<string, number>; total: number }>();
-    for (const e of echoes) {
-      if (e.pct < minP || e.pct > maxP) continue;
-      const z = Math.min(9, Math.floor(Math.max(0, Math.min(1, e.pct)) * 10));
-      const b = hitZones.get(z) ?? { kinds: {}, total: 0 };
-      b.kinds[e.kind] = (b.kinds[e.kind] ?? 0) + e.count;
-      b.total += e.count;
-      hitZones.set(z, b);
-    }
-    if (totalPages > 0) {
-      for (const [pageStr, counts] of Object.entries(heat)) {
-        const pct = (Number(pageStr) - 0.5) / totalPages;
-        if (pct < minP || pct > maxP) continue;
-        const z = Math.min(9, Math.floor(Math.max(0, Math.min(1, pct)) * 10));
-        const b = hitZones.get(z) ?? { kinds: {}, total: 0 };
-        for (const [kind, count] of Object.entries(counts)) {
-          if (kind === "paid") continue;
-          b.kinds[kind] = (b.kinds[kind] ?? 0) + count;
-          b.total += count;
-        }
-        if (b.total > 0) hitZones.set(z, b);
-      }
+    for (const z of zones) {
+      if (z.pct < minP || z.pct > maxP) continue;
+      hitZones.set(z.zone, { kinds: { [z.kind]: z.total }, total: z.total });
     }
     if (hitZones.size === 0) return;
     const now = performance.now();
