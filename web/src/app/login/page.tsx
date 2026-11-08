@@ -117,7 +117,7 @@ export default function LoginPage() {
             ด
           </span>
           <div>
-            <div className="label">// better auth · google & email</div>
+            <div className="label">// google & email</div>
             <h1 className="h-display text-2xl">
               {mode === "signin" ? "Sign in to DOOTOON" : "Create your account"}
             </h1>

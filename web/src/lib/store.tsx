@@ -90,9 +90,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
   const { data: session } = useSession();
 
-  /* sync Better Auth session into active account */
-  useEffect(() => {
-    if (!state.hydrated || !session?.user) return;
+  const sessionAccount = useMemo<Account | null>(() => {
+    if (!session?.user) return null;
     const u = session.user;
     const id = (u.email.split("@")[0] ?? u.id).replace(/[^a-z0-9_-]/gi, "-").toLowerCase() || u.id;
     const role: "reader" | "creator" | "admin" =
@@ -101,7 +100,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       id,
       name: u.name || u.email.split("@")[0] || "Reader",
       role,
-      bio: "Signed in via DOOTOON Auth.",
+      bio: "Signed in to DOOTOON.",
       location: "DOOTOON",
       joined: "2026",
       tagline: u.email,
@@ -112,12 +111,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       verified: true,
     };
     ACCOUNT_MAP[id] = acc;
+    return acc;
+  }, [session?.user]);
+
+  /* sync Better Auth session into active account */
+  useEffect(() => {
+    if (!state.hydrated || !sessionAccount) return;
+    const id = sessionAccount.id;
+    ACCOUNT_MAP[id] = sessionAccount;
     setState((s) => {
-      if (s.accountId === id && s.data[id]) return s;
-      const data = s.data[id] ? s.data : { ...s.data, [id]: emptyData(acc.name) };
+      const existing = s.data[id];
+      const data = {
+        ...s.data,
+        [id]: existing
+          ? { ...existing, profile: { ...existing.profile, name: sessionAccount.name } }
+          : emptyData(sessionAccount.name),
+      };
+      if (s.accountId === id && existing?.profile.name === sessionAccount.name) return s;
       return { ...s, accountId: id, data };
     });
-  }, [state.hydrated, session?.user]);
+  }, [state.hydrated, sessionAccount]);
 
   /* hydrate from localStorage */
   useEffect(() => {
@@ -439,19 +452,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [state.data, now],
   );
 
+  const activeAccount = useMemo<Account>(() => {
+    if (sessionAccount && (state.accountId === sessionAccount.id || state.accountId === "mika")) {
+      return sessionAccount;
+    }
+    if (ACCOUNT_MAP[state.accountId]) return ACCOUNT_MAP[state.accountId];
+    const stored = state.data[state.accountId];
+    if (stored?.profile?.name) {
+      return {
+        id: state.accountId,
+        name: stored.profile.name,
+        role: "reader",
+        bio: stored.profile.bio || "",
+        location: "DOOTOON",
+        joined: "2026",
+        tagline: "",
+        colors: ["#3340ff", "#12b58b"],
+        glyph: (stored.profile.name[0] ?? "ด").toUpperCase(),
+        followers: 0,
+        following: 0,
+        verified: true,
+      };
+    }
+    return ACCOUNT_MAP["mika"];
+  }, [sessionAccount, state.accountId, state.data]);
+
   const value = useMemo<Ctx>(
     () => ({
       state,
       act,
       toast,
       now,
-      account: ACCOUNT_MAP[state.accountId] ?? ACCOUNT_MAP["mika"],
-      me: state.data[state.accountId] ?? emptyData("Reader"),
+      account: activeAccount,
+      me: state.data[activeAccount.id] ?? emptyData(activeAccount.name),
       catalog,
       getStory,
       dataFor,
     }),
-    [state, act, toast, now, catalog, getStory, dataFor],
+    [state, act, toast, now, activeAccount, catalog, getStory, dataFor],
   );
 
   return (
