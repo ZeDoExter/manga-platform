@@ -172,37 +172,58 @@ export function LivingRoom({
 
     const minP = Math.min(prev, progress) - 0.016;
     const maxP = Math.max(prev, progress) + 0.016;
-    const now = performance.now();
-
-    const crossed: { echo: Echo; idx: number }[] = [];
-    echoes.forEach((e, i) => {
-      if (e.pct >= minP && e.pct <= maxP) {
-        const lastAt = cooldowns.current.get(i) ?? 0;
-        if (now - lastAt > 750) {
-          cooldowns.current.set(i, now);
-          crossed.push({ echo: e, idx: i });
+    // Merge everything crossed into the zones they belong to, then show ONE
+    // bubble per zone (top emoji + label + total). Stays 5s, no stagger spam.
+    const hitZones = new Map<number, { kinds: Record<string, number>; total: number }>();
+    for (const e of echoes) {
+      if (e.pct < minP || e.pct > maxP) continue;
+      const z = Math.min(9, Math.floor(Math.max(0, Math.min(1, e.pct)) * 10));
+      const b = hitZones.get(z) ?? { kinds: {}, total: 0 };
+      b.kinds[e.kind] = (b.kinds[e.kind] ?? 0) + e.count;
+      b.total += e.count;
+      hitZones.set(z, b);
+    }
+    if (totalPages > 0) {
+      for (const [pageStr, counts] of Object.entries(heat)) {
+        const pct = (Number(pageStr) - 0.5) / totalPages;
+        if (pct < minP || pct > maxP) continue;
+        const z = Math.min(9, Math.floor(Math.max(0, Math.min(1, pct)) * 10));
+        const b = hitZones.get(z) ?? { kinds: {}, total: 0 };
+        for (const [kind, count] of Object.entries(counts)) {
+          b.kinds[kind] = (b.kinds[kind] ?? 0) + count;
+          b.total += count;
         }
+        hitZones.set(z, b);
       }
-    });
-
-    if (crossed.length === 0) return;
-
-    // Sort in the direction of scroll so comments stream in order
-    crossed.sort((a, b) => (progress >= prev ? a.echo.pct - b.echo.pct : b.echo.pct - a.echo.pct));
-
-    crossed.slice(0, 10).forEach(({ echo, idx }, j) => {
-      setTimeout(() => {
-        pushFloater({
-          emoji: ECHO_EMOJI[echo.kind],
-          text: echo.text,
-          sub: echo.mine ? "You" : `${fmtNum(echo.count)} ${ECHO_LABEL[echo.kind]}`,
-          x: (idx % 3) * 10 + Math.random() * 10,
-          y: 26 + ((idx * 17) % 48) + (Math.random() * 8 - 4),
-          mine: echo.mine,
-        });
-      }, j * 65);
-    });
-  }, [progress, echoes, quiet, preview]);
+    }
+    if (hitZones.size === 0) return;
+    const now = performance.now();
+    const fresh = [...hitZones.entries()].filter(([z]) => now - (cooldowns.current.get(z + 100) ?? 0) > 5000);
+    if (fresh.length === 0) return;
+    for (const [z] of fresh) cooldowns.current.set(z + 100, now);
+    // Single merged bubble: top emoji of the busiest zone + grand total.
+    let best = { kind: "fire" as EchoKind, total: 0 };
+    let grand = 0;
+    for (const [, b] of fresh) {
+      grand += b.total;
+      const top = Object.entries(b.kinds).sort((a, c) => c[1] - a[1])[0];
+      if (top && top[1] > (b.kinds[best.kind] ?? 0) && b.total >= best.total) {
+        best = { kind: top[0] as EchoKind, total: b.total };
+      }
+    }
+    if (grand === 0) return;
+    pushFloater(
+      {
+        emoji: ECHO_EMOJI[best.kind],
+        text: `${ECHO_LABEL[best.kind]} · ${grand}`,
+        sub: fresh.length > 1 ? `${fresh.length} zones` : undefined,
+        x: 4,
+        y: 44,
+        mine: false,
+      },
+      5000,
+    );
+  }, [progress, echoes, heat, totalPages, quiet, preview]);
   // Daily echo budget: 3 free echoes per day, persisted in localStorage.
   useEffect(() => {
     try {
