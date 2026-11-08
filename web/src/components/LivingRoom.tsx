@@ -401,11 +401,11 @@ export function LivingRoom({
       )}
 
       {/* Merged zone bubbles stack vertically — no overlap */}
-      <div className="pointer-events-none fixed bottom-24 left-3 top-24 z-[48] flex w-44 flex-col justify-center gap-1.5 sm:left-6 sm:w-52" aria-hidden="true">
+      <div className="pointer-events-none fixed bottom-24 left-3 top-24 z-[48] flex flex-col items-start justify-center gap-1.5 sm:left-6" aria-hidden="true">
         {floaters.slice(-4).map((f) => (
           <div
             key={f.id}
-            className="flex max-w-full items-center gap-1.5 rounded-xl border border-[#15120f] bg-[#fbf8f1]/95 px-2 py-1 text-[0.7rem] font-bold text-[#15120f] shadow-[2px_2px_0_#15120f] backdrop-blur-xs"
+            className="flex w-fit max-w-64 items-center gap-2 rounded-2xl border-2 border-[#15120f] bg-[#fbf8f1]/95 px-3 py-1.5 text-xs font-bold text-[#15120f] shadow-[3px_3px_0_#15120f] backdrop-blur-xs sm:max-w-72"
             style={{
               animation: "echo-rise 8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
               outline: f.mine ? "2px solid var(--accent)" : undefined,
