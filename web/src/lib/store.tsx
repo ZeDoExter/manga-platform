@@ -178,10 +178,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     })();
     // Pull remote catalog stories (catalog service) and merge into studio list.
+    // Stories that vanished remotely (deleted test data) get pruned from local studio.
     void (async () => {
       try {
         const remote = await fetchRemoteCatalog();
-        if (!remote.length) return;
+        const remoteIds = new Set(remote.map((r) => r.id));
         setState((s) => {
           const byId = new Map(s.studio.map((x) => [x.id, x]));
           for (const r of remote) {
@@ -196,7 +197,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
               byId.set(r.id, { ...cur, chapters: Array.from(chMap.values()).sort((a, b) => b.number - a.number) });
             }
           }
-          return { ...s, studio: Array.from(byId.values()) };
+          // Prune: drop synced stories (owner "x" test stubs or missing remotely)
+          // that the user did not create locally. Local creations have ownerId
+          // matching a known account or a createdAt older than this session.
+          const pruned = Array.from(byId.values()).filter((x) => {
+            if (STORY_MAP[x.id]) return true;
+            if (x.ownerId !== "x" && ACCOUNT_MAP[x.ownerId]) return true;
+            return remoteIds.has(x.id);
+          });
+          if (pruned.length === s.studio.length) return s;
+          return { ...s, studio: pruned };
         });
       } catch {
         // Catalog offline: local stories stand alone.
