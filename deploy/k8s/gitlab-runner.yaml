@@ -25,15 +25,16 @@ metadata:
   name: gitlab-runner-config
   namespace: default
 data:
-  config.toml: |
-    concurrent = 4
-    check_interval = 5
+  config.template.toml: |
+    concurrent = 1
+    check_interval = 15
 
     [[runners]]
       name = "dootoon-aks-k8s-runner"
       url = "https://gitlab.com"
-      token = "glrt-XPRtbybWD8-pI2FHO0j_MWM6MQpvOjEKcDoxZndoM3AKdDozCnU6ZGRzaXIc.01.1o01lf290"
+      token = "__RUNNER_TOKEN__"
       executor = "kubernetes"
+      request_concurrency = 2
       [runners.kubernetes]
         namespace = "default"
         image = "alpine:latest"
@@ -64,8 +65,16 @@ spec:
       containers:
         - name: gitlab-runner
           image: gitlab/gitlab-runner:alpine
-          command: ["gitlab-runner", "run", "--config=/etc/gitlab-runner/config.toml"]
+          command: ["sh", "-c", "sed \"s/__RUNNER_TOKEN__/$RUNNER_TOKEN/\" /etc/gitlab-runner-tpl/config.template.toml > /etc/gitlab-runner/config.toml && exec gitlab-runner run --config=/etc/gitlab-runner/config.toml"]
+          env:
+            - name: RUNNER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: gitlab-runner-token
+                  key: RUNNER_TOKEN
           volumeMounts:
+            - name: config-tpl
+              mountPath: /etc/gitlab-runner-tpl
             - name: config
               mountPath: /etc/gitlab-runner
           resources:
@@ -76,6 +85,8 @@ spec:
               cpu: "200m"
               memory: "256Mi"
       volumes:
-        - name: config
+        - name: config-tpl
           configMap:
             name: gitlab-runner-config
+        - name: config
+          emptyDir: {}
