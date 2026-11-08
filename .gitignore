@@ -56,3 +56,4 @@ coverage.html
 *.pprof
 k6.zip
 k6bin/
+*.webp
