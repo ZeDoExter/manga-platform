@@ -104,9 +104,9 @@ export function studioToStory(s: StudioStory, owner: Account | undefined): Story
 }
 
 /* ------------------------------ echoes (living reading room) ------------------------------ */
-export type EchoKind = "gasp" | "laugh" | "cry" | "fire" | "heart" | "think";
-export const ECHO_EMOJI: Record<EchoKind, string> = { gasp: "😱", laugh: "😂", cry: "😭", fire: "🔥", heart: "💗", think: "🤔" };
-export const ECHO_LABEL: Record<EchoKind, string> = { gasp: "gasped", laugh: "laughed", cry: "teared up", fire: "hyped", heart: "swooned", think: "theorized" };
+export type EchoKind = "gasp" | "laugh" | "cry" | "fire" | "heart" | "think" | "paid";
+export const ECHO_EMOJI: Record<EchoKind, string> = { gasp: "😱", laugh: "😂", cry: "😭", fire: "🔥", heart: "💗", think: "🤔", paid: "💬" };
+export const ECHO_LABEL: Record<EchoKind, string> = { gasp: "gasped", laugh: "laughed", cry: "teared up", fire: "hyped", heart: "swooned", think: "theorized", paid: "commented" };
 export interface Echo {
   pct: number;
   kind: EchoKind;

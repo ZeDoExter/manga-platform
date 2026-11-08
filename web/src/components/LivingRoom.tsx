@@ -201,7 +201,26 @@ export function LivingRoom({
     const fresh = [...hitZones.entries()].filter(([z]) => now - (cooldowns.current.get(z + 100) ?? 0) > 5000);
     if (fresh.length === 0) return;
     for (const [z] of fresh) cooldowns.current.set(z + 100, now);
-    // Single merged bubble: top emoji of the busiest zone + grand total.
+    // Paid comments win: show the actual text + author + coins.
+    // Otherwise fall back to the merged echo bubble.
+    const pageNow = totalPages > 0 ? Math.max(1, Math.min(totalPages, Math.floor(progress * totalPages) + 1)) : 0;
+    const paidHere = feed
+      .filter((c) => Math.abs(c.page - pageNow) <= 1)
+      .sort((a, b) => b.coins - a.coins || b.at - a.at)[0];
+    if (paidHere) {
+      pushFloater(
+        {
+          emoji: "💬",
+          text: paidHere.text,
+          sub: `@${paidHere.user} · 🪙${paidHere.coins} · p.${paidHere.page}`,
+          x: 4,
+          y: 44,
+          mine: paidHere.mine,
+        },
+        8000,
+      );
+      return;
+    }
     let best = { kind: "fire" as EchoKind, total: 0 };
     let grand = 0;
     for (const [, b] of fresh) {
@@ -223,7 +242,7 @@ export function LivingRoom({
       },
       8000,
     );
-  }, [progress, echoes, heat, totalPages, quiet, preview]);
+  }, [progress, echoes, heat, totalPages, quiet, preview, feed]);
   // Daily echo budget: 3 free echoes per day, persisted in localStorage.
   useEffect(() => {
     try {
@@ -520,12 +539,12 @@ export function LivingRoom({
               </div>
             </div>
 
-            {/* Card 2: Stacked Echoes & Community Reactions Pod */}
+            {/* Card 2: Echoes + paid comment + totals, all in one */}
             {!preview && (
               <div className="panel anim-pop w-full p-3.5" style={{ animationDelay: "40ms" }}>
                 <div className="mb-2 flex items-center justify-between">
                   <span className="label flex items-center gap-1.5 !text-[#15120f]">
-                    <Icon name="heart" size={12} className="text-accent" /> Echoes · {Math.round(progress * 100)}% · {echoLeft}/3 left
+                    <Icon name="heart" size={12} className="text-accent" /> Echoes · {echoLeft}/3
                   </span>
                   <button
                     onClick={() => act.setPrefs({ quiet: !quiet })}
@@ -533,84 +552,51 @@ export function LivingRoom({
                     className={cx("chip !text-[0.6rem]", !quiet ? "!bg-[#15120f] !text-[#fbf8f1]" : "!bg-paper2 !text-[#15120f]")}
                   >
                     <Icon name={quiet ? "mute" : "eye"} size={11} />
-                    {quiet ? "Scrollbar: Hidden" : "Scrollbar: Shown"}
+                    {quiet ? "Hidden" : "Shown"}
                   </button>
                 </div>
-                <div className="grid grid-cols-5 gap-1.5" role="group" aria-label="Drop an echo reaction">
-                  {(Object.keys(ECHO_EMOJI) as EchoKind[]).map((k) => (
+                <div className="grid grid-cols-6 gap-1" role="group" aria-label="Drop an echo reaction">
+                  {(Object.keys(ECHO_EMOJI) as EchoKind[]).filter((k) => k !== "paid").map((k) => (
                     <button
                       key={k}
                       onClick={() => drop(k)}
                       title={`React: ${ECHO_LABEL[k]}`}
                       aria-label={`React: ${ECHO_LABEL[k]}`}
-                      className="flex flex-col items-center justify-center gap-0.5 rounded-md border-2 border-line bg-paper2 py-1.5 transition-transform hover:-translate-y-0.5 hover:bg-hl active:translate-y-0"
+                      className="grid place-items-center rounded-md border-2 border-line bg-paper2 py-1 text-base leading-none transition-transform hover:-translate-y-0.5 hover:bg-hl active:translate-y-0"
                     >
-                      <span className="text-lg leading-none">{ECHO_EMOJI[k]}</span>
-                      <span className="font-mono text-[0.55rem] font-bold uppercase">{k}</span>
+                      {ECHO_EMOJI[k]}
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Card 3: Paid comments (donate-to-post, min 5 coins) */}
-            {!preview && (
-              <div className="panel anim-pop w-full p-3.5" style={{ animationDelay: "80ms" }}>
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="label flex items-center gap-1.5 !text-[#15120f]">
-                    <Icon name="coin" size={12} className="text-accent" /> Paid comment · min 🪙5
-                  </span>
-                </div>
-                <input
-                  value={paidText}
-                  onChange={(e) => setPaidText(e.target.value.slice(0, 140))}
-                  placeholder={state.accountId === "guest" ? "Sign in to comment…" : "Say it loud — shows for 3s…"}
-                  maxLength={140}
-                  className="w-full rounded-md border-2 border-line bg-paper px-2.5 py-2 text-xs font-semibold outline-none placeholder:text-muted focus:bg-hl/20"
-                />
-                <div className="mt-2 flex items-center gap-1.5">
-                  {[5, 10, 20, 50].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => setPaidCoins(n)}
-                      aria-pressed={paidCoins === n}
-                      className={cx("chip !text-[0.65rem]", paidCoins === n && "chip-on")}
-                    >
-                      🪙{n}
-                    </button>
-                  ))}
+                <div className="mt-2 flex gap-1.5">
+                  <input
+                    value={paidText}
+                    onChange={(e) => setPaidText(e.target.value.slice(0, 140))}
+                    placeholder={state.accountId === "guest" ? "Sign in…" : "💬 min 🪙5…"}
+                    maxLength={140}
+                    className="min-w-0 flex-1 rounded-md border-2 border-line bg-paper px-2 py-1.5 text-xs font-semibold outline-none placeholder:text-muted focus:bg-hl/20"
+                  />
                   <input
                     type="number"
                     min={5}
                     max={1000}
                     value={paidCoins}
                     onChange={(e) => setPaidCoins(Math.max(5, Math.min(1000, Number(e.target.value) || 5)))}
-                    className="ml-auto w-20 rounded-md border-2 border-line bg-paper px-2 py-1 font-mono text-xs font-bold outline-none"
-                    aria-label="Coins to donate"
+                    className="w-16 shrink-0 rounded-md border-2 border-line bg-paper px-1.5 py-1.5 font-mono text-xs font-bold outline-none"
+                    aria-label="Coins"
                   />
                   <button
                     onClick={sendPaid}
                     disabled={paidBusy}
-                    className="btn btn-accent !py-1.5 !text-xs"
+                    className="btn btn-accent shrink-0 !px-3 !py-1.5 !text-xs"
                   >
                     {paidBusy ? "…" : "Send"}
                   </button>
                 </div>
-              </div>
-            )}
-
-            {/* Card 4: Reaction totals (compact, SoundCloud-style) */}
-            {!preview && (
-              <div className="panel anim-pop w-full p-3.5" style={{ animationDelay: "120ms" }}>
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="label flex items-center gap-1.5 !text-[#15120f]">
-                    <Icon name="chat" size={12} className="text-accent" /> Reactions · {feed.length} comments
-                  </span>
-                </div>
-                {feed.length === 0 && Object.keys(heat).length === 0 ? (
-                  <p className="text-xs italic text-muted">No reactions yet — drop the first echo.</p>
-                ) : (
-                  <ul className="space-y-1.5">
+                {Object.keys(heat).length > 0 && (
+                  <div className="mt-2 border-t border-dashed border-line/30 pt-2">
+                    <div className="label mb-1.5 !text-[0.6rem]">This chapter · all pages</div>
+                    <div className="flex flex-wrap gap-1">
                     {(Object.keys(ECHO_EMOJI) as EchoKind[])
                       .map((k) => ({
                         kind: k,
@@ -619,27 +605,22 @@ export function LivingRoom({
                       .filter((r) => r.count > 0)
                       .sort((a, b) => b.count - a.count)
                       .map((r) => (
-                        <li key={r.kind} className="flex items-center gap-2 rounded-md border border-line/40 bg-paper px-2 py-1.5">
-                          <span className="text-base leading-none">{ECHO_EMOJI[r.kind]}</span>
-                          <span className="text-xs font-extrabold capitalize">{ECHO_LABEL[r.kind]}</span>
-                          <span className="ml-auto font-mono text-xs font-bold">×{r.count}</span>
-                          <button
-                            onClick={() => drop(r.kind)}
-                            aria-label={`React ${ECHO_LABEL[r.kind]}`}
-                            className="rounded-md border border-line/60 bg-paper2 px-2 py-0.5 text-xs font-extrabold transition-colors hover:bg-hl"
-                          >
-                            +
-                          </button>
-                        </li>
+                        <button
+                          key={r.kind}
+                          onClick={() => drop(r.kind)}
+                          title={`React ${ECHO_LABEL[r.kind]}`}
+                          className="chip !gap-1 !px-2 !py-1 !text-[0.65rem]"
+                        >
+                          {ECHO_EMOJI[r.kind]} ×{r.count > 99 ? "99+" : r.count}
+                        </button>
                       ))}
-                  </ul>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
           </div>
         )}
-
-        {/* Floating Circular Buttons Stack: Up to Top + Settings (sliders icon) */}
         <div className="flex flex-col items-center gap-2.5">
           <button
             onClick={onScrollTop}
