@@ -33,7 +33,7 @@ export async function POST(request: Request) {
           price_data: {
             currency: "thb",
             unit_amount: pkg.priceTHB * 100,
-            product_data: { name: `TSUZUKU ${pkg.label} — ${pkg.coins + pkg.bonus} coins` },
+            product_data: { name: `DOOTOON ${pkg.label} — ${pkg.coins + pkg.bonus} coins` },
           },
           quantity: 1,
         },

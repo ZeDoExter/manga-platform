@@ -55,7 +55,7 @@ function Inner() {
       if (!has && !first) return toast("Add a chapter first", "warn");
       if (!has && first) act.upsertChapter(s.id, { ...first, status: "published", updatedAt: Date.now() });
       act.updateStory(s.id, { status: "published" });
-      toast(`${s.title} is live on TSUZUKU 🎉`);
+      toast(`${s.title} is live on DOOTOON 🎉`);
     }
   };
 

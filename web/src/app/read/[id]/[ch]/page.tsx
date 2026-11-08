@@ -1,6 +1,6 @@
 import { ReaderPage } from "@/components/readers/ReaderPage";
 
-export const metadata = { title: "Reading — TSUZUKU" };
+export const metadata = { title: "Reading — DOOTOON" };
 
 export default async function ReadPage({ params }: { params: Promise<{ id: string; ch: string }> }) {
   const { id, ch } = await params;

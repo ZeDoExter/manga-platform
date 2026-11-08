@@ -46,7 +46,8 @@
   --color-accent2: var(--accent2);
   --color-hl: var(--hl);
   --color-mint: var(--mint);
-  --font-display: "Dela Gothic One", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --font-display: "Kanit", "Bricolage Grotesque Variable", system-ui, sans-serif;
+  --font-thai: "Mitr", "Kanit", system-ui, sans-serif;
   --font-sans: "Bricolage Grotesque Variable", "Hiragino Sans", system-ui, sans-serif;
   --font-serif: "Literata Variable", Georgia, serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
@@ -252,6 +253,10 @@
     font-family: var(--font-display);
     line-height: 0.96;
     letter-spacing: -0.01em;
+  }
+  .th-display {
+    font-family: var(--font-thai);
+    line-height: 1.1;
   }
   .tone {
     background-image: radial-gradient(var(--tone) 1.2px, transparent 1.5px);

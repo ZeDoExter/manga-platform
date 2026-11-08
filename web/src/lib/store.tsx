@@ -7,7 +7,7 @@ import { STORIES, STORY_MAP } from "@/data/stories";
 import { studioToStory } from "./content";
 import { SSR_NOW, uid } from "./util";
 import { fetchContinue, mergeGuest, saveProgressRemote, type GuestItem } from "./library-api";
-const KEY = "tsuzuku.v1";
+const KEY = "dootoon.v1";
 
 interface ToastItem {
   id: number;

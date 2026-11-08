@@ -13,7 +13,8 @@ export interface PageStyle {
 const INK = "#14110f";
 const PAPER = "#fbfaf6";
 const FONT_UI = "'Bricolage Grotesque Variable', system-ui, sans-serif";
-const FONT_DISPLAY = "'Dela Gothic One', 'Hiragino Sans', sans-serif";
+const FONT_DISPLAY = "'Kanit', 'Bricolage Grotesque Variable', sans-serif";
+const FONT_THAI = "'Mitr', 'Kanit', sans-serif";
 
 interface C {
   uid: string;
@@ -250,8 +251,8 @@ function PageSvg({ page, style, className, activePanel }: { page: PageSpec; styl
             <rect width={PAGE_W} height={PAGE_H} fill={INK} />
             <rect width={PAGE_W} height={PAGE_H} fill={`url(#${uid}d2)`} opacity=".08" />
             <rect x="40" y="40" width={PAGE_W - 80} height={PAGE_H - 80} fill="none" stroke="#fff" strokeOpacity=".35" strokeWidth="3" />
-            <text x={PAGE_W / 2} y={PAGE_H / 2 - 20} textAnchor="middle" fontSize="190" fill="#ff4a22" style={{ fontFamily: FONT_DISPLAY }}>つづく</text>
-            <text x={PAGE_W / 2} y={PAGE_H / 2 + 70} textAnchor="middle" fontSize="28" letterSpacing="14" fill="#fff" style={{ fontFamily: "'JetBrains Mono Variable', monospace" }}>TO BE CONTINUED</text>
+            <text x={PAGE_W / 2} y={PAGE_H / 2 - 20} textAnchor="middle" fontSize="190" fill="#ff4a22" style={{ fontFamily: FONT_THAI }}>ดูตูน</text>
+            <text x={PAGE_W / 2} y={PAGE_H / 2 + 70} textAnchor="middle" fontSize="28" letterSpacing="14" fill="#fff" style={{ fontFamily: "'JetBrains Mono Variable', monospace" }}>ตอนต่อไป</text>
             <text x={PAGE_W / 2} y={PAGE_H / 2 + 130} textAnchor="middle" fontSize="20" fill="#fff" opacity=".5" style={{ fontFamily: FONT_UI }}>Chapter {page.chapter} · {page.title}</text>
           </g>
         ) : (

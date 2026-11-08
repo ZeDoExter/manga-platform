@@ -93,7 +93,7 @@ export function LibraryView() {
           <div>
             <p className="mb-4 max-w-2xl text-sm text-ink2">Your library organizes itself. These shelves are live rules — finish a story, add a new one, or leave something untouched for a month and the shelves reshuffle.</p>
             {smart.length === 0 ? (
-              <Empty icon="wand" title="Add stories to see smart shelves" text="Save a few titles and TSUZUKU will sort them by pace, mood, progress and freshness." action={<Link href="/discover" className="btn">Browse stories</Link>} />
+              <Empty icon="wand" title="Add stories to see smart shelves" text="Save a few titles and DOOTOON will sort them by pace, mood, progress and freshness." action={<Link href="/discover" className="btn">Browse stories</Link>} />
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {smart.map(({ r, items }) => (

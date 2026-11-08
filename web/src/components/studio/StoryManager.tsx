@@ -61,7 +61,7 @@ function Inner({ id }: { id: string }) {
       act.upsertChapter(story.id, { ...first, status: "published", updatedAt: Date.now() });
     }
     act.updateStory(story.id, { status: "published" });
-    toast(`“${story.title}” is live on TSUZUKU 🎉`);
+    toast(`“${story.title}” is live on DOOTOON 🎉`);
   };
   const setCh = (c: StudioChapter, status: StudioChapter["status"], scheduledFor?: string) => {
     act.upsertChapter(story.id, { ...c, status, scheduledFor, updatedAt: Date.now() });

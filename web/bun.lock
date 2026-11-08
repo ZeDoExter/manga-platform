@@ -8,7 +8,8 @@
         "@fontsource-variable/bricolage-grotesque": "^5.3.0",
         "@fontsource-variable/jetbrains-mono": "^5.3.0",
         "@fontsource-variable/literata": "^5.3.0",
-        "@fontsource/dela-gothic-one": "^5.3.0",
+        "@fontsource/kanit": "^5.3.0",
+        "@fontsource/mitr": "^5.3.0",
         "dotenv": "17.3.1",
         "drizzle-orm": "0.45.2",
         "next": "16.2.6",
@@ -151,7 +152,9 @@
 
     "@fontsource-variable/literata": ["@fontsource-variable/literata@5.3.0", "", {}, "sha512-1Jw7xvOcoGyB83lxB2nG4bfNbqtX2/TTbdh9sHAOmU064SvmSdulDtA5RBu5JYWf64fdaKX7xU+z3GO1T2bCHA=="],
 
-    "@fontsource/dela-gothic-one": ["@fontsource/dela-gothic-one@5.3.0", "", {}, "sha512-4A26Qs7TqYFWegJfYHx7KKWy01YybW/e7uhFDM8A8e1neVPm721laLnh0en60wtKihfNdCbJt0VVcEMHC4pHjw=="],
+    "@fontsource/kanit": ["@fontsource/kanit@5.3.0", "", {}, "sha512-XrVxf5NWb8QLAEbQS2GYir3AY0WbOLr5Q80fWurnoFWXyc7CWvioGNPC2dxRGZKocMUXbwGhuK+sJqWkRLAWNA=="],
+
+    "@fontsource/mitr": ["@fontsource/mitr@5.3.0", "", {}, "sha512-94SSDRpCqQppyPist8DRrF02iu0ri9i0SJ8X7WtKvUpV8d2aSLBhZdT6i9YIoEgbGzZED88YiJ2ph1RrlhOavQ=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.2", "", { "dependencies": { "@humanfs/types": "^0.15.0" } }, "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA=="],
 

@@ -79,11 +79,11 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
   return (
     <header className="sticky top-0 z-[100] border-b-2 border-line bg-paper/90 backdrop-blur-md">
       <div className="wrap flex h-16 items-center gap-3">
-        <Link href="/" className="group flex items-center gap-2.5" aria-label="TSUZUKU home">
-          <span className="grid size-10 -rotate-3 place-items-center border-2 border-line bg-accent font-display text-xl text-white shadow-[3px_3px_0_var(--shadow)] transition-transform group-hover:rotate-0">つ</span>
+        <Link href="/" className="group flex items-center gap-2.5" aria-label="DOOTOON home">
+          <span className="grid size-10 -rotate-3 place-items-center border-2 border-line bg-accent font-display text-xl text-white shadow-[3px_3px_0_var(--shadow)] transition-transform group-hover:rotate-0" style={{ fontFamily: "var(--font-thai)" }}>ด</span>
           <span className="hidden leading-none sm:block">
-            <span className="h-display block text-[1.35rem]">TSUZUKU</span>
-            <span className="label block !text-[0.55rem] !tracking-[0.3em]">to be continued</span>
+            <span className="h-display block text-[1.35rem]">DOOTOON</span>
+            <span className="label block !text-[0.55rem] !tracking-[0.3em]" style={{ fontFamily: "var(--font-thai)" }}>ดูตูน</span>
           </span>
         </Link>
 
@@ -191,9 +191,9 @@ function Footer() {
       <div className="tone-lg absolute inset-0 opacity-30" style={{ ["--tone" as string]: "rgba(255,255,255,.12)" }} />
       <div className="wrap relative grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
-          <div className="h-display text-6xl text-accent md:text-8xl">つづく</div>
+          <div className="th-display text-6xl text-accent md:text-8xl">ดูตูน</div>
           <p className="mt-3 max-w-sm text-sm text-paper/70">
-            TSUZUKU is a fictional next-generation reading universe. Every story, creator, review and analytic you see is generated sample content — publishing and analytics are simulations stored in your browser.
+            DOOTOON is a fictional next-generation reading universe. Every story, creator, review and analytic you see is generated sample content — publishing and analytics are simulations stored in your browser.
           </p>
         </div>
         {[
@@ -214,7 +214,7 @@ function Footer() {
         ))}
       </div>
       <div className="wrap relative mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-paper/20 pt-5 font-mono text-[0.7rem] text-paper/50">
-        <span>© 2026 TSUZUKU — a demo platform. No real content was harmed.</span>
+        <span>© 2026 DOOTOON — a demo platform. No real content was harmed.</span>
         <span>Press ⌘K / “/” to search anywhere</span>
       </div>
     </footer>
