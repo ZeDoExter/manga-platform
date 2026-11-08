@@ -221,7 +221,7 @@ export function LivingRoom({
         y: 44,
         mine: false,
       },
-      5000,
+      8000,
     );
   }, [progress, echoes, heat, totalPages, quiet, preview]);
   // Daily echo budget: 3 free echoes per day, persisted in localStorage.
@@ -409,7 +409,7 @@ export function LivingRoom({
             style={{
               left: `${f.x}px`,
               top: `${f.y}%`,
-              animation: "echo-rise 3.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
+              animation: "echo-rise 8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
               outline: f.mine ? "2px solid var(--accent)" : undefined,
             }}
           >
