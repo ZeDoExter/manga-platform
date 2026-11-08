@@ -31,6 +31,7 @@ stages:
     jobs:
       - job: Lint
         pool:
+          name: "Azure Pipelines"
           vmImage: "ubuntu-latest"
         steps:
           - task: GoTool@0
@@ -45,6 +46,7 @@ stages:
     jobs:
       - job: Test
         pool:
+          name: "Azure Pipelines"
           vmImage: "ubuntu-latest"
         services:
           postgres:
@@ -89,6 +91,7 @@ stages:
       - job: BuildGo
         displayName: "Build Go services"
         pool:
+          name: "Azure Pipelines"
           vmImage: "ubuntu-latest"
         strategy:
           matrix:
@@ -135,6 +138,7 @@ stages:
       - job: BuildWeb
         displayName: "Build Next.js web"
         pool:
+          name: "Azure Pipelines"
           vmImage: "ubuntu-latest"
         steps:
           - task: Docker@2
@@ -157,6 +161,7 @@ stages:
       - deployment: DeployAKS
         displayName: "Rolling update AKS"
         pool:
+          name: "Azure Pipelines"
           vmImage: "ubuntu-latest"
         environment: "production"
         strategy:
