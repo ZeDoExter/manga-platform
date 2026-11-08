@@ -201,8 +201,8 @@ export function LivingRoom({
     const fresh = [...hitZones.entries()].filter(([z]) => now - (cooldowns.current.get(z + 100) ?? 0) > 5000);
     if (fresh.length === 0) return;
     for (const [z] of fresh) cooldowns.current.set(z + 100, now);
-    // Paid comments win: show the actual text + author + coins.
-    // Otherwise fall back to the merged echo bubble.
+    // Show BOTH: paid comment (actual text) + merged echo bubble side by side.
+    // They stack vertically so nothing overlaps.
     const pageNow = totalPages > 0 ? Math.max(1, Math.min(totalPages, Math.floor(progress * totalPages) + 1)) : 0;
     const paidHere = feed
       .filter((c) => Math.abs(c.page - pageNow) <= 1)
@@ -219,7 +219,6 @@ export function LivingRoom({
         },
         8000,
       );
-      return;
     }
     let best = { kind: "fire" as EchoKind, total: 0 };
     let grand = 0;
