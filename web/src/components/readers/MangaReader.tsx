@@ -127,20 +127,23 @@ export function MangaReader({ story, chapter, title, nav, content, preview, onCl
     let last = el.scrollTop;
     let frame = 0;
     let hideTimer = 0;
+    let shownAt = 0;
     const run = () => {
       frame = 0;
       const t = el.scrollTop;
       const max = el.scrollHeight - el.clientHeight;
       if (max > 0) setScrollPct(Math.round(Math.min(1, Math.max(0, t / max)) * 200) / 200);
       if (Math.abs(t - last) > 14) {
-        const show = t < last || t < 80;
+        const up = t < last;
         last = t;
-        if (show) {
+        if (up || t < 80) {
+          // Scroll-up: stick visible, restart 2s grace.
           clearTimeout(hideTimer);
+          shownAt = performance.now();
           setChrome(true);
-          // Linger 2s after scroll-up so the bar survives a quick scroll-down.
           hideTimer = window.setTimeout(() => { hideTimer = 0; setChrome(false); }, 2000);
-        } else if (!hideTimer) {
+        } else if (performance.now() - shownAt >= 2000) {
+          // Scroll-down only hides after the grace window expired.
           setChrome(false);
         }
       }
@@ -306,7 +309,6 @@ export function MangaReader({ story, chapter, title, nav, content, preview, onCl
       <LivingRoom
         storyId={story.id}
         ch={chapter}
-        mood={story.mood}
         progress={liveProgress}
         onJump={onJumpPct}
         totalPages={total}

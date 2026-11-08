@@ -115,27 +115,6 @@ export interface Echo {
   mine?: boolean;
   live?: boolean;
 }
-const ECHO_TEXT: Record<EchoKind, string[]> = {
-  gasp: ["Did NOT see that coming.", "Rewinding. Rewinding right now.", "I audibly gasped on the train."],
-  laugh: ["I'm wheezing.", "The timing of this panel!!", "Creator, you can't just do this to us."],
-  cry: ["Tissues. Now.", "This line again... I'm done.", "Reading this at 2 AM was a mistake."],
-  fire: ["THIS is why I'm subscribed.", "Peak. Absolute peak.", "Stand-up ovation."],
-  heart: ["Soft. So soft.", "Marry me, fictional character.", "My heart can't take it."],
-  think: ["Theory: it's the bell again.", "Wait, is that foreshadowing?", "Bookmarking this for later."],
-};
-
-export function getEchoes(storyId: string, ch: number, mood: Mood): Echo[] {
-  const r = rng(`${storyId}:echo:${ch}`);
-  const kinds: EchoKind[] = ["gasp", "laugh", "cry", "fire", "heart", "think"];
-  const bias: Partial<Record<Mood, EchoKind[]>> = { dread: ["gasp", "gasp", "think"], petal: ["heart", "laugh", "heart"], calm: ["laugh", "heart"], neon: ["fire", "gasp"], ember: ["fire", "fire"], rain: ["cry", "think"], stars: ["cry", "think"], tide: ["think", "fire"], snow: ["heart", "cry"] };
-  const n = 11 + Math.floor(r() * 4);
-  const out: Echo[] = [];
-  for (let i = 0; i < n; i++) {
-    const kind = r() < 0.5 && bias[mood] ? pick(r, bias[mood] as EchoKind[]) : pick(r, kinds);
-    out.push({ pct: 0.05 + (i / n) * 0.9 + r() * 0.04, kind, count: Math.floor(120 + r() * r() * 5200), text: pick(r, ECHO_TEXT[kind]) });
-  }
-  return out;
-}
 
 /* ------------------------------ reader levels ------------------------------ */
 export const LEVEL_TITLES = ["Page Turner", "Night Owl", "Bookmark Keeper", "Chapter Hunter", "Ink Drinker", "Plot Tracker", "Archivist", "Story Warden", "Lorekeeper", "Mythweaver"] as const;

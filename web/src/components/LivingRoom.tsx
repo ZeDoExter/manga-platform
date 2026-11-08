@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ECHO_EMOJI, ECHO_LABEL, getEchoes, type Echo, type EchoKind } from "@/lib/content";
-import type { Mood } from "@/lib/types";
+import { ECHO_EMOJI, ECHO_LABEL, type Echo, type EchoKind } from "@/lib/content";
 import { useApp } from "@/lib/store";
 import { cx, fmtNum } from "@/lib/util";
 import { Icon } from "./ui";
@@ -17,19 +16,10 @@ interface Floater {
   mine?: boolean;
 }
 
-const EXTRA_QUOTES: Record<EchoKind, string[]> = {
-  gasp: ["WAIT WHAT?!", "No way...", "Chills right now"],
-  laugh: ["LMAOOO", "Peak comedy 💀", "I can't breathe"],
-  cry: ["Why does it hurt 😭", "Who's cutting onions", "My heart..."],
-  fire: ["ABSOLUTE CINEMA 🔥", "GOATED PANEL", "10/10 chapter"],
-  heart: ["PROTECT THEM 💗", "Too precious!!", "So wholesome"],
-  think: ["Wait look at the background", "Big clue here 👀", "Everything connects"],
-};
 
 export interface LivingRoomProps {
   storyId: string;
   ch: number;
-  mood: Mood;
   progress: number;
   onJump: (pct: number) => void;
   totalPages?: number;
@@ -54,7 +44,6 @@ export interface LivingRoomProps {
 export function LivingRoom({
   storyId,
   ch,
-  mood,
   progress,
   onJump,
   totalPages = 0,
@@ -73,11 +62,13 @@ export function LivingRoom({
   const quiet = state.prefs.quiet;
   const atmos = state.prefs.atmos;
   const key = `${storyId}:${ch}`;
-  const base = useMemo(() => getEchoes(storyId, ch, mood), [storyId, ch, mood]);
   const mine = state.echoes[key] ?? [];
   const [shared, setShared] = useState<{ pct: number; kind: EchoKind; author: string }[]>([]);
   const [heat, setHeat] = useState<Record<string, Record<string, number>>>({});
   const seenPaid = useRef<Set<string>>(new Set());
+  const [feed, setFeed] = useState<{ id: string; user: string; text: string; coins: number; page: number; at: number; mine?: boolean }[]>([]);
+  const [feedOpen, setFeedOpen] = useState(false);
+  const [echoLeft, setEchoLeft] = useState(3);
 
   useEffect(() => {
     if (preview) return;
@@ -111,13 +102,12 @@ export function LivingRoom({
 
   const echoes: Echo[] = useMemo(
     () => [
-      ...base,
       ...shared
         .filter((s) => s.author !== state.accountId)
         .map((s) => ({ pct: s.pct, kind: s.kind, count: 1, text: `Live from @${s.author}`, live: true })),
       ...mine.map((m) => ({ pct: m.pct, kind: m.kind as EchoKind, count: 1, text: "You were here.", mine: true })),
     ],
-    [base, mine, shared, state.accountId],
+    [mine, shared, state.accountId],
   );
 
   const [hover, setHover] = useState<number | null>(null);
@@ -174,9 +164,7 @@ export function LivingRoom({
     // Sort in the direction of scroll so comments stream in order
     crossed.sort((a, b) => (progress >= prev ? a.echo.pct - b.echo.pct : b.echo.pct - a.echo.pct));
 
-    let delayIdx = 0;
-    crossed.slice(0, 10).forEach(({ echo, idx }) => {
-      const d1 = delayIdx++ * 65;
+    crossed.slice(0, 10).forEach(({ echo, idx }, j) => {
       setTimeout(() => {
         pushFloater({
           emoji: ECHO_EMOJI[echo.kind],
@@ -186,27 +174,42 @@ export function LivingRoom({
           y: 26 + ((idx * 17) % 48) + (Math.random() * 8 - 4),
           mine: echo.mine,
         });
-      }, d1);
-
-      // Spawn a second comment bubble for high-activity echoes so it feels like a lively comment stream
-      if (echo.count > 500) {
-        const d2 = delayIdx++ * 65;
-        const pool = EXTRA_QUOTES[echo.kind];
-        const extraText = pool[idx % pool.length];
-        setTimeout(() => {
-          pushFloater({
-            emoji: ECHO_EMOJI[echo.kind],
-            text: extraText,
-            sub: `+${fmtNum(Math.max(12, Math.round(echo.count * 0.28)))}`,
-            x: 8 + ((idx + 1) % 3) * 12,
-            y: 30 + (((idx + 3) * 19) % 44),
-          });
-        }, d2);
-      }
+      }, j * 65);
     });
   }, [progress, echoes, quiet, preview]);
+  // Daily echo budget: 3 free echoes per day, persisted in localStorage.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("dootoon.echoBudget");
+      const today = new Date().toISOString().slice(0, 10);
+      if (!raw) {
+        setEchoLeft(3);
+        return;
+      }
+      const saved = JSON.parse(raw) as { date?: string; left?: number };
+      setEchoLeft(saved.date === today ? Math.max(0, Math.min(3, saved.left ?? 3)) : 3);
+    } catch {
+      setEchoLeft(3);
+    }
+  }, []);
+
+  const spendEcho = (): boolean => {
+    if (echoLeft <= 0) {
+      toast("Daily echoes used up (3/day) — paid comments still open 💬", "warn");
+      return false;
+    }
+    const left = echoLeft - 1;
+    setEchoLeft(left);
+    try {
+      localStorage.setItem("dootoon.echoBudget", JSON.stringify({ date: new Date().toISOString().slice(0, 10), left }));
+    } catch {
+      // Budget is best-effort client-side.
+    }
+    return true;
+  };
 
   const drop = (kind: EchoKind) => {
+    if (!spendEcho()) return;
     act.addEcho(key, progress, kind);
     if (!preview) {
       fetch("/api/echoes", {
@@ -225,7 +228,7 @@ export function LivingRoom({
     });
     toast(`${ECHO_EMOJI[kind]} Echo left at ${Math.round(progress * 100)}%`);
   };
-  // Paid comments live feed: poll every 5s, flash new ones for 3s.
+  // Paid comments live feed: poll every 5s, flash new ones for 3s + keep persistent feed.
   useEffect(() => {
     if (preview) return;
     let alive = true;
@@ -235,6 +238,11 @@ export function LivingRoom({
         .then((j) => {
           if (!alive || !j?.comments) return;
           const rows = j.comments as { id: string; user: string; text: string; coins: number; page: number; at: number }[];
+          setFeed((prev) => {
+            const ids = new Set(prev.map((p) => p.id));
+            const merged = [...rows.filter((c) => !ids.has(c.id)).map((c) => ({ ...c, mine: c.user === state.accountId })), ...prev];
+            return merged.slice(0, 30);
+          });
           const fresh = rows.filter((c) => Date.now() - c.at < 60000 && !seenPaid.current.has(c.id));
           for (const c of fresh) {
             seenPaid.current.add(c.id);
@@ -249,7 +257,7 @@ export function LivingRoom({
       alive = false;
       clearInterval(t);
     };
-  }, [storyId, ch, preview]);
+  }, [storyId, ch, preview, state.accountId]);
 
   const sendPaid = async () => {
     const text = paidText.trim();
@@ -501,7 +509,7 @@ export function LivingRoom({
               <div className="panel anim-pop w-full p-3.5" style={{ animationDelay: "40ms" }}>
                 <div className="mb-2 flex items-center justify-between">
                   <span className="label flex items-center gap-1.5 !text-[#15120f]">
-                    <Icon name="heart" size={12} className="text-accent" /> Echoes · {Math.round(progress * 100)}%
+                    <Icon name="heart" size={12} className="text-accent" /> Echoes · {Math.round(progress * 100)}% · {echoLeft}/3 left
                   </span>
                   <button
                     onClick={() => act.setPrefs({ quiet: !quiet })}
@@ -572,6 +580,53 @@ export function LivingRoom({
                     {paidBusy ? "…" : "Send"}
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* Card 4: Persistent comments feed (stays, react inline) */}
+            {!preview && (
+              <div className="panel anim-pop w-full p-3.5" style={{ animationDelay: "120ms" }}>
+                <button
+                  onClick={() => setFeedOpen((o) => !o)}
+                  aria-expanded={feedOpen}
+                  className="flex w-full items-center justify-between"
+                >
+                  <span className="label flex items-center gap-1.5 !text-[#15120f]">
+                    <Icon name="chat" size={12} className="text-accent" /> Comments · {feed.length}
+                  </span>
+                  <Icon name={feedOpen ? "up" : "down"} size={13} />
+                </button>
+                {feedOpen && (
+                  feed.length === 0 ? (
+                    <p className="mt-2 text-xs italic text-muted">No paid comments yet — be the first to say it loud.</p>
+                  ) : (
+                    <ul className="scroll-y mt-2 max-h-56 space-y-2 pr-1">
+                      {feed.map((c) => (
+                        <li key={c.id} className="rounded-md border-2 border-line bg-paper p-2">
+                          <div className="flex items-center gap-1.5 text-xs font-extrabold">
+                            <span className="truncate">@{c.user}</span>
+                            <span className="chip !px-1.5 !py-0 !text-[0.6rem]">🪙{c.coins}</span>
+                            <span className="ml-auto shrink-0 font-mono text-[0.6rem] text-muted">p.{c.page}</span>
+                          </div>
+                          <p className="mt-1 text-xs leading-snug">{c.text}</p>
+                          <div className="mt-1.5 flex gap-1" role="group" aria-label={`React to @${c.user}`}>
+                            {(Object.keys(ECHO_EMOJI) as EchoKind[]).map((k) => (
+                              <button
+                                key={k}
+                                onClick={() => drop(k)}
+                                title={`React ${ECHO_EMOJI[k]}`}
+                                aria-label={`React ${ECHO_LABEL[k]} to @${c.user}`}
+                                className="grid size-7 place-items-center rounded-md border border-line/60 bg-paper2 text-sm transition-transform hover:-translate-y-0.5 hover:bg-hl active:translate-y-0"
+                              >
+                                {ECHO_EMOJI[k]}
+                              </button>
+                            ))}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )
+                )}
               </div>
             )}
           </div>

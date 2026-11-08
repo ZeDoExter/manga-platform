@@ -71,19 +71,21 @@ export function NovelReader({ story, chapter, title, nav, paragraphs, preview, o
     let raf = 0;
     let last = el.scrollTop;
     let hideTimer = 0;
+    let shownAt = 0;
     const h = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         onScroll();
         const t = el.scrollTop;
         if (Math.abs(t - last) > 24) {
-          const show = t < last || t < 100;
+          const up = t < last;
           last = t;
-          if (show) {
+          if (up || t < 100) {
             clearTimeout(hideTimer);
+            shownAt = performance.now();
             setChrome(true);
             hideTimer = window.setTimeout(() => { hideTimer = 0; setChrome(false); }, 2000);
-          } else if (!hideTimer) {
+          } else if (performance.now() - shownAt >= 2000) {
             setChrome(false);
           }
         }
@@ -200,7 +202,6 @@ export function NovelReader({ story, chapter, title, nav, paragraphs, preview, o
       <LivingRoom
         storyId={story.id}
         ch={chapter}
-        mood={story.mood}
         progress={pct}
         onJump={jump}
         totalPages={body.length}

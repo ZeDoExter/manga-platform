@@ -18,14 +18,16 @@ type MockEchoRow = {
   createdAt: string;
 };
 
-const SEED_ECHOES: MockEchoRow[] = [
-  { id: 1, storyId: "hollow-moon-courier", chapter: 1, pct: 0.24, kind: "gasp", author: "suzu_reads", createdAt: new Date(Date.now() - 1000 * 60 * 18).toISOString() },
-  { id: 2, storyId: "hollow-moon-courier", chapter: 1, pct: 0.62, kind: "tears", author: "inkwanderer", createdAt: new Date(Date.now() - 1000 * 60 * 11).toISOString() },
-  { id: 3, storyId: "the-ninth-bell", chapter: 1, pct: 0.45, kind: "mind", author: "teacup_oni", createdAt: new Date(Date.now() - 1000 * 60 * 4).toISOString() },
-];
+const SEED_ECHOES: MockEchoRow[] = [];
 
 declare global {
   var __mockEchoesStore: MockEchoRow[] | undefined;
+  var __echoBudget: Record<string, { date: string; count: number }> | undefined;
+}
+
+function getBudget(): Record<string, { date: string; count: number }> {
+  if (!globalThis.__echoBudget) globalThis.__echoBudget = {};
+  return globalThis.__echoBudget;
 }
 
 function getStore(): MockEchoRow[] {
@@ -95,6 +97,15 @@ export async function POST(request: Request) {
       : "heart";
     const author =
       typeof body?.author === "string" && body.author.trim() ? body.author.trim().slice(0, 40) : "reader";
+
+    // Daily budget: 3 free echoes per author per day (paid comments unlimited).
+    const today = new Date().toISOString().slice(0, 10);
+    const budget = getBudget();
+    const entry = budget[author];
+    if (entry && entry.date === today && entry.count >= 3) {
+      return NextResponse.json({ error: "Daily echo limit reached (3/day)" }, { status: 429 });
+    }
+    budget[author] = entry && entry.date === today ? { date: today, count: entry.count + 1 } : { date: today, count: 1 };
 
     const store = getStore();
     const created: MockEchoRow = {
