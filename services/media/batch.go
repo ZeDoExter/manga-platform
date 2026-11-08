@@ -64,6 +64,10 @@ func processOne(raw []byte) (out []byte, w, h int, animated bool, err error) {
 		return nil, 0, 0, false, ErrTooTall
 	}
 
+	rgba := ensureRGBA(img)
+	applyWatermark(rgba)
+	img = rgba
+
 	var buf bytes.Buffer
 	if err := webp.Encode(&buf, img, webp.Options{Quality: WebPQuality}); err != nil {
 		return nil, 0, 0, false, fmt.Errorf("webp encode: %w", err)
