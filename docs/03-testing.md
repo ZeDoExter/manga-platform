@@ -78,7 +78,7 @@ autoscale in front of the audience.
 ### Tooling
 
 - **k6** — `load/read-heavy.js` (50 VUs, 5 min: 1m ramp + 3m sustain + 1m down).
-- **Go `net/http/pprof`** — not wired into any service yet; when added, pull a profile before/during/after load to show where time goes.
+- **Go `net/http/pprof`** — wired in `pkg/httpapi` (opt-in via `PPROF_PORT`, localhost only, port-forward to reach). During load: `go tool pprof -http=:8081 http://localhost:6060/debug/pprof/profile?seconds=30` for the flame graph.
 - **`kubectl top pods` + OpenObserve dashboard** — live CPU and memory per pod during the run (this part works today).
 - **HPA (Horizontal Pod Autoscaler)** — `manga-reader-hpa` on `reader` (min 1, max 4, CPU 70%). All 9 Go services are PG-backed and scale-safe now.
 

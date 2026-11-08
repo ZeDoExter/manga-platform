@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"strconv"
@@ -193,13 +194,22 @@ func Run(service string, handler http.Handler) {
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-
 	go func() {
 		log.Printf("%s listening on %s", service, addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("%s server error: %v", service, err)
 		}
 	}()
+
+	// pprof on localhost only, opt-in via PPROF_PORT (e.g. "6060" for load-test profiling).
+	// Never exposed via K8s Service; reach it with kubectl port-forward.
+	if pprofPort := os.Getenv("PPROF_PORT"); pprofPort != "" {
+		go func() {
+			addr := net.JoinHostPort("127.0.0.1", pprofPort)
+			log.Printf("%s pprof on %s", service, addr)
+			_ = http.ListenAndServe(addr, nil)
+		}()
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
