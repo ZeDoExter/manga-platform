@@ -1,16 +1,33 @@
 package main
 
 import (
+	"context"
 	"errors"
+	"log"
 	"net/http"
+	"os"
 
+	dbmigrations "manga-platform/deploy/postgres"
 	"manga-platform/pkg/api"
 	"manga-platform/pkg/httpapi"
+	"manga-platform/pkg/pgmigrate"
 	"manga-platform/services/identity"
 )
 
+func newService(ctx context.Context) *identity.Service {
+	if os.Getenv("DATABASE_URL") == "" {
+		log.Print("identity: DATABASE_URL unset, using in-memory store")
+		return identity.NewService()
+	}
+	pool := pgmigrate.MustConnect(ctx)
+	if err := pgmigrate.Up(ctx, pool, dbmigrations.Migrations, dbmigrations.Dir); err != nil {
+		log.Fatalf("identity: migrate: %v", err)
+	}
+	return identity.NewServiceWithStore(identity.NewPGStore(pool))
+}
+
 func main() {
-	svc := identity.NewService()
+	svc := newService(context.Background())
 	mux := http.NewServeMux()
 	httpapi.Health(mux)
 

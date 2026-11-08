@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"manga-platform/services/catalog"
@@ -29,24 +28,23 @@ type Commerce interface {
 	CheckEntitlement(ctx context.Context, userID, chapterID string) (bool, error)
 }
 
+// Service holds validation + business rules; persistence goes through Store.
 type Service struct {
-	mu           sync.RWMutex
-	comments     map[string]*Comment   // key: comment_id
-	byChapter    map[string][]*Comment // key: chapter_id -> slice in chronological order
-	byStory      map[string][]*Comment // key: story_id -> slice in chronological order
-	blockedWords []string
-	catalog      Catalog
-	commerce     Commerce
+	catalog  Catalog
+	commerce Commerce
+	store    Store
 }
 
 func NewService(cat Catalog, com Commerce) *Service {
+	return NewServiceWithStore(cat, com, NewMemoryStore())
+}
+
+// NewServiceWithStore creates a service over any Store (e.g. PGStore).
+func NewServiceWithStore(cat Catalog, com Commerce, store Store) *Service {
 	return &Service{
-		comments:     make(map[string]*Comment),
-		byChapter:    make(map[string][]*Comment),
-		byStory:      make(map[string][]*Comment),
-		blockedWords: []string{"spam", "scam", "phishing", "illegal-download"},
-		catalog:      cat,
-		commerce:     com,
+		catalog:  cat,
+		commerce: com,
+		store:    store,
 	}
 }
 
@@ -54,13 +52,6 @@ func generateID(prefix string) string {
 	b := make([]byte, 8)
 	_, _ = rand.Read(b)
 	return prefix + "_" + hex.EncodeToString(b)
-}
-
-// AddBlockedWord configures prohibited words for moderation (FR-CM7).
-func (s *Service) AddBlockedWord(word string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.blockedWords = append(s.blockedWords, strings.ToLower(strings.TrimSpace(word)))
 }
 
 // PostComment posts a comment or a one-level reply (FR-CM2, FR-CM4, FR-CM5, FR-CM12).
@@ -76,15 +67,16 @@ func (s *Service) PostComment(ctx context.Context, req PostCommentRequest) (*Com
 	}
 
 	// 2. Blocked word check (FR-CM7)
-	s.mu.RLock()
+	blocked, err := s.store.ListBlockedWords(ctx)
+	if err != nil {
+		return nil, err
+	}
 	lowerBody := strings.ToLower(body)
-	for _, bw := range s.blockedWords {
+	for _, bw := range blocked {
 		if strings.Contains(lowerBody, bw) {
-			s.mu.RUnlock()
 			return nil, ErrBlockedWordFound
 		}
 	}
-	s.mu.RUnlock()
 
 	// 3. FR-CM12: Posting on a coin-locked chapter requires having unlocked it
 	if s.catalog != nil && s.commerce != nil {
@@ -97,20 +89,19 @@ func (s *Service) PostComment(ctx context.Context, req PostCommentRequest) (*Com
 		}
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	// 4. One-level reply enforcement (FR-CM5)
 	if req.ParentID != "" {
-		parent, exists := s.comments[req.ParentID]
-		if !exists {
+		parent, err := s.store.GetComment(ctx, req.ParentID)
+		if err != nil {
 			return nil, ErrCommentNotFound
 		}
 		// If the parent is already a reply, reject (one level only)
 		if parent.ParentID != "" {
 			return nil, ErrMaxReplyDepth
 		}
-		parent.ReplyCount++
+		if err := s.store.IncrementReplyCount(ctx, req.ParentID); err != nil {
+			return nil, err
+		}
 	}
 
 	comment := &Comment{
@@ -127,83 +118,55 @@ func (s *Service) PostComment(ctx context.Context, req PostCommentRequest) (*Com
 		CreatedAt:  time.Now(),
 	}
 
-	s.comments[comment.ID] = comment
-	s.byChapter[req.ChapterID] = append(s.byChapter[req.ChapterID], comment)
-	s.byStory[req.StoryID] = append(s.byStory[req.StoryID], comment)
+	if err := s.store.InsertComment(ctx, comment); err != nil {
+		return nil, err
+	}
 
 	return comment, nil
 }
 
+// AddBlockedWord configures prohibited words for moderation (FR-CM7).
+func (s *Service) AddBlockedWord(ctx context.Context, word string) error {
+	return s.store.AddBlockedWord(ctx, strings.ToLower(strings.TrimSpace(word)))
+}
+
 // ListChapterComments returns visible comments for a chapter using cursor pagination (FR-CM2).
 func (s *Service) ListChapterComments(ctx context.Context, chapterID string, cursor string, limit int) (*CommentPage, error) {
-	if limit <= 0 || limit > 50 {
-		limit = 20
-	}
-
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	all := s.byChapter[chapterID]
-	return s.paginateComments(all, cursor, limit)
+	return s.listScoped(ctx, "chapter", chapterID, cursor, limit)
 }
 
 // ListStoryComments returns story-wide comments labelled with chapter for all-comments view (FR-CM3).
 func (s *Service) ListStoryComments(ctx context.Context, storyID string, cursor string, limit int) (*CommentPage, error) {
+	return s.listScoped(ctx, "story", storyID, cursor, limit)
+}
+
+func (s *Service) listScoped(ctx context.Context, scope, scopeID, cursor string, limit int) (*CommentPage, error) {
 	if limit <= 0 || limit > 50 {
 		limit = 20
 	}
-
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	all := s.byStory[storyID]
-	return s.paginateComments(all, cursor, limit)
-}
-
-func (s *Service) paginateComments(all []*Comment, cursor string, limit int) (*CommentPage, error) {
-	var cursorNano int64 = 0
+	var cursorNano int64
 	if cursor != "" {
 		if val, err := strconv.ParseInt(cursor, 10, 64); err == nil {
 			cursorNano = val
 		}
 	}
 
-	var results []*Comment
-	// Iterate newest to oldest
-	for i := len(all) - 1; i >= 0; i-- {
-		item := all[i]
-		if item.Status == StatusHidden {
-			continue // Moderation hidden
-		}
-
-		itemNano := item.CreatedAt.UnixNano()
-		if cursorNano > 0 && itemNano >= cursorNano {
-			continue // Already seen in prior page
-		}
-
-		results = append(results, item)
-		if len(results) == limit {
-			break
-		}
+	rows, err := s.store.ListComments(ctx, scope, scopeID, cursorNano, limit)
+	if err != nil {
+		return nil, err
 	}
 
-	hasMore := false
+	hasMore := len(rows) > limit
+	if hasMore {
+		rows = rows[:limit]
+	}
 	var nextCursor string
-	if len(results) > 0 {
-		lastItem := results[len(results)-1]
-		nextCursor = strconv.FormatInt(lastItem.CreatedAt.UnixNano(), 10)
-
-		// Check if more items exist past lastItem
-		for i := len(all) - 1; i >= 0; i-- {
-			if all[i].Status != StatusHidden && all[i].CreatedAt.UnixNano() < lastItem.CreatedAt.UnixNano() {
-				hasMore = true
-				break
-			}
-		}
+	if len(rows) > 0 {
+		nextCursor = strconv.FormatInt(rows[len(rows)-1].CreatedAt.UnixNano(), 10)
 	}
 
 	return &CommentPage{
-		Comments:   results,
+		Comments:   rows,
 		NextCursor: nextCursor,
 		HasMore:    hasMore,
 	}, nil
@@ -216,11 +179,8 @@ func (s *Service) EditComment(ctx context.Context, commentID, userID, newBody st
 		return nil, ErrInvalidCommentBody
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	comment, exists := s.comments[commentID]
-	if !exists {
+	comment, err := s.store.GetComment(ctx, commentID)
+	if err != nil {
 		return nil, ErrCommentNotFound
 	}
 	if comment.UserID != userID {
@@ -230,6 +190,9 @@ func (s *Service) EditComment(ctx context.Context, commentID, userID, newBody st
 		return nil, ErrEditWindowExpired
 	}
 
+	if err := s.store.UpdateCommentBody(ctx, commentID, newBody); err != nil {
+		return nil, err
+	}
 	now := time.Now()
 	comment.Body = newBody
 	comment.EditedAt = &now
@@ -238,31 +201,21 @@ func (s *Service) EditComment(ctx context.Context, commentID, userID, newBody st
 
 // SoftDeleteComment marks a comment as deleted (FR-CM5).
 func (s *Service) SoftDeleteComment(ctx context.Context, commentID, userID string, isAdmin bool) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	comment, exists := s.comments[commentID]
-	if !exists {
+	comment, err := s.store.GetComment(ctx, commentID)
+	if err != nil {
 		return ErrCommentNotFound
 	}
 	if !isAdmin && comment.UserID != userID {
 		return ErrPermissionDenied
 	}
 
-	comment.Status = StatusDeleted
-	comment.Body = "[This comment has been deleted]"
-	return nil
+	if err := s.store.SetCommentStatus(ctx, commentID, StatusDeleted); err != nil {
+		return err
+	}
+	return s.store.UpdateCommentBody(ctx, commentID, "[This comment has been deleted]")
 }
 
 // SetCommentStatus allows Admins or Creators to hide/restore comments (FR-CM7, FR-CM8).
 func (s *Service) SetCommentStatus(ctx context.Context, commentID string, status CommentStatus) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	comment, exists := s.comments[commentID]
-	if !exists {
-		return ErrCommentNotFound
-	}
-	comment.Status = status
-	return nil
+	return s.store.SetCommentStatus(ctx, commentID, status)
 }

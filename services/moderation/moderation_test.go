@@ -85,7 +85,7 @@ func TestFR_D2_And_FR_M6_ModerationTakedownWorkflow(t *testing.T) {
 	}
 
 	// 4. Verify audit log entry (FR-D4)
-	logs := mod.GetAuditLogs(ctx)
+	logs, _ := mod.GetAuditLogs(ctx)
 	if len(logs) != 1 {
 		t.Fatalf("expected 1 audit log entry, got %d", len(logs))
 	}
@@ -117,7 +117,7 @@ func TestFR_D3_BanUserWithAudit(t *testing.T) {
 	}
 
 	// Verify audit log
-	logs := mod.GetAuditLogs(ctx)
+	logs, _ := mod.GetAuditLogs(ctx)
 	if len(logs) != 1 || logs[0].Action != "user_ban" {
 		t.Errorf("audit log not properly recorded: %+v", logs)
 	}

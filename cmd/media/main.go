@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -20,6 +21,20 @@ func userFromHeader(r *http.Request) (userID, role string) {
 func newStore() imagestore.ImageStore {
 	secret := []byte(httpapi.Env("HMAC_SECRET", "default-dev-hmac-secret-32-bytes"))
 	baseURL := httpapi.Env("CDN_BASE_URL", "https://img.yourmanga.com")
+	if os.Getenv("R2_ACCOUNT_ID") != "" {
+		store, err := imagestore.NewR2Store(context.Background(), imagestore.R2Config{
+			AccountID:       os.Getenv("R2_ACCOUNT_ID"),
+			AccessKeyID:     os.Getenv("R2_ACCESS_KEY_ID"),
+			SecretAccessKey: os.Getenv("R2_SECRET_ACCESS_KEY"),
+			BucketName:      httpapi.Env("R2_BUCKET", "dootoon-img"),
+			CustomDomain:    httpapi.Env("R2_CUSTOM_DOMAIN", baseURL),
+			TokenSecret:     secret,
+		})
+		if err != nil {
+			log.Fatalf("media: r2 store: %v", err)
+		}
+		return store
+	}
 	if dir := os.Getenv("MEDIA_LOCAL_DIR"); dir != "" {
 		store, err := imagestore.NewLocalStore(dir, baseURL, secret)
 		if err != nil {

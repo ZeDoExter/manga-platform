@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -49,19 +48,20 @@ type Session struct {
 	ExpiresAt time.Time `json:"expires_at"`
 }
 
+// Service holds validation + business rules; persistence goes through Store.
 type Service struct {
-	mu       sync.RWMutex
-	users    map[string]*User    // key: user_id
-	byEmail  map[string]*User    // key: normalized email
-	sessions map[string]*Session // key: token
+	store Store
 }
 
+// NewService creates an in-memory service (default for tests and local dev
+// without DATABASE_URL).
 func NewService() *Service {
-	return &Service{
-		users:    make(map[string]*User),
-		byEmail:  make(map[string]*User),
-		sessions: make(map[string]*Session),
-	}
+	return &Service{store: NewMemoryStore()}
+}
+
+// NewServiceWithStore creates a service over any Store (e.g. PGStore).
+func NewServiceWithStore(store Store) *Service {
+	return &Service{store: store}
 }
 
 func generateID(prefix string) string {
@@ -89,13 +89,6 @@ func (s *Service) SignUp(ctx context.Context, email, password string, role Role)
 		role = RoleUser
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if _, exists := s.byEmail[normEmail]; exists {
-		return nil, ErrUserExists
-	}
-
 	saltBytes := make([]byte, 16)
 	_, _ = rand.Read(saltBytes)
 	salt := hex.EncodeToString(saltBytes)
@@ -111,8 +104,9 @@ func (s *Service) SignUp(ctx context.Context, email, password string, role Role)
 		CreatedAt:    time.Now(),
 	}
 
-	s.users[user.ID] = user
-	s.byEmail[normEmail] = user
+	if err := s.store.InsertUser(ctx, user); err != nil {
+		return nil, err
+	}
 	return user, nil
 }
 
@@ -120,11 +114,8 @@ func (s *Service) SignUp(ctx context.Context, email, password string, role Role)
 func (s *Service) Login(ctx context.Context, email, password string) (*Session, error) {
 	normEmail := strings.ToLower(strings.TrimSpace(email))
 
-	s.mu.RLock()
-	user, exists := s.byEmail[normEmail]
-	s.mu.RUnlock()
-
-	if !exists {
+	user, err := s.store.GetUserByEmail(ctx, normEmail)
+	if err != nil {
 		return nil, ErrInvalidPassword
 	}
 	if user.Banned {
@@ -148,25 +139,25 @@ func (s *Service) Login(ctx context.Context, email, password string) (*Session, 
 		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
 
-	s.mu.Lock()
-	s.sessions[token] = session
-	s.mu.Unlock()
+	if err := s.store.InsertSession(ctx, session); err != nil {
+		return nil, err
+	}
 
 	return session, nil
 }
 
 // ValidateSession retrieves the session and validates expiry.
 func (s *Service) ValidateSession(ctx context.Context, token string) (*Session, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	session, exists := s.sessions[token]
-	if !exists || time.Now().After(session.ExpiresAt) {
+	session, err := s.store.GetSession(ctx, token)
+	if err != nil {
+		return nil, ErrUnauthorized
+	}
+	if time.Now().After(session.ExpiresAt) {
 		return nil, ErrUnauthorized
 	}
 
-	user, userExists := s.users[session.UserID]
-	if !userExists || user.Banned {
+	user, err := s.store.GetUser(ctx, session.UserID)
+	if err != nil || user.Banned {
 		return nil, ErrUserBanned
 	}
 
@@ -176,11 +167,8 @@ func (s *Service) ValidateSession(ctx context.Context, token string) (*Session, 
 // CanEditStory enforces the invariant: "Uploader rights are per-story, not global" (FR-A2).
 // Admins can edit any story. Uploaders can only edit stories they own or are team members of.
 func (s *Service) CanEditStory(userID string, storyOwnerID string, storyTeamIDs []string) (bool, error) {
-	s.mu.RLock()
-	user, exists := s.users[userID]
-	s.mu.RUnlock()
-
-	if !exists {
+	user, err := s.store.GetUser(context.Background(), userID)
+	if err != nil {
 		return false, ErrUserNotFound
 	}
 	if user.Banned {
@@ -208,13 +196,5 @@ func (s *Service) CanEditStory(userID string, storyOwnerID string, storyTeamIDs 
 
 // SetBanStatus allows Admins to ban or unban users (FR-D3).
 func (s *Service) SetBanStatus(ctx context.Context, targetUserID string, banned bool) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	user, exists := s.users[targetUserID]
-	if !exists {
-		return ErrUserNotFound
-	}
-	user.Banned = banned
-	return nil
+	return s.store.SetBanStatus(ctx, targetUserID, banned)
 }

@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"errors"
+	"log"
 	"net/http"
+	"os"
 
+	dbmigrations "manga-platform/deploy/postgres"
 	"manga-platform/pkg/clients"
 	"manga-platform/pkg/httpapi"
 	"manga-platform/pkg/imagestore"
+	"manga-platform/pkg/pgmigrate"
 	"manga-platform/services/catalog"
 	"manga-platform/services/commerce"
 	"manga-platform/services/identity"
@@ -25,16 +30,25 @@ type banUserRequest struct {
 	Reason  string `json:"reason"`
 }
 
-func main() {
+func newService(ctx context.Context) *moderation.Service {
 	secret := []byte(httpapi.Env("HMAC_SECRET", "default-dev-hmac-secret-32-bytes"))
 	store := imagestore.NewMemoryStore(httpapi.Env("CDN_BASE_URL", "https://img.yourmanga.com"), secret)
+	cat := clients.NewCatalog(httpapi.Env("CATALOG_URL", "http://localhost:8082"))
+	com := clients.NewCommerce(httpapi.Env("COMMERCE_URL", "http://localhost:8083"))
+	id := clients.NewIdentity(httpapi.Env("IDENTITY_URL", "http://localhost:8081"))
+	if os.Getenv("DATABASE_URL") == "" {
+		log.Print("moderation: DATABASE_URL unset, using in-memory store")
+		return moderation.NewService(cat, com, id, store)
+	}
+	pool := pgmigrate.MustConnect(ctx)
+	if err := pgmigrate.Up(ctx, pool, dbmigrations.Migrations, dbmigrations.Dir); err != nil {
+		log.Fatalf("moderation: migrate: %v", err)
+	}
+	return moderation.NewServiceWithStore(cat, com, id, store, moderation.NewPGStore(pool))
+}
 
-	svc := moderation.NewService(
-		clients.NewCatalog(httpapi.Env("CATALOG_URL", "http://localhost:8082")),
-		clients.NewCommerce(httpapi.Env("COMMERCE_URL", "http://localhost:8083")),
-		clients.NewIdentity(httpapi.Env("IDENTITY_URL", "http://localhost:8081")),
-		store,
-	)
+func main() {
+	svc := newService(context.Background())
 
 	mux := http.NewServeMux()
 	httpapi.Health(mux)
@@ -84,7 +98,12 @@ func main() {
 	})
 
 	mux.HandleFunc("GET /audit-logs", func(w http.ResponseWriter, r *http.Request) {
-		httpapi.JSON(w, http.StatusOK, svc.GetAuditLogs(r.Context()))
+		logs, err := svc.GetAuditLogs(r.Context())
+		if err != nil {
+			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		httpapi.JSON(w, http.StatusOK, logs)
 	})
 
 	httpapi.Run("moderation", mux)

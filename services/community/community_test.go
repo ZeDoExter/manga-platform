@@ -230,8 +230,18 @@ func TestFR_CM5_EditWindowAndIDOR(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SoftDelete failed: %v", err)
 	}
-	if cmt.Status != community.StatusDeleted {
-		t.Errorf("expected status deleted, got %s", cmt.Status)
+	page, _ := comm.ListChapterComments(ctx, "c1", "", 10)
+	found := false
+	for _, c := range page.Comments {
+		if c.ID == cmt.ID {
+			found = true
+			if c.Status != community.StatusDeleted {
+				t.Errorf("expected status deleted, got %s", c.Status)
+			}
+		}
+	}
+	if !found {
+		t.Error("expected deleted comment still listed (soft delete)")
 	}
 }
 

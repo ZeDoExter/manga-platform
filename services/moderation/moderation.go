@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
-	"sync"
 	"time"
 
 	"manga-platform/pkg/imagestore"
@@ -40,21 +39,25 @@ type Identity interface {
 }
 
 type Service struct {
-	mu        sync.RWMutex
-	catalog   Catalog
-	commerce  Commerce
-	identity  Identity
-	storage   imagestore.ImageStore
-	auditLogs []*AuditLog
+	catalog  Catalog
+	commerce Commerce
+	identity Identity
+	storage  imagestore.ImageStore
+	store    Store
 }
 
 func NewService(cat Catalog, com Commerce, id Identity, store imagestore.ImageStore) *Service {
+	return NewServiceWithStore(cat, com, id, store, NewMemoryStore())
+}
+
+// NewServiceWithStore creates a service over any Store (e.g. PGStore).
+func NewServiceWithStore(cat Catalog, com Commerce, id Identity, imgStore imagestore.ImageStore, store Store) *Service {
 	return &Service{
-		catalog:   cat,
-		commerce:  com,
-		identity:  id,
-		storage:   store,
-		auditLogs: make([]*AuditLog, 0),
+		catalog:  cat,
+		commerce: com,
+		identity: id,
+		storage:  imgStore,
+		store:    store,
 	}
 }
 
@@ -98,8 +101,6 @@ func (s *Service) TakedownChapter(ctx context.Context, adminID string, chapterID
 	}
 
 	// 4. Record audit log (FR-D4)
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	logEntry := &AuditLog{
 		ID:        generateID("audit"),
 		AdminID:   adminID,
@@ -108,7 +109,9 @@ func (s *Service) TakedownChapter(ctx context.Context, adminID string, chapterID
 		Reason:    reason,
 		CreatedAt: time.Now(),
 	}
-	s.auditLogs = append(s.auditLogs, logEntry)
+	if err := s.store.InsertAuditLog(ctx, logEntry); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -123,8 +126,6 @@ func (s *Service) BanUser(ctx context.Context, adminID, targetUserID, reason str
 		return err
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	logEntry := &AuditLog{
 		ID:        generateID("audit"),
 		AdminID:   adminID,
@@ -133,16 +134,14 @@ func (s *Service) BanUser(ctx context.Context, adminID, targetUserID, reason str
 		Reason:    reason,
 		CreatedAt: time.Now(),
 	}
-	s.auditLogs = append(s.auditLogs, logEntry)
+	if err := s.store.InsertAuditLog(ctx, logEntry); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 // GetAuditLogs returns the immutable audit trail (FR-D4).
-func (s *Service) GetAuditLogs(ctx context.Context) []*AuditLog {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	out := make([]*AuditLog, len(s.auditLogs))
-	copy(out, s.auditLogs)
-	return out
+func (s *Service) GetAuditLogs(ctx context.Context) ([]*AuditLog, error) {
+	return s.store.ListAuditLogs(ctx)
 }

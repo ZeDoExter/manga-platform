@@ -43,6 +43,11 @@ spec:
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
               value: "root@example.com:Complexpass#123"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-auth
+                  key: DATABASE_URL
           livenessProbe:
             httpGet:
               path: /healthz
@@ -347,6 +352,11 @@ spec:
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
               value: "root@example.com:Complexpass#123"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-auth
+                  key: DATABASE_URL
             - name: CATALOG_URL
               value: "http://catalog"
             - name: COMMERCE_URL
@@ -431,6 +441,11 @@ spec:
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
               value: "root@example.com:Complexpass#123"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-auth
+                  key: DATABASE_URL
             - name: CATALOG_URL
               value: "http://catalog"
             - name: COMMERCE_URL
@@ -646,19 +661,35 @@ spec:
           env:
             - name: PORT
               value: "8080"
-            - name: MEDIA_LOCAL_DIR
-              value: "/data/images"
             - name: MEDIA_MAX_CONCURRENT
               value: "2"
+            - name: CDN_BASE_URL
+              value: "https://img.dootoon.store"
+            - name: R2_BUCKET
+              value: "dootoon-img"
+            - name: R2_CUSTOM_DOMAIN
+              value: "https://img.dootoon.store"
+            - name: R2_ACCOUNT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: r2-credentials
+                  key: R2_ACCOUNT_ID
+            - name: R2_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: r2-credentials
+                  key: R2_ACCESS_KEY_ID
+            - name: R2_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: r2-credentials
+                  key: R2_SECRET_ACCESS_KEY
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "otel-collector.observability.svc.cluster.local:4318"
             - name: OOLOG_URL
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
               value: "root@example.com:Complexpass#123"
-          volumeMounts:
-            - name: images
-              mountPath: /data/images
           livenessProbe:
             httpGet:
               path: /healthz
@@ -679,14 +710,10 @@ spec:
           resources:
             requests:
               cpu: "100m"
-              memory: "256Mi"
+              memory: "128Mi"
             limits:
-              cpu: "1000m"
-              memory: "1Gi"
-      volumes:
-        - name: images
-          persistentVolumeClaim:
-            claimName: media-images
+              cpu: "500m"
+              memory: "512Mi"
 ---
 apiVersion: apps/v1
 kind: Deployment
