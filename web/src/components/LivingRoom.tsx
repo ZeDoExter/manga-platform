@@ -110,6 +110,32 @@ export function LivingRoom({
     [mine, shared, state.accountId],
   );
 
+  // Zone clustering: merge echoes + heat into 10% bands (max 10 markers).
+  // Each zone shows the top emoji + total count — no more scattered dots.
+  const zones = useMemo(() => {
+    const buckets: Record<number, { kinds: Record<string, number>; total: number; mine: boolean }> = {};
+    const add = (pct: number, kind: string, count: number, isMine: boolean) => {
+      const z = Math.min(9, Math.floor(Math.max(0, Math.min(1, pct)) * 10));
+      buckets[z] ??= { kinds: {}, total: 0, mine: false };
+      buckets[z].kinds[kind] = (buckets[z].kinds[kind] ?? 0) + count;
+      buckets[z].total += count;
+      if (isMine) buckets[z].mine = true;
+    };
+    for (const e of echoes) add(e.pct, e.kind, e.count, !!e.mine);
+    if (totalPages > 0) {
+      for (const [pageStr, counts] of Object.entries(heat)) {
+        const pct = (Number(pageStr) - 0.5) / totalPages;
+        for (const [kind, count] of Object.entries(counts)) add(pct, kind, count, false);
+      }
+    }
+    return Object.entries(buckets)
+      .map(([z, b]) => {
+        const top = Object.entries(b.kinds).sort((a, c) => c[1] - a[1])[0];
+        return { zone: Number(z), pct: (Number(z) + 0.5) / 10, kind: top[0] as EchoKind, total: b.total, mine: b.mine };
+      })
+      .sort((a, b) => a.zone - b.zone);
+  }, [echoes, heat, totalPages]);
+
   const [hover, setHover] = useState<number | null>(null);
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [open, setOpen] = useState(false);
@@ -301,8 +327,7 @@ export function LivingRoom({
   };
 
 
-  const hv = hover !== null ? echoes[hover] : null;
-
+  const hv = hover !== null ? zones[hover] ?? null : null;
   return (
     <>
       {/* Echo markers pinned directly onto the right-edge scrollbar of `scroll-y absolute inset-0` */}
@@ -311,56 +336,30 @@ export function LivingRoom({
           className="pointer-events-none fixed inset-y-0 right-0 z-[45] w-3.5 select-none"
           aria-label="Community echoes on scrollbar"
         >
-          {echoes.map((e, i) => {
-            const sz = 10 + Math.min(8, Math.log10(e.count + 1) * 2.5);
-            const topPos = `calc(8px + ${Math.min(1, Math.max(0, e.pct)) * 100}% * 0.96)`;
+          {zones.map((z, i) => {
+            const intensity = Math.min(1, z.total / 20);
+            const sz = 22 + intensity * 10;
             return (
               <button
-                key={i}
+                key={z.zone}
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
                 onFocus={() => setHover(i)}
                 onBlur={() => setHover(null)}
-                onClick={() => onJump(e.pct)}
-                aria-label={`${e.count} readers ${ECHO_LABEL[e.kind]} at ${Math.round(e.pct * 100)} percent`}
-                className="pointer-events-auto absolute right-[1px] grid -translate-y-1/2 place-items-center rounded-full border border-line/80 bg-card text-[9px] leading-none shadow-sm transition-transform hover:z-20 hover:scale-150"
+                onClick={() => onJump(z.pct)}
+                aria-label={`${z.total} reactions in ${z.zone * 10}-${z.zone * 10 + 10} percent, top ${ECHO_LABEL[z.kind]}`}
+                className="pointer-events-auto absolute right-[1px] grid -translate-y-1/2 place-items-center rounded-full border-2 border-line bg-hl text-[11px] leading-none shadow transition-transform hover:z-20 hover:scale-150"
                 style={{
-                  top: topPos,
+                  top: `calc(8px + ${z.pct * 100}% * 0.96)`,
                   width: sz,
                   height: sz,
-                  outline: e.mine ? "2px solid var(--accent)" : e.live ? "2px solid var(--hl)" : undefined,
-                }}
-              >
-                <span className="scale-[.65]">{ECHO_EMOJI[e.kind]}</span>
-              </button>
-            );
-          })}
-          {/* Persistent heatmap peaks (SoundCloud-style): per-page top emoji + count */}
-          {totalPages > 0 && Object.entries(heat).map(([pageStr, counts]) => {
-            const page = Number(pageStr);
-            const entries = Object.entries(counts);
-            if (!entries.length) return null;
-            const [topKind, topCount] = entries.sort((a, b) => b[1] - a[1])[0];
-            const total = entries.reduce((a, [, c]) => a + c, 0);
-            const pct = Math.min(1, Math.max(0, (page - 0.5) / totalPages));
-            const intensity = Math.min(1, total / 20);
-            return (
-              <button
-                key={`heat-${page}`}
-                onClick={() => onJump(pct)}
-                aria-label={`Page ${page}: ${total} reactions, top ${topKind}`}
-                title={`p.${page} · ${entries.map(([k, c]) => `${k}×${c}`).join(" ")}`}
-                className="pointer-events-auto absolute right-[15px] grid -translate-y-1/2 place-items-center rounded-full border-2 border-line bg-hl text-[10px] leading-none shadow transition-transform hover:z-20 hover:scale-150"
-                style={{
-                  top: `calc(8px + ${pct * 100}% * 0.96)`,
-                  width: 20 + intensity * 10,
-                  height: 20 + intensity * 10,
                   opacity: 0.75 + intensity * 0.25,
+                  outline: z.mine ? "2px solid var(--accent)" : undefined,
                 }}
               >
-                <span>{ECHO_EMOJI[topKind as EchoKind] ?? "💬"}</span>
+                <span>{ECHO_EMOJI[z.kind]}</span>
                 <span className="absolute -bottom-1 -right-1 grid min-w-4 place-items-center rounded-full border border-line bg-ink px-0.5 font-mono text-[0.55rem] font-bold text-paper">
-                  {total > 99 ? "99+" : total}
+                  {z.total > 99 ? "99+" : z.total}
                 </span>
               </button>
             );
@@ -368,15 +367,13 @@ export function LivingRoom({
           {hv && hover !== null && (
             <div
               className="pointer-events-none absolute right-5 w-52 -translate-y-1/2 rounded-md border-2 border-line bg-card p-2.5 text-ink shadow-[3px_3px_0_var(--shadow)]"
+              style={{ top: `calc(8px + ${Math.min(0.92, Math.max(0.08, hv.pct)) * 100}% * 0.96)` }}
             >
               <div className="flex items-center gap-1.5 text-sm font-extrabold">
                 <span>{ECHO_EMOJI[hv.kind]}</span>
-                {hv.live ? ECHO_LABEL[hv.kind] : `${fmtNum(hv.count)} ${ECHO_LABEL[hv.kind]}`}
-                {hv.live && (
-                  <span className="chip !border-line !bg-hl !px-1.5 !py-0 !text-[0.55rem] !text-[#15120f]">live</span>
-                )}
+                {fmtNum(hv.total)} reactions · {hv.zone * 10}-{hv.zone * 10 + 10}%
               </div>
-              <div className="mt-0.5 text-xs italic text-ink2">“{hv.text}”</div>
+              <div className="mt-0.5 text-xs italic text-ink2">Top: {ECHO_LABEL[hv.kind]}</div>
             </div>
           )}
         </div>
