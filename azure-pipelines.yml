@@ -23,6 +23,7 @@ variables:
   resourceGroup: "manga-demo-rg"
   aksName: "manga-demo-aks"
   serviceConnection: "dootoon-azure"
+  acrConnection: "dootoon-acr"
   minCoverage: "80"
 
 stages:
@@ -123,7 +124,7 @@ stages:
           - task: Docker@2
             displayName: "Build + push $(image)"
             inputs:
-              containerRegistry: "$(serviceConnection)"
+              containerRegistry: "$(acrConnection)"
               repository: "$(image)"
               command: buildAndPush
               Dockerfile: Dockerfile
@@ -140,7 +141,7 @@ stages:
           - task: Docker@2
             displayName: "Build + push manga-web"
             inputs:
-              containerRegistry: "$(serviceConnection)"
+              containerRegistry: "$(acrConnection)"
               repository: "manga-web"
               command: buildAndPush
               Dockerfile: web/Dockerfile
