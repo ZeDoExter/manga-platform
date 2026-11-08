@@ -583,49 +583,40 @@ export function LivingRoom({
               </div>
             )}
 
-            {/* Card 4: Persistent comments feed (stays, react inline) */}
+            {/* Card 4: Reaction totals (compact, SoundCloud-style) */}
             {!preview && (
               <div className="panel anim-pop w-full p-3.5" style={{ animationDelay: "120ms" }}>
-                <button
-                  onClick={() => setFeedOpen((o) => !o)}
-                  aria-expanded={feedOpen}
-                  className="flex w-full items-center justify-between"
-                >
+                <div className="mb-2 flex items-center justify-between">
                   <span className="label flex items-center gap-1.5 !text-[#15120f]">
-                    <Icon name="chat" size={12} className="text-accent" /> Comments · {feed.length}
+                    <Icon name="chat" size={12} className="text-accent" /> Reactions · {feed.length} comments
                   </span>
-                  <Icon name={feedOpen ? "up" : "down"} size={13} />
-                </button>
-                {feedOpen && (
-                  feed.length === 0 ? (
-                    <p className="mt-2 text-xs italic text-muted">No paid comments yet — be the first to say it loud.</p>
-                  ) : (
-                    <ul className="scroll-y mt-2 max-h-56 space-y-2 pr-1">
-                      {feed.map((c) => (
-                        <li key={c.id} className="rounded-md border-2 border-line bg-paper p-2">
-                          <div className="flex items-center gap-1.5 text-xs font-extrabold">
-                            <span className="truncate">@{c.user}</span>
-                            <span className="chip !px-1.5 !py-0 !text-[0.6rem]">🪙{c.coins}</span>
-                            <span className="ml-auto shrink-0 font-mono text-[0.6rem] text-muted">p.{c.page}</span>
-                          </div>
-                          <p className="mt-1 text-xs leading-snug">{c.text}</p>
-                          <div className="mt-1.5 flex gap-1" role="group" aria-label={`React to @${c.user}`}>
-                            {(Object.keys(ECHO_EMOJI) as EchoKind[]).map((k) => (
-                              <button
-                                key={k}
-                                onClick={() => drop(k)}
-                                title={`React ${ECHO_EMOJI[k]}`}
-                                aria-label={`React ${ECHO_LABEL[k]} to @${c.user}`}
-                                className="grid size-7 place-items-center rounded-md border border-line/60 bg-paper2 text-sm transition-transform hover:-translate-y-0.5 hover:bg-hl active:translate-y-0"
-                              >
-                                {ECHO_EMOJI[k]}
-                              </button>
-                            ))}
-                          </div>
+                </div>
+                {feed.length === 0 && Object.keys(heat).length === 0 ? (
+                  <p className="text-xs italic text-muted">No reactions yet — drop the first echo.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {(Object.keys(ECHO_EMOJI) as EchoKind[])
+                      .map((k) => ({
+                        kind: k,
+                        count: Object.values(heat).reduce((a, counts) => a + (counts[k] ?? 0), 0),
+                      }))
+                      .filter((r) => r.count > 0)
+                      .sort((a, b) => b.count - a.count)
+                      .map((r) => (
+                        <li key={r.kind} className="flex items-center gap-2 rounded-md border border-line/40 bg-paper px-2 py-1.5">
+                          <span className="text-base leading-none">{ECHO_EMOJI[r.kind]}</span>
+                          <span className="text-xs font-extrabold capitalize">{ECHO_LABEL[r.kind]}</span>
+                          <span className="ml-auto font-mono text-xs font-bold">×{r.count}</span>
+                          <button
+                            onClick={() => drop(r.kind)}
+                            aria-label={`React ${ECHO_LABEL[r.kind]}`}
+                            className="rounded-md border border-line/60 bg-paper2 px-2 py-0.5 text-xs font-extrabold transition-colors hover:bg-hl"
+                          >
+                            +
+                          </button>
                         </li>
                       ))}
-                    </ul>
-                  )
+                  </ul>
                 )}
               </div>
             )}

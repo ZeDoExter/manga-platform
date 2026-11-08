@@ -126,26 +126,15 @@ export function MangaReader({ story, chapter, title, nav, content, preview, onCl
     if (!el || mode !== "scroll") return;
     let last = el.scrollTop;
     let frame = 0;
-    let hideTimer = 0;
-    let shownAt = 0;
     const run = () => {
       frame = 0;
       const t = el.scrollTop;
       const max = el.scrollHeight - el.clientHeight;
       if (max > 0) setScrollPct(Math.round(Math.min(1, Math.max(0, t / max)) * 200) / 200);
       if (Math.abs(t - last) > 14) {
-        const up = t < last;
+        // Scroll-up sticks forever; only a real scroll-down hides.
+        setChrome(t < last || t < 80);
         last = t;
-        if (up || t < 80) {
-          // Scroll-up: stick visible, restart 2s grace.
-          clearTimeout(hideTimer);
-          shownAt = performance.now();
-          setChrome(true);
-          hideTimer = window.setTimeout(() => { hideTimer = 0; setChrome(false); }, 2000);
-        } else if (performance.now() - shownAt >= 2000) {
-          // Scroll-down only hides after the grace window expired.
-          setChrome(false);
-        }
       }
     };
     const h = () => {
@@ -155,7 +144,6 @@ export function MangaReader({ story, chapter, title, nav, content, preview, onCl
     return () => {
       el.removeEventListener("scroll", h);
       cancelAnimationFrame(frame);
-      clearTimeout(hideTimer);
     };
   }, [mode]);
 
