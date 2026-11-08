@@ -1,0 +1,55 @@
+# Production gateway: real dootoon.store hosts + Let's Encrypt cert.
+# Apply AFTER dootoon-tls certificate is READY:
+#   kubectl apply -f deploy/k8s/gateway-prod.yaml
+# Keep gateway.yaml (manga.local) for local minikube; do not apply both
+# Gateways with the same listeners to one cluster.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: manga
+spec:
+  gatewayClassName: envoy
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: dootoon-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: manga-api
+spec:
+  parentRefs:
+    - name: manga
+  hostnames: [dootoon.store, api.dootoon.store]
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: gateway
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: obs-ui
+spec:
+  parentRefs:
+    - name: manga
+  hostnames: [obs.dootoon.store]
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: openobserve
+          namespace: observability
+          port: 5080
