@@ -124,7 +124,6 @@ export function LivingRoom({
         for (const [pageStr, counts] of Object.entries(heat)) {
           const pct = (Number(pageStr) - 0.5) / totalPages;
           for (const [kind, count] of Object.entries(counts)) {
-            if (kind === "paid") continue;
             add(pct, kind, count, false);
           }
         }
