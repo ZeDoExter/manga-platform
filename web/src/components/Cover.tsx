@@ -276,7 +276,7 @@ export const Cover = memo(function Cover({ story, className, compact, rank, prio
         </>
       )}
       {rank !== undefined && (
-        <span className="absolute left-0 top-0 grid h-[16cqw] min-w-[16cqw] place-items-center bg-accent px-[3cqw] font-display text-[8cqw] text-white [clip-path:polygon(0_0,100%_0,82%_100%,0_100%)]">{rank}</span>
+        <span className="absolute left-0 top-0 grid h-[20cqw] min-w-[20cqw] place-items-center bg-accent px-[4cqw] font-display text-[11cqw] text-white [clip-path:polygon(0_0,100%_0,82%_100%,0_100%)]">{rank}</span>
       )}
     </div>
   );
