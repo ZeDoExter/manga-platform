@@ -136,7 +136,7 @@ export function LivingRoom({
       .map(([z, b]) => {
         const sorted = Object.entries(b.kinds).sort((a, c) => c[1] - a[1]);
         const top = sorted.find(([k]) => k !== "paid") ?? sorted[0];
-        return { zone: Number(z), pct: (Number(z) + 0.5) / 10, kind: top[0] as EchoKind, total: b.total, mine: b.mine };
+        return { zone: Number(z), pct: (Number(z) + 0.5) / 10, kind: top[0] as EchoKind, total: b.total, mine: b.mine, kinds: b.kinds };
       })
       .sort((a, b) => a.zone - b.zone);
   }, [echoes, heat, totalPages]);
@@ -181,54 +181,56 @@ export function LivingRoom({
     const hitZones = new Map<number, { kinds: Record<string, number>; total: number }>();
     for (const z of zones) {
       if (z.pct < minP || z.pct > maxP) continue;
-      hitZones.set(z.zone, { kinds: { [z.kind]: z.total }, total: z.total });
+      hitZones.set(z.zone, { kinds: z.kinds, total: z.total });
     }
     if (hitZones.size === 0) return;
     const now = performance.now();
     const fresh = [...hitZones.entries()].filter(([z]) => now - (cooldowns.current.get(z + 100) ?? 0) > 5000);
     if (fresh.length === 0) return;
     for (const [z] of fresh) cooldowns.current.set(z + 100, now);
-    // ONE bubble: if a paid comment sits in these zones, show its text.
-    // Otherwise show the top echo kind + total. Never both.
+    // Paid first (up to 3), then ONE echo rollup. Never paid OR echo.
     const pageNow = totalPages > 0 ? Math.max(1, Math.min(totalPages, Math.floor(progress * totalPages) + 1)) : 0;
     const paidHere = feed
       .filter((c) => Math.abs(c.page - pageNow) <= 1)
-      .sort((a, b) => b.coins - a.coins || b.at - a.at)[0];
-    if (paidHere) {
+      .sort((a, b) => b.coins - a.coins || b.at - a.at)
+      .slice(0, 3);
+    for (const c of paidHere) {
       pushFloater(
         {
           emoji: "💬",
-          text: paidHere.text,
-          sub: `@${paidHere.user} · 🪙${paidHere.coins} · p.${paidHere.page}`,
+          text: c.text,
+          sub: `@${c.user} · 🪙${c.coins} · p.${c.page}`,
           x: 4,
           y: 44,
-          mine: paidHere.mine,
+          mine: c.mine,
         },
         8000,
       );
-      return;
     }
     let best = { kind: "fire" as EchoKind, total: 0 };
     let grand = 0;
     for (const [, b] of fresh) {
-      grand += b.total;
-      const top = Object.entries(b.kinds).sort((a, c) => c[1] - a[1])[0];
-      if (top && b.total >= best.total) {
-        best = { kind: top[0] as EchoKind, total: b.total };
+      const nonPaid = Object.entries(b.kinds).filter(([k]) => k !== "paid");
+      const etotal = nonPaid.reduce((a, [, n]) => a + n, 0);
+      grand += etotal;
+      const top = nonPaid.sort((a, c) => c[1] - a[1])[0];
+      if (top && etotal >= best.total) {
+        best = { kind: top[0] as EchoKind, total: etotal };
       }
     }
-    if (grand === 0) return;
-    pushFloater(
-      {
-        emoji: ECHO_EMOJI[best.kind],
-        text: `${ECHO_LABEL[best.kind]} · ${grand}`,
-        sub: fresh.length > 1 ? `${fresh.length} zones` : undefined,
-        x: 4,
-        y: 44,
-        mine: false,
-      },
-      8000,
-    );
+    if (grand > 0) {
+      pushFloater(
+        {
+          emoji: ECHO_EMOJI[best.kind],
+          text: `${ECHO_LABEL[best.kind]} · ${grand}`,
+          sub: fresh.length > 1 ? `${fresh.length} zones` : undefined,
+          x: 4,
+          y: 44,
+          mine: false,
+        },
+        8000,
+      );
+    }
   }, [progress, echoes, heat, totalPages, quiet, preview, feed]);
   // Daily echo budget: 3 free echoes per day, persisted in localStorage.
   useEffect(() => {
