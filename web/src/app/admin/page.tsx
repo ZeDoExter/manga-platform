@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApp } from "@/lib/store";
 import { economyApi } from "@/lib/economy-client";
-import { DEMO_ADMIN, banUser, fetchAuditLogs, takedownChapter, type AuditLog } from "@/lib/admin-api";
+import { banUser, fetchAuditLogs, takedownChapter, type AuditLog } from "@/lib/admin-api";
 import { Empty, Icon, SectionHead } from "@/components/ui";
 import { fmtNum } from "@/lib/util";
 
@@ -34,7 +35,7 @@ function Field({
 const DAILY_BASE = [420, 480, 455, 530, 610, 590, 675, 720, 695, 790, 840, 815, 910, 980];
 
 export default function AdminPage() {
-  const { toast, catalog, account, act } = useApp();
+  const { toast, catalog, account } = useApp();
   const [chapterID, setChapterID] = useState("");
   const [takedownReason, setTakedownReason] = useState("");
   const [banTarget, setBanTarget] = useState("");
@@ -105,7 +106,7 @@ export default function AdminPage() {
     }
     setBusy("takedown");
     try {
-      await takedownChapter(DEMO_ADMIN, id, reason);
+      await takedownChapter(account.id, id, reason);
       toast(`Chapter ${id} taken down`, "ok");
       setChapterID("");
       setTakedownReason("");
@@ -126,7 +127,7 @@ export default function AdminPage() {
     }
     setBusy("ban");
     try {
-      await banUser(DEMO_ADMIN, id, reason);
+      await banUser(account.id, id, reason);
       toast(`User ${id} banned`, "ok");
       setBanTarget("");
       setBanReason("");
@@ -149,13 +150,9 @@ export default function AdminPage() {
           <p className="mt-2 text-sm text-muted">
             The Operations & Moderation Dashboard is restricted to platform administrators.
           </p>
-          <button
-            type="button"
-            onClick={() => act.switchAccount("admin-1")}
-            className="btn btn-accent mt-6 w-full justify-center"
-          >
-            Switch to System Admin role
-          </button>
+          <Link href="/login" className="btn btn-accent mt-6 w-full justify-center">
+            Sign in as admin
+          </Link>
         </div>
       </div>
     );

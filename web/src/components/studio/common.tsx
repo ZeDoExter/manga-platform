@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 import type { Mood, Motif, PagePreset, Story, StudioChapter, StudioStory } from "@/lib/types";
 import { isVisual } from "@/lib/types";
@@ -24,15 +25,15 @@ export const PALETTES: [string, string, string][] = [
 export const PRESET_LABEL: Record<PagePreset, string> = { action: "Action", dialogue: "Dialogue", establishing: "Establishing", closeup: "Close-ups", splash: "Splash", blank: "Blank frames" };
 
 export function CreatorGate({ children }: { children: ReactNode }) {
-  const { account, act } = useApp();
+  const { account } = useApp();
   if (account.role !== "creator")
     return (
       <div className="wrap py-20">
         <Empty
           icon="pen"
           title="The Studio is for Uploader accounts"
-          text={`You’re signed in as ${account.name}, a Reader. Switch to the demo Uploader (Ren Akitsuki) to create stories, write chapters, schedule releases and open the Analytics Lab.`}
-          action={<button className="btn btn-accent" onClick={() => act.switchAccount("ren-akitsuki")}>Switch to Ren Akitsuki (Uploader)</button>}
+          text={`You're signed in as ${account.name} (${account.role}). Sign in with a creator account to create stories, write chapters, schedule releases and open the Analytics Lab.`}
+          action={<Link href="/login" className="btn btn-accent">Sign in as creator</Link>}
         />
       </div>
     );

@@ -210,7 +210,7 @@ export function CreatorSpotlight() {
 }
 
 export function StudioBanner() {
-  const { account, act } = useApp();
+  const { account } = useApp();
   const creator = account.role === "creator";
   return (
     <div className="panel relative overflow-hidden bg-hl p-6 md:p-10" style={{ background: "var(--hl)" }}>
@@ -225,7 +225,7 @@ export function StudioBanner() {
           {creator ? (
             <Link href="/studio" className="btn !px-5 !py-3">Open your Studio <Icon name="arrow" size={16} /></Link>
           ) : (
-            <button className="btn !px-5 !py-3" onClick={() => act.switchAccount("ren-akitsuki")}>Try the Uploader demo <Icon name="arrow" size={16} /></button>
+            <Link href="/login" className="btn !px-5 !py-3">Sign in as creator <Icon name="arrow" size={16} /></Link>
           )}
           <Link href="/studio/new" className="btn btn-ghost !border-[#15120f]">New story</Link>
         </div>

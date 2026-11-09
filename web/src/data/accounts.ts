@@ -23,7 +23,6 @@ export const READERS: Account[] = [
 
 export const ACCOUNTS: Account[] = [...READERS, ...CREATORS];
 export const ACCOUNT_MAP: Record<string, Account> = Object.fromEntries(ACCOUNTS.map((a) => [a.id, a]));
-export const DEMO_IDS = ["mika", "ren-akitsuki", "admin-1"];
 
 export interface AppState {
   accountId: string;

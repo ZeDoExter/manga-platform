@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useApp } from "@/lib/store";
 import { useEconomy } from "@/lib/economy-store";
-import { DEMO_IDS, ACCOUNT_MAP } from "@/data/accounts";
 import { useSession, signOut } from "@/lib/auth-client";
 import { suggest } from "@/lib/search";
 import { cx } from "@/lib/util";
@@ -130,20 +129,7 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
                 <Link href="/login" onClick={() => setMenu(false)} className="btn btn-accent mb-2 flex w-full items-center justify-center gap-2 !py-2 text-xs font-extrabold">
                   <Icon name="user" size={14} /> Sign in / Google
                 </Link>
-                <div className="label px-2 pb-1 pt-1">Try demo accounts</div>
-                {DEMO_IDS.map((id) => {
-                  const a = ACCOUNT_MAP[id];
-                  return (
-                    <button key={id} role="menuitem" onClick={() => { act.switchAccount(id); setMenu(false); }} className="flex w-full items-center gap-2.5 rounded-md border-2 border-transparent p-1.5 text-left transition-colors hover:border-line hover:bg-paper2">
-                      <Avatar account={a} style={state.data[id]?.profile.avatar} size={28} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-xs font-extrabold">{a.name}</span>
-                        <span className="block truncate text-[0.65rem] text-muted">{a.role === "admin" ? "Admin · KPI & Moderation" : a.role === "creator" ? "Uploader · Creator Studio" : "Reader · Library"}</span>
-                      </span>
-                      <span className={cx("chip !text-[0.52rem]", a.role !== "reader" && "chip-on")}>{a.role === "admin" ? "ADM" : a.role === "creator" ? "UP" : "RD"}</span>
-                    </button>
-                  );
-                })}
+                <p className="px-2 py-1 text-[0.68rem] text-muted">Demo logins: reader@ / creator@ / admin@ + dootoon123</p>
               </div>
             )}
           </div>
@@ -170,7 +156,7 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
                     type="button"
                     onClick={async () => {
                       await signOut();
-                      act.switchAccount("guest");
+                      act.signOutLocal();
                       setMenu(false);
                     }}
                     className="btn btn-sm mt-2 w-full justify-center"
@@ -203,25 +189,6 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
                   <Icon name="lock" size={16} /> Admin Dashboard
                 </Link>
               )}
-              <details className="mt-2 border-t-2 border-dashed border-line/30 pt-2">
-                <summary className="label cursor-pointer px-2 py-1 select-none">Switch role (Reader / Creator / Admin)</summary>
-                <div className="mt-1 space-y-1">
-                  {DEMO_IDS.map((id) => {
-                    const a = ACCOUNT_MAP[id];
-                    const on = id === account.id;
-                    return (
-                      <button key={id} role="menuitem" onClick={() => { act.switchAccount(id); setMenu(false); }} className={cx("flex w-full items-center gap-2.5 rounded-md border-2 p-1.5 text-left transition-colors", on ? "border-line bg-paper2" : "border-transparent hover:border-line hover:bg-paper2")}>
-                        <Avatar account={a} style={state.data[id]?.profile.avatar} size={28} />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-xs font-extrabold">{a.name}</span>
-                          <span className="block truncate text-[0.65rem] text-muted">{a.role === "admin" ? "Admin · KPI & Moderation" : a.role === "creator" ? "Uploader · Creator Studio" : "Reader · Library"}</span>
-                        </span>
-                        {on ? <Icon name="check" size={14} className="text-accent" /> : <span className={cx("chip !text-[0.52rem]", a.role !== "reader" && "chip-on")}>{a.role === "admin" ? "ADM" : a.role === "creator" ? "UP" : "RD"}</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </details>
             </div>
           )}
         </div>
@@ -337,7 +304,6 @@ function Palette({ open, onClose }: { open: boolean; onClose: () => void }) {
     ];
     const actions: PItem[] = [
       { id: "a-theme", label: state.theme === "night" ? "Switch to Paper edition" : "Switch to Night edition", sub: "Toggle theme", icon: state.theme === "night" ? "sun" : "moon", run: () => act.setTheme(state.theme === "night" ? "paper" : "night") },
-      ...DEMO_IDS.filter((id) => id !== account.id).map<PItem>((id) => ({ id: "sw-" + id, label: `Switch to ${ACCOUNT_MAP[id].name}`, sub: ACCOUNT_MAP[id].role === "creator" ? "Uploader demo account" : "Reader demo account", icon: "shuffle", run: () => act.switchAccount(id) })),
     ];
     const tops = TOP10.slice(0, 3).map<PItem>((s) => ({ id: "t-" + s.id, label: s.title, sub: `Top 10 · #${s.rank}`, icon: "flame", run: go(`/story/${s.id}`), story: s }));
     return [...pages, ...actions, ...tops];

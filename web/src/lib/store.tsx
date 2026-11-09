@@ -28,7 +28,7 @@ interface ToastItem {
 }
 
 export interface Actions {
-  switchAccount(id: string): void;
+  signOutLocal(): void;
   setTheme(t: "paper" | "night"): void;
   setPrefs(p: Partial<Prefs>): void;
   toggleLibrary(storyId: string): void;
@@ -304,14 +304,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, studio: s.studio.map((x) => (x.id === id ? fn(x) : x)) }));
 
     return {
-      switchAccount(id) {
-        const a = ACCOUNT_MAP[id];
-        if (!a) return;
-        setState((s) => {
-          const data = s.data[id] ? s.data : { ...s.data, [id]: genReaderData(id, Date.now()) };
-          return { ...s, accountId: id, data };
-        });
-        toast(`Switched to ${a.name} — ${a.role === "admin" ? "Admin" : a.role === "creator" ? "Uploader" : a.role === "guest" ? "Guest" : "Reader"} view`, "info");
+      signOutLocal() {
+        setState((s) => ({ ...s, accountId: "guest" }));
+        toast("Signed out", "info");
       },
       setTheme(t) {
         setState((s) => ({ ...s, theme: t }));
