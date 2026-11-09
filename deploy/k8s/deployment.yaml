@@ -275,7 +275,7 @@ spec:
             - name: IDENTITY_URL
               value: "http://identity"
             - name: CDN_BASE_URL
-              value: "https://img.yourmanga.com"
+              value: "https://img.dootoon.store"
             - name: HMAC_SECRET
               valueFrom:
                 secretKeyRef:
@@ -364,7 +364,7 @@ spec:
             - name: IDENTITY_URL
               value: "http://identity"
             - name: CDN_BASE_URL
-              value: "https://img.yourmanga.com"
+              value: "https://img.dootoon.store"
             - name: HMAC_SECRET
               valueFrom:
                 secretKeyRef:

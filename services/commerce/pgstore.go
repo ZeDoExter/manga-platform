@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"manga-platform/pkg/pgmigrate"
 )
 
 // PGStore persists commerce data in PostgreSQL (schema: commerce).
@@ -62,12 +62,6 @@ func (t *PGTx) LockUser(ctx context.Context, userID string) error {
 	_, err := t.tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, userID)
 	return err
 }
-
-func isUniqueViolation(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == "23505"
-}
-
 func (t *PGTx) FindLedgerByKey(ctx context.Context, userID, idempotencyKey string) (*LedgerEntry, error) {
 	e := &LedgerEntry{}
 	err := t.tx.QueryRow(ctx, `
@@ -89,7 +83,7 @@ func (t *PGTx) AppendLedger(ctx context.Context, e *LedgerEntry) error {
 		INSERT INTO commerce.ledger_entries (id, user_id, type, coin_type, amount, reference_id, idempotency_key, created_at)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
 		e.ID, e.UserID, e.Type, e.CoinType, e.Amount, e.ReferenceID, e.IdempotencyKey, e.CreatedAt)
-	if isUniqueViolation(err) {
+	if pgmigrate.IsUniqueViolation(err) {
 		return ErrDuplicateRequest
 	}
 	return err
@@ -202,7 +196,7 @@ func (t *PGTx) InsertPurchase(ctx context.Context, p *Purchase) error {
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
 		p.ID, p.UserID, p.StoryID, p.ChapterID, p.TotalCoins, p.PurchasedCoinsDebited,
 		p.BonusCoinsDebited, p.IdempotencyKey, p.Status, p.CreatedAt, p.ReversedAt)
-	if isUniqueViolation(err) {
+	if pgmigrate.IsUniqueViolation(err) {
 		return ErrDuplicateRequest
 	}
 	return err
@@ -281,7 +275,7 @@ func (t *PGTx) InsertEarning(ctx context.Context, e *CreatorEarning) error {
 		INSERT INTO commerce.creator_earnings (id, purchase_id, creator_id, story_id, chapter_id, coins_earned, clawed_back, created_at)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
 		e.ID, e.PurchaseID, e.CreatorID, e.StoryID, e.ChapterID, e.CoinsEarned, e.ClawedBack, e.CreatedAt)
-	if isUniqueViolation(err) {
+	if pgmigrate.IsUniqueViolation(err) {
 		return ErrDuplicateRequest
 	}
 	return err

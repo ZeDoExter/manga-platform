@@ -93,11 +93,3 @@ export function ChapterPicker({ open, onClose, nav, chapter, storyId, preview }:
     </Modal>
   );
 }
-
-export function IconBtn({ icon, label, onClick, active, className }: { icon: string; label: string; onClick: () => void; active?: boolean; className?: string }) {
-  return (
-    <button onClick={onClick} aria-label={label} title={label} aria-pressed={active} className={`grid size-9 shrink-0 place-items-center rounded-md border-2 transition-colors ${active ? "border-white bg-white text-black" : "border-white/30 text-white hover:border-white/80"} ${className ?? ""}`}>
-      <Icon name={icon} size={16} />
-    </button>
-  );
-}

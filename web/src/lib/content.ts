@@ -236,8 +236,3 @@ export function relatedStories(s: Story, n = 6): Story[] {
     .slice(0, n)
     .map((x) => x.o);
 }
-
-export function readMinutes(paragraphs: string[], wpm = 230): number {
-  const w = paragraphs.join(" ").split(/\s+/).length;
-  return Math.max(1, Math.round(w / wpm));
-}

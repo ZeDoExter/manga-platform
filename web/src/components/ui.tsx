@@ -35,7 +35,6 @@ const ICONS: Record<string, ReactNode> = {
   share: (<><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="6" r="2.5" /><circle cx="18" cy="18" r="2.5" /><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6" /></>),
   flame: <path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 2.5 1.5 2.5C10 9 11 6 12 3z" />,
   eye: (<><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>),
-  volume: <path d="M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11" />,
   mute: <path d="M4 9v6h4l5 4V5L8 9zM17 9l5 6M22 9l-5 6" />,
   clock: (<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
   trash: <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />,
@@ -166,7 +165,7 @@ export function Modal({ open, onClose, title, children, wide, className }: { ope
 
 export function Tabs<T extends string>({ tabs, value, onChange, className }: { tabs: { id: T; label: string; icon?: string; count?: number }[]; value: T; onChange: (v: T) => void; className?: string }) {
   return (
-    <div role="tablist" className={cx("scroll-x -mx-2 -my-2 flex gap-1.5 px-2 py-2", className)}>
+    <div role="tablist" className={cx("scroll-x -mx-2 -my-2 flex w-full max-w-full gap-1.5 overflow-x-auto px-2 py-2", className)}>
       {tabs.map((t) => {
         const on = t.id === value;
         return (
@@ -226,7 +225,7 @@ export function ProgressBar({ value, className, color = "var(--accent)" }: { val
   );
 }
 
-export function Sparkline({ data, width = 120, height = 36, color = "var(--accent)", fill = true }: { data: number[]; width?: number; height?: number; color?: string; fill?: boolean }) {
+export function Sparkline({ data, width = 120, height = 36, color = "var(--accent)", fill = true, className }: { data: number[]; width?: number; height?: number; color?: string; fill?: boolean; className?: string }) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   const path = useMemo(() => {
     const min = Math.min(...data);
@@ -236,7 +235,7 @@ export function Sparkline({ data, width = 120, height = 36, color = "var(--accen
     return { line, area: `${line} L${width} ${height} L0 ${height}Z` };
   }, [data, width, height]);
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible" aria-hidden="true">
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className={cx("overflow-visible", className)} style={className?.includes("w-full") ? { width: "100%", height: "auto" } : undefined} aria-hidden="true">
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={color} stopOpacity="0.35" />
@@ -249,13 +248,6 @@ export function Sparkline({ data, width = 120, height = 36, color = "var(--accen
   );
 }
 
-export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
-  return (
-    <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className={cx("relative h-6 w-11 shrink-0 rounded-full border-2 border-line transition-colors", on ? "bg-accent" : "bg-paper2")}>
-      <span className={cx("absolute top-0.5 size-4 rounded-full border-2 border-line bg-card transition-all", on ? "left-[1.35rem]" : "left-0.5")} />
-    </button>
-  );
-}
 
 export function Stat({ label, value, sub, className }: { label: string; value: ReactNode; sub?: ReactNode; className?: string }) {
   return (

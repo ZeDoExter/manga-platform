@@ -62,7 +62,7 @@ function StoryInner({ story }: { story: Story }) {
         )}
         <div className="absolute inset-0 -z-10" style={{ background: `linear-gradient(115deg, ${p0} 15%, ${p0}d0 55%, ${p1}55 100%)` }} />
         <div className="tone-lg absolute inset-0 -z-10 opacity-40" style={{ ["--tone" as string]: "rgba(255,255,255,.12)" }} />
-        <div className="wrap grid gap-8 py-10 md:grid-cols-[auto_1fr] md:py-14">
+        <div className="wrap grid grid-cols-1 gap-8 py-10 md:grid-cols-[auto_minmax(0,1fr)] md:py-14">
           <div className="mx-auto w-52 md:w-72">
             <div className="rounded-md border-2 border-white shadow-[10px_12px_0_rgba(0,0,0,.45)]">
               <Cover story={story} className="rounded-[4px]" priority />

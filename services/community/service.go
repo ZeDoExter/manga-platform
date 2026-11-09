@@ -2,12 +2,11 @@ package community
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"strconv"
 	"strings"
 	"time"
 
+	"manga-platform/pkg/ids"
 	"manga-platform/services/catalog"
 )
 
@@ -47,13 +46,6 @@ func NewServiceWithStore(cat Catalog, com Commerce, store Store) *Service {
 		store:    store,
 	}
 }
-
-func generateID(prefix string) string {
-	b := make([]byte, 8)
-	_, _ = rand.Read(b)
-	return prefix + "_" + hex.EncodeToString(b)
-}
-
 // PostComment posts a comment or a one-level reply (FR-CM2, FR-CM4, FR-CM5, FR-CM12).
 func (s *Service) PostComment(ctx context.Context, req PostCommentRequest) (*Comment, error) {
 	// 1. Authentication check (FR-CM4: Guests cannot post)
@@ -105,7 +97,7 @@ func (s *Service) PostComment(ctx context.Context, req PostCommentRequest) (*Com
 	}
 
 	comment := &Comment{
-		ID:         generateID("cmt"),
+		ID:         ids.New("cmt"),
 		StoryID:    req.StoryID,
 		ChapterID:  req.ChapterID,
 		UserID:     req.UserID,

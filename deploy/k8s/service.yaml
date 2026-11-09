@@ -168,17 +168,7 @@ spec:
   selector:
     app.kubernetes.io/name: web
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: media-images
-spec:
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests: { storage: 10Gi }
----
-# Scale-safe: reader (stateless) + catalog/commerce/library (PG-backed).
-# identity/moderation/community keep state in memory; media uses a PVC.
+# Scale-safe: reader (stateless) + catalog/commerce/library/identity/moderation/community (PG-backed, migration 005). Media uses Cloudflare R2.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

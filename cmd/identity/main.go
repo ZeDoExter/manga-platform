@@ -70,21 +70,6 @@ func main() {
 			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
 		}
 	})
-
-	mux.HandleFunc("GET /sessions/{token}", func(w http.ResponseWriter, r *http.Request) {
-		session, err := svc.ValidateSession(r.Context(), r.PathValue("token"))
-		switch {
-		case err == nil:
-			httpapi.JSON(w, http.StatusOK, session)
-		case errors.Is(err, identity.ErrUnauthorized):
-			httpapi.Fail(w, http.StatusUnauthorized, err.Error())
-		case errors.Is(err, identity.ErrUserBanned):
-			httpapi.Fail(w, http.StatusForbidden, err.Error())
-		default:
-			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
-		}
-	})
-
 	mux.HandleFunc("POST /users/{id}/ban", func(w http.ResponseWriter, r *http.Request) {
 		var req api.SetBanRequest
 		if err := httpapi.Decode(r, &req); err != nil {

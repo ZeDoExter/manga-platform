@@ -11,7 +11,7 @@ ARG SERVICE=server
 RUN apk add --no-cache ca-certificates git
 
 # Cache Go modules
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy source code

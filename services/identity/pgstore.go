@@ -2,11 +2,9 @@ package identity
 
 import (
 	"context"
-	"errors"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"manga-platform/pkg/pgmigrate"
 )
 
 // PGStore persists identity data in PostgreSQL (schema: identity).
@@ -18,26 +16,13 @@ type PGStore struct {
 func NewPGStore(pool *pgxpool.Pool) *PGStore {
 	return &PGStore{pool: pool}
 }
-
-func pgErr(err error, notFound error) error {
-	if errors.Is(err, pgx.ErrNoRows) {
-		return notFound
-	}
-	return err
-}
-
-func isUniqueViolation(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == "23505"
-}
-
 func (p *PGStore) InsertUser(ctx context.Context, u *User) error {
 	_, err := p.pool.Exec(ctx, `
 		INSERT INTO identity.users (id, email, password_hash, salt, role, banned, created_at)
 		VALUES ($1,$2,$3,$4,$5,$6,$7)`,
 		u.ID, u.Email, u.PasswordHash, u.Salt, u.Role, u.Banned, u.CreatedAt)
 	if err != nil {
-		if isUniqueViolation(err) {
+		if pgmigrate.IsUniqueViolation(err) {
 			return ErrUserExists
 		}
 		return err
@@ -52,7 +37,7 @@ func (p *PGStore) GetUser(ctx context.Context, userID string) (*User, error) {
 		FROM identity.users WHERE id = $1`, userID).Scan(
 		&u.ID, &u.Email, &u.PasswordHash, &u.Salt, &u.Role, &u.Banned, &u.CreatedAt,
 	); err != nil {
-		return nil, pgErr(err, ErrUserNotFound)
+		return nil, pgmigrate.NotFound(err, ErrUserNotFound)
 	}
 	return u, nil
 }
@@ -64,7 +49,7 @@ func (p *PGStore) GetUserByEmail(ctx context.Context, normEmail string) (*User, 
 		FROM identity.users WHERE LOWER(email) = $1`, normEmail).Scan(
 		&u.ID, &u.Email, &u.PasswordHash, &u.Salt, &u.Role, &u.Banned, &u.CreatedAt,
 	); err != nil {
-		return nil, pgErr(err, ErrUserNotFound)
+		return nil, pgmigrate.NotFound(err, ErrUserNotFound)
 	}
 	return u, nil
 }
@@ -96,12 +81,7 @@ func (p *PGStore) GetSession(ctx context.Context, token string) (*Session, error
 		FROM identity.sessions WHERE token = $1`, token).Scan(
 		&s.Token, &s.UserID, &s.Role, &s.ExpiresAt,
 	); err != nil {
-		return nil, pgErr(err, ErrUnauthorized)
+		return nil, pgmigrate.NotFound(err, ErrUnauthorized)
 	}
 	return s, nil
-}
-
-func (p *PGStore) DeleteSession(ctx context.Context, token string) error {
-	_, err := p.pool.Exec(ctx, `DELETE FROM identity.sessions WHERE token = $1`, token)
-	return err
 }

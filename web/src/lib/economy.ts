@@ -137,13 +137,6 @@ export function chapterPrice(type: StoryType, chapterNumber: number, chapterCoun
   return defaultChapterPrice(type, chapterNumber, chapterCount);
 }
 
-export function studioPublishedCount(story: StudioStory): number {
-  return story.chapters.filter((c) => c.status === "published").length;
-}
-
-export function studioChapterPrice(story: StudioStory, chapter: StudioChapter): number {
-  return chapterPrice(story.type, chapter.number, Math.max(studioPublishedCount(story), chapter.number), chapter.priceCoins);
-}
 
 export function storySyncFromStory(story: Story): StorySync {
   return {
@@ -156,21 +149,6 @@ export function storySyncFromStory(story: Story): StorySync {
   };
 }
 
-export function storySyncFromStudio(story: StudioStory): StorySync {
-  return {
-    id: story.id,
-    title: story.title,
-    type: story.type,
-    creator: story.ownerId,
-    synopsis: story.synopsis,
-    tags: story.tags,
-  };
-}
-
 export function walletTotal(wallet: Pick<Wallet, "purchased_coins" | "bonus_coins"> | null | undefined): number {
   return (wallet?.purchased_coins ?? 0) + (wallet?.bonus_coins ?? 0);
-}
-
-export function isOwner(story: Pick<StorySync, "creator">, accountId: string): boolean {
-  return story.creator === accountId;
 }

@@ -47,8 +47,8 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
       <section className="relative isolate overflow-hidden border-b-2 border-line text-white" style={{ background: c1 }}>
         <div className="absolute inset-0 -z-10" style={{ background: `linear-gradient(120deg, ${c1} 30%, ${c2}55 140%)` }} />
         <div className="tone-lg absolute inset-0 -z-10 opacity-50" style={{ ["--tone" as string]: "rgba(255,255,255,.12)" }} />
-        <div className="pointer-events-none absolute -right-6 top-0 select-none font-display text-[22rem] leading-none opacity-[0.07]" aria-hidden="true">{account.glyph}</div>
-        <div className="wrap relative grid items-end gap-6 py-10 md:grid-cols-[auto_1fr_auto] md:py-14">
+        <div className="pointer-events-none absolute -right-6 top-0 max-w-full select-none overflow-hidden font-display text-[10rem] leading-none opacity-[0.07] md:text-[22rem]" aria-hidden="true">{account.glyph}</div>
+        <div className="wrap relative grid grid-cols-1 items-end gap-6 py-10 md:grid-cols-[auto_minmax(0,1fr)_auto] md:py-14">
           <Avatar account={account} size={120} ring />
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -77,9 +77,9 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
         </div>
       </section>
 
-      <div className="wrap grid gap-8 py-8 lg:grid-cols-[320px_1fr]">
+      <div className="wrap grid grid-cols-1 gap-8 py-8 lg:grid-cols-[320px_minmax(0,1fr)]">
         {/* sticky studio card */}
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
           <div className="panel p-4">
             <div className="label">Studio at a glance</div>
             <div className="mt-3 grid grid-cols-2 gap-2.5">
@@ -88,7 +88,7 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
               <Stat label="Avg rating" value={avg ? avg.toFixed(2) : "—"} />
               <Stat label="Works" value={works.length + draftOnly.length} />
             </div>
-            <div className="mt-4"><div className="label mb-1">Follower growth · 30d</div><Sparkline data={growth} width={270} height={52} /></div>
+            <div className="mt-4"><div className="label mb-1">Follower growth · 30d</div><Sparkline data={growth} height={52} className="w-full" /></div>
           </div>
           <div className="panel p-4">
             <div className="label">{isMe ? "Next scheduled release" : "Release rhythm"}</div>
@@ -105,7 +105,7 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
           </div>
         </aside>
 
-        <div>
+        <div className="min-w-0">
           <Tabs value={tab} onChange={setTab} tabs={[
             { id: "portfolio", label: "Portfolio", icon: "book", count: works.length + draftOnly.length },
             { id: "releases", label: isMe ? "Drafts & schedule" : "Releases", icon: "calendar", count: isMe ? pending.length : undefined },
@@ -190,7 +190,7 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
                       {replies[i] ? (
                         <div className="mt-3 rounded-md border-2 border-dashed border-line/50 bg-paper2 p-3 text-sm"><b>{account.name.split(" ")[0]} replied:</b> {replies[i]}</div>
                       ) : isMe ? (
-                        <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (draftReply[i]?.trim()) { setReplies((r) => ({ ...r, [i]: draftReply[i].trim() })); toast("Reply sent ✓"); } }}>
+                        <form className="mt-3 flex min-w-0 gap-2" onSubmit={(e) => { e.preventDefault(); if (draftReply[i]?.trim()) { setReplies((r) => ({ ...r, [i]: draftReply[i].trim() })); toast("Reply sent ✓"); } }}>
                           <input className="field !py-1.5 text-sm" placeholder="Reply as creator…" value={draftReply[i] ?? ""} onChange={(e) => setDraftReply((r) => ({ ...r, [i]: e.target.value }))} aria-label="Reply" />
                           <button className="btn btn-sm" type="submit">Reply</button>
                         </form>

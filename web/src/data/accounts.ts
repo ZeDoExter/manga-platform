@@ -44,7 +44,6 @@ export const DEFAULT_PREFS: Prefs = {
   width: 660,
   focusLens: false,
   atmos: true,
-  sound: false,
   quiet: false,
   mangaMode: "scroll",
 };

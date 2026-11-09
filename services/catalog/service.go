@@ -2,10 +2,9 @@ package catalog
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"time"
 
+	"manga-platform/pkg/ids"
 	"manga-platform/pkg/sanitize"
 )
 
@@ -23,12 +22,6 @@ func NewService() *Service {
 // NewServiceWithStore creates a service over any Store (e.g. PGStore).
 func NewServiceWithStore(store Store) *Service {
 	return &Service{store: store}
-}
-
-func generateID(prefix string) string {
-	b := make([]byte, 8)
-	_, _ = rand.Read(b)
-	return prefix + "_" + hex.EncodeToString(b)
 }
 
 func validateSplits(ownerID string, splits []CreatorSplit) ([]CreatorSplit, error) {
@@ -67,7 +60,7 @@ func (s *Service) createStory(ctx context.Context, id, ownerID string, storyType
 		return nil, err
 	}
 	if id == "" {
-		id = generateID("story")
+		id = ids.New("story")
 	}
 	story := &Story{
 		ID: id, OwnerID: ownerID, Type: storyType, Title: title,
@@ -116,7 +109,7 @@ func (s *Service) createChapter(ctx context.Context, id, storyID string, orderIn
 		return nil, ErrInvalidPrice
 	}
 	if id == "" {
-		id = generateID("chap")
+		id = ids.New("chap")
 	}
 	if pageKeys == nil {
 		pageKeys = []string{}

@@ -24,8 +24,10 @@ services:
     image: manga-identity:dev
     environment:
       PORT: "8081"
-    ports:
-      - "8081:8081"
+      DATABASE_URL: "postgres://manga:manga-demo-pw@postgres:5432/manga?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/healthz"]
       interval: 5s
@@ -83,7 +85,7 @@ services:
       CATALOG_URL: "http://catalog:8082"
       COMMERCE_URL: "http://commerce:8083"
       IDENTITY_URL: "http://identity:8081"
-      CDN_BASE_URL: "https://img.yourmanga.com"
+      CDN_BASE_URL: "https://img.dootoon.store"
       HMAC_SECRET: "dev-only-hmac-secret-change-me"
     ports:
       - "8084:8084"
@@ -108,14 +110,17 @@ services:
     image: manga-moderation:dev
     environment:
       PORT: "8085"
+      DATABASE_URL: "postgres://manga:manga-demo-pw@postgres:5432/manga?sslmode=disable"
       CATALOG_URL: "http://catalog:8082"
       COMMERCE_URL: "http://commerce:8083"
       IDENTITY_URL: "http://identity:8081"
-      CDN_BASE_URL: "https://img.yourmanga.com"
+      CDN_BASE_URL: "https://img.dootoon.store"
       HMAC_SECRET: "dev-only-hmac-secret-change-me"
     ports:
       - "8085:8085"
     depends_on:
+      postgres:
+        condition: service_healthy
       catalog:
         condition: service_healthy
       commerce:
@@ -136,11 +141,14 @@ services:
     image: manga-community:dev
     environment:
       PORT: "8086"
+      DATABASE_URL: "postgres://manga:manga-demo-pw@postgres:5432/manga?sslmode=disable"
       CATALOG_URL: "http://catalog:8082"
       COMMERCE_URL: "http://commerce:8083"
     ports:
       - "8086:8086"
     depends_on:
+      postgres:
+        condition: service_healthy
       catalog:
         condition: service_healthy
       commerce:
@@ -167,6 +175,24 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8087/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  media:
+    build:
+      context: .
+      args:
+        SERVICE: media
+    image: manga-media:dev
+    environment:
+      PORT: "8088"
+      CDN_BASE_URL: "https://img.dootoon.store"
+      HMAC_SECRET: "dev-only-hmac-secret-change-me"
+    ports:
+      - "8088:8088"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8088/healthz"]
       interval: 5s
       timeout: 3s
       retries: 20

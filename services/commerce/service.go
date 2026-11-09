@@ -2,11 +2,11 @@ package commerce
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"sort"
 	"time"
+
+	"manga-platform/pkg/ids"
 )
 
 // Service provides ACID, idempotent commerce operations (FR-M1..M4, FR-M6, NFR-Money-1).
@@ -23,12 +23,6 @@ func NewService() *Service {
 // NewServiceWithStore creates a service over any Store (e.g. PGStore).
 func NewServiceWithStore(store Store) *Service {
 	return &Service{store: store}
-}
-
-func generateID(prefix string) string {
-	b := make([]byte, 8)
-	_, _ = rand.Read(b)
-	return prefix + "_" + hex.EncodeToString(b)
 }
 
 // PlatformUserID owns platform-fee ledger entries so they never inflate
@@ -52,7 +46,7 @@ func (s *Service) TopUp(ctx context.Context, userID string, amount int64, coinTy
 			return nil
 		}
 		entry := &LedgerEntry{
-			ID: generateID("ledge"), UserID: userID, Type: LedgerTopUp,
+			ID: ids.New("ledge"), UserID: userID, Type: LedgerTopUp,
 			CoinType: coinType, Amount: amount, ReferenceID: refID,
 			IdempotencyKey: idempotencyKey, CreatedAt: time.Now(),
 		}
@@ -92,11 +86,11 @@ func (s *Service) Tip(ctx context.Context, userID string, amount int64, refID, i
 		// Debit bonus first, then purchased.
 		remaining := amount
 		now := time.Now()
-		tipID := generateID("tip")
+		tipID := ids.New("tip")
 		if bonus > 0 {
-			take := min64(bonus, remaining)
+			take := min(bonus, remaining)
 			if err := tx.AppendLedger(ctx, &LedgerEntry{
-				ID: generateID("ledge"), UserID: userID, Type: LedgerTipFee,
+				ID: ids.New("ledge"), UserID: userID, Type: LedgerTipFee,
 				CoinType: CoinBonus, Amount: -take, ReferenceID: tipID,
 				IdempotencyKey: idempotencyKey + ":bonus", CreatedAt: now,
 			}); err != nil {
@@ -106,7 +100,7 @@ func (s *Service) Tip(ctx context.Context, userID string, amount int64, refID, i
 		}
 		if remaining > 0 {
 			if err := tx.AppendLedger(ctx, &LedgerEntry{
-				ID: generateID("ledge"), UserID: userID, Type: LedgerTipFee,
+				ID: ids.New("ledge"), UserID: userID, Type: LedgerTipFee,
 				CoinType: CoinPurchased, Amount: -remaining, ReferenceID: tipID,
 				IdempotencyKey: idempotencyKey + ":purchased", CreatedAt: now,
 			}); err != nil {
@@ -114,7 +108,7 @@ func (s *Service) Tip(ctx context.Context, userID string, amount int64, refID, i
 			}
 		}
 		out = &LedgerEntry{
-			ID: generateID("ledge"), UserID: PlatformUserID, Type: LedgerTipFee,
+			ID: ids.New("ledge"), UserID: PlatformUserID, Type: LedgerTipFee,
 			CoinType: CoinPurchased, Amount: amount, ReferenceID: tipID,
 			IdempotencyKey: idempotencyKey + ":platform", CreatedAt: now,
 		}
@@ -126,12 +120,6 @@ func (s *Service) Tip(ctx context.Context, userID string, amount int64, refID, i
 	return out, err
 }
 
-func min64(a, b int64) int64 {
-	if a < b {
-		return a
-	}
-	return b
-}
 // GetWallet returns current coin balances for a user (derived from ledger).
 func (s *Service) GetWallet(ctx context.Context, userID string) (Wallet, error) {
 	var w Wallet
@@ -224,11 +212,11 @@ func (s *Service) PurchaseChapter(ctx context.Context, req PurchaseRequest) (*Pu
 		}
 
 		now := time.Now()
-		purchaseID := generateID("purch")
+		purchaseID := ids.New("purch")
 
 		appendDebit := func(coinType CoinType, amount int64, suffix string) error {
 			return tx.AppendLedger(ctx, &LedgerEntry{
-				ID: generateID("ledge"), UserID: req.UserID, Type: LedgerPurchaseDebit,
+				ID: ids.New("ledge"), UserID: req.UserID, Type: LedgerPurchaseDebit,
 				CoinType: coinType, Amount: -amount, ReferenceID: purchaseID,
 				IdempotencyKey: fmt.Sprintf("%s:%s", req.IdempotencyKey, suffix), CreatedAt: now,
 			})
@@ -254,7 +242,7 @@ func (s *Service) PurchaseChapter(ctx context.Context, req PurchaseRequest) (*Pu
 		}
 
 		ent := &Entitlement{
-			ID: generateID("ent"), UserID: req.UserID,
+			ID: ids.New("ent"), UserID: req.UserID,
 			StoryID: req.StoryID, ChapterID: req.ChapterID, GrantedAt: now,
 		}
 		if err := tx.UpsertEntitlement(ctx, ent); err != nil {
@@ -268,7 +256,7 @@ func (s *Service) PurchaseChapter(ctx context.Context, req PurchaseRequest) (*Pu
 			creatorPool := purchasedToDebit - feeCoins
 			if feeCoins > 0 {
 				if err := tx.AppendLedger(ctx, &LedgerEntry{
-					ID: generateID("ledge"), UserID: PlatformUserID, Type: LedgerPlatformFee,
+					ID: ids.New("ledge"), UserID: PlatformUserID, Type: LedgerPlatformFee,
 					CoinType: CoinPurchased, Amount: feeCoins, ReferenceID: purchaseID,
 					IdempotencyKey: fmt.Sprintf("%s:platform", purchaseID), CreatedAt: now,
 				}); err != nil {
@@ -281,7 +269,7 @@ func (s *Service) PurchaseChapter(ctx context.Context, req PurchaseRequest) (*Pu
 					continue
 				}
 				earning := &CreatorEarning{
-					ID: generateID("earn"), PurchaseID: purchaseID, CreatorID: split.CreatorID,
+					ID: ids.New("earn"), PurchaseID: purchaseID, CreatorID: split.CreatorID,
 					StoryID: req.StoryID, ChapterID: req.ChapterID,
 					CoinsEarned: creatorCoins, CreatedAt: now,
 				}
@@ -289,7 +277,7 @@ func (s *Service) PurchaseChapter(ctx context.Context, req PurchaseRequest) (*Pu
 					return err
 				}
 				if err := tx.AppendLedger(ctx, &LedgerEntry{
-					ID: generateID("ledge"), UserID: split.CreatorID, Type: LedgerCreatorEarning,
+					ID: ids.New("ledge"), UserID: split.CreatorID, Type: LedgerCreatorEarning,
 					CoinType: CoinPurchased, Amount: creatorCoins, ReferenceID: purchaseID,
 					IdempotencyKey: fmt.Sprintf("%s:creator:%s", purchaseID, split.CreatorID), CreatedAt: now,
 				}); err != nil {
@@ -330,7 +318,7 @@ func (s *Service) ReversePurchaseOnTakedown(ctx context.Context, purchaseID stri
 				return nil
 			}
 			return tx.AppendLedger(ctx, &LedgerEntry{
-				ID: generateID("ledge"), UserID: purchase.UserID, Type: LedgerRefundCredit,
+				ID: ids.New("ledge"), UserID: purchase.UserID, Type: LedgerRefundCredit,
 				CoinType: coinType, Amount: amount, ReferenceID: takedownID,
 				IdempotencyKey: fmt.Sprintf("takedown:%s:%s:%s", takedownID, suffix, purchaseID), CreatedAt: now,
 			})
@@ -351,7 +339,7 @@ func (s *Service) ReversePurchaseOnTakedown(ctx context.Context, purchaseID stri
 				continue
 			}
 			if err := tx.AppendLedger(ctx, &LedgerEntry{
-				ID: generateID("ledge"), UserID: earning.CreatorID, Type: LedgerTakedownClawback,
+				ID: ids.New("ledge"), UserID: earning.CreatorID, Type: LedgerTakedownClawback,
 				CoinType: CoinPurchased, Amount: -earning.CoinsEarned, ReferenceID: takedownID,
 				IdempotencyKey: fmt.Sprintf("takedown:%s:clawback:%s", takedownID, earning.ID), CreatedAt: now,
 			}); err != nil {

@@ -72,7 +72,7 @@ export function ReaderProfile({ account, isMe }: { account: Account; isMe: boole
       <section className="relative isolate overflow-hidden border-b-2 border-line bg-[#0b0a14] text-white">
         <div className="absolute inset-0 -z-10 opacity-60" style={{ background: `radial-gradient(ellipse at 15% 20%, ${accent}66, transparent 55%), radial-gradient(ellipse at 90% 80%, ${account.colors[1]}33, transparent 50%)` }} />
         <div className="tone-lg absolute inset-0 -z-10 opacity-40" style={{ ["--tone" as string]: "rgba(255,255,255,.1)" }} />
-        <div className="wrap grid items-center gap-8 py-10 md:grid-cols-[auto_1fr_auto] md:py-14">
+        <div className="wrap grid grid-cols-1 items-center gap-8 py-10 md:grid-cols-[auto_minmax(0,1fr)_auto] md:py-14">
           <div className="relative mx-auto">
             <Avatar account={account} style={isMe ? d.profile.avatar : undefined} size={132} ring />
             <div className="absolute -bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2">

@@ -159,7 +159,3 @@ export function AtmosLayer({ mood, strength = 1, className }: { mood: Mood; stre
     </div>
   );
 }
-
-export function useAtmosAudio(_mood?: Mood, _on?: boolean) {
-  // Sound feature removed
-}

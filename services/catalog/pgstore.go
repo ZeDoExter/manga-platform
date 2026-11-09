@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"manga-platform/pkg/pgmigrate"
 )
 
 // PGStore persists catalog data in PostgreSQL (schema: catalog).
@@ -17,21 +17,6 @@ type PGStore struct {
 // NewPGStore creates a PG-backed store. Caller owns pool lifecycle.
 func NewPGStore(pool *pgxpool.Pool) *PGStore {
 	return &PGStore{pool: pool}
-}
-
-func pgErr(err error, notFound error) error {
-	if errors.Is(err, pgx.ErrNoRows) {
-		return notFound
-	}
-	return err
-}
-
-func isUniqueViolation(err error, constraint string) bool {
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		return constraint == "" || pgErr.ConstraintName == constraint
-	}
-	return false
 }
 
 func isFKViolation(err error) bool {
@@ -50,7 +35,7 @@ func (p *PGStore) InsertStory(ctx context.Context, s *Story) error {
 		INSERT INTO catalog.stories (id, owner_id, type, title, cover_key, synopsis, status, created_at)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
 		s.ID, s.OwnerID, s.Type, s.Title, s.CoverKey, s.Synopsis, s.Status, s.CreatedAt); err != nil {
-		if isUniqueViolation(err, "stories_pkey") {
+		if pgmigrate.IsUniqueViolationOn(err, "stories_pkey") {
 			return ErrStoryExists
 		}
 		return err
@@ -79,7 +64,7 @@ func (p *PGStore) GetStory(ctx context.Context, storyID string) (*Story, error) 
 		FROM catalog.stories WHERE id = $1`, storyID).Scan(
 		&s.ID, &s.OwnerID, &s.Type, &s.Title, &s.CoverKey, &s.Synopsis, &s.Status, &s.CreatedAt,
 	); err != nil {
-		return nil, pgErr(err, ErrStoryNotFound)
+		return nil, pgmigrate.NotFound(err, ErrStoryNotFound)
 	}
 	rows, err := p.pool.Query(ctx, `SELECT tag FROM catalog.story_tags WHERE story_id = $1`, storyID)
 	if err != nil {
@@ -120,7 +105,7 @@ func (p *PGStore) InsertChapter(ctx context.Context, c *Chapter) error {
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
 		c.ID, c.StoryID, c.OrderIndex, c.Title, c.PriceCoins, c.PageKeys, c.NovelText, c.Status, c.AutoUnlockAt, c.CreatedAt)
 	if err != nil {
-		if isUniqueViolation(err, "chapters_pkey") {
+		if pgmigrate.IsUniqueViolationOn(err, "chapters_pkey") {
 			return ErrChapterExists
 		}
 		if isFKViolation(err) {
@@ -139,7 +124,7 @@ func (p *PGStore) GetChapter(ctx context.Context, chapterID string) (*Chapter, e
 		&c.ID, &c.StoryID, &c.OrderIndex, &c.Title, &c.PriceCoins, &c.PageKeys,
 		&c.NovelText, &c.Status, &c.AutoUnlockAt, &c.CreatedAt,
 	); err != nil {
-		return nil, pgErr(err, ErrChapterNotFound)
+		return nil, pgmigrate.NotFound(err, ErrChapterNotFound)
 	}
 	return c, nil
 }
@@ -153,7 +138,7 @@ func (p *PGStore) UpdateChapter(ctx context.Context, chapterID, title string, pr
 		&c.ID, &c.StoryID, &c.OrderIndex, &c.Title, &c.PriceCoins, &c.PageKeys,
 		&c.NovelText, &c.Status, &c.AutoUnlockAt, &c.CreatedAt,
 	); err != nil {
-		return nil, pgErr(err, ErrChapterNotFound)
+		return nil, pgmigrate.NotFound(err, ErrChapterNotFound)
 	}
 	return c, nil
 }

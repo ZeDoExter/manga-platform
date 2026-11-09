@@ -9,6 +9,8 @@ import (
 	"errors"
 	"strings"
 	"time"
+
+	"manga-platform/pkg/ids"
 )
 
 var (
@@ -63,13 +65,6 @@ func NewService() *Service {
 func NewServiceWithStore(store Store) *Service {
 	return &Service{store: store}
 }
-
-func generateID(prefix string) string {
-	b := make([]byte, 8)
-	_, _ = rand.Read(b)
-	return prefix + "_" + hex.EncodeToString(b)
-}
-
 func hashPassword(password, salt string) string {
 	h := sha256.New()
 	h.Write([]byte(salt + ":" + password))
@@ -95,7 +90,7 @@ func (s *Service) SignUp(ctx context.Context, email, password string, role Role)
 	hash := hashPassword(password, salt)
 
 	user := &User{
-		ID:           generateID("usr"),
+		ID:           ids.New("usr"),
 		Email:        normEmail,
 		PasswordHash: hash,
 		Salt:         salt,

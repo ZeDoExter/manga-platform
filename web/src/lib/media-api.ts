@@ -100,14 +100,3 @@ export async function uploadArchive(
   xhr.send(form);
   return promise;
 }
-
-export async function confirmUpload(tmpKey: string, storyID: string, chapterID: string): Promise<string> {
-  const res = await fetch(`${BASE}/confirm`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tmp_key: tmpKey, story_id: storyID, chapter_id: chapterID }),
-  });
-  if (!res.ok) throw new Error(`confirm -> ${res.status}`);
-  const body = (await res.json()) as { key: string };
-  return body.key;
-}

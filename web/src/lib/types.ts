@@ -8,16 +8,6 @@ export const TYPE_LABEL: Record<StoryType, string> = {
   "web-novel": "Web Novel",
   original: "Original Fiction",
 };
-
-export const TYPE_GLYPH: Record<StoryType, string> = {
-  manga: "漫",
-  manhwa: "웹",
-  manhua: "画",
-  "light-novel": "軽",
-  "web-novel": "網",
-  original: "創",
-};
-
 export const isVisual = (t: StoryType) => t === "manga" || t === "manhwa" || t === "manhua";
 
 export type Mood = "dread" | "rain" | "neon" | "ember" | "petal" | "calm" | "stars" | "tide" | "snow";
@@ -115,7 +105,6 @@ export interface Prefs {
   width: number;
   focusLens: boolean;
   atmos: boolean;
-  sound: boolean;
   quiet: boolean;
   mangaMode: "scroll" | "page" | "book";
 }

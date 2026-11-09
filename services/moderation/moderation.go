@@ -2,11 +2,10 @@ package moderation
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"time"
 
+	"manga-platform/pkg/ids"
 	"manga-platform/pkg/imagestore"
 	"manga-platform/services/catalog"
 )
@@ -60,13 +59,6 @@ func NewServiceWithStore(cat Catalog, com Commerce, id Identity, imgStore images
 		store:    store,
 	}
 }
-
-func generateID(prefix string) string {
-	b := make([]byte, 8)
-	_, _ = rand.Read(b)
-	return prefix + "_" + hex.EncodeToString(b)
-}
-
 // TakedownChapter executes the full takedown workflow (FR-D2, FR-M6, ADR-001):
 // 1. Marks chapter as taken_down in catalog (FR-D1)
 // 2. Removes or invalidates image objects in ImageStore (ADR-001, B-B2)
@@ -77,7 +69,7 @@ func (s *Service) TakedownChapter(ctx context.Context, adminID string, chapterID
 		return ErrReasonRequired
 	}
 
-	takedownID := generateID("takedown")
+	takedownID := ids.New("takedown")
 
 	// 1. Fetch and update chapter status in catalog (FR-D1)
 	chap, err := s.catalog.GetChapter(ctx, chapterID)
@@ -102,7 +94,7 @@ func (s *Service) TakedownChapter(ctx context.Context, adminID string, chapterID
 
 	// 4. Record audit log (FR-D4)
 	logEntry := &AuditLog{
-		ID:        generateID("audit"),
+		ID:        ids.New("audit"),
 		AdminID:   adminID,
 		Action:    "chapter_takedown",
 		TargetID:  chapterID,
@@ -127,7 +119,7 @@ func (s *Service) BanUser(ctx context.Context, adminID, targetUserID, reason str
 	}
 
 	logEntry := &AuditLog{
-		ID:        generateID("audit"),
+		ID:        ids.New("audit"),
 		AdminID:   adminID,
 		Action:    "user_ban",
 		TargetID:  targetUserID,

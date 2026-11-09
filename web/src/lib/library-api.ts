@@ -3,9 +3,7 @@
 // local dev uses the demo user below).
 
 const BASE = process.env.NEXT_PUBLIC_LIBRARY_URL ?? '/api/library';
-const GUEST_KEY = 'manga-guest-progress';
 
-export const DEMO_USER = 'demo-user-1';
 
 export interface RemoteProgress {
   user_id: string;
@@ -85,52 +83,4 @@ export async function removeBookmarkRemote(userID: string, chapterID: string): P
 export async function mergeGuest(userID: string, items: GuestItem[]): Promise<void> {
   if (items.length === 0) return;
   await req('/merge', userID, { method: 'POST', body: JSON.stringify({ items }) });
-}
-
-// --- Guest localStorage (FR-L4) ---
-
-export function loadGuestProgress(): Record<string, GuestItem> {
-  try {
-    return JSON.parse(localStorage.getItem(GUEST_KEY) ?? '{}') as Record<string, GuestItem>;
-  } catch {
-    return {};
-  }
-}
-
-export function saveGuestProgress(storyID: string, item: GuestItem): void {
-  const all = loadGuestProgress();
-  all[storyID] = item;
-  try {
-    localStorage.setItem(GUEST_KEY, JSON.stringify(all));
-  } catch {
-    // Storage full or unavailable: guest progress is best-effort.
-  }
-}
-
-export function clearGuestProgress(): void {
-  localStorage.removeItem(GUEST_KEY);
-}
-
-// debounce returns a trailing-edge debounced fn + flush.
-export function debounce<A extends unknown[]>(fn: (...args: A) => void, ms: number) {
-  let timer: number | undefined;
-  let last: A | null = null;
-  const fire = (...args: A) => {
-    last = args;
-    clearTimeout(timer);
-    timer = window.setTimeout(() => {
-      timer = undefined;
-      if (last) fn(...last);
-      last = null;
-    }, ms);
-  };
-  const flush = () => {
-    clearTimeout(timer);
-    timer = undefined;
-    if (last) {
-      fn(...last);
-      last = null;
-    }
-  };
-  return { fire, flush };
 }

@@ -94,10 +94,3 @@ func (m *MemoryStore) GetSession(_ context.Context, token string) (*Session, err
 	}
 	return copySession(s), nil
 }
-
-func (m *MemoryStore) DeleteSession(_ context.Context, token string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	delete(m.sessions, token)
-	return nil
-}

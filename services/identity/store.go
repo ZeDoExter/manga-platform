@@ -14,5 +14,4 @@ type Store interface {
 
 	InsertSession(ctx context.Context, s *Session) error
 	GetSession(ctx context.Context, token string) (*Session, error)
-	DeleteSession(ctx context.Context, token string) error
 }

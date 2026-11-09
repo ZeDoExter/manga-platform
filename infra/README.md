@@ -38,5 +38,4 @@ terraform destroy
 - ACR `admin_enabled` is demo convenience; prod uses managed identity.
 - PG password lives in Terraform state + Key Vault. State is local for
   demo; migrate to an Azure Storage backend before sharing.
-- Media images use a PVC on AKS (dev parity). R2 (ADR-001) is the
-  production target and is out of scope for this demo cut.
+- Media images use Cloudflare R2 (`dootoon-img` + `img.dootoon.store`) via `R2Store` (ADR-001). Local dev falls back to in-memory store.

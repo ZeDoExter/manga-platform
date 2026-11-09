@@ -2,11 +2,11 @@ package community
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"manga-platform/pkg/pgmigrate"
 )
 
 // PGStore persists community data in PostgreSQL (schema: community).
@@ -18,14 +18,6 @@ type PGStore struct {
 func NewPGStore(pool *pgxpool.Pool) *PGStore {
 	return &PGStore{pool: pool}
 }
-
-func pgErr(err error, notFound error) error {
-	if errors.Is(err, pgx.ErrNoRows) {
-		return notFound
-	}
-	return err
-}
-
 func scanComment(row pgx.Row) (*Comment, error) {
 	c := &Comment{}
 	if err := row.Scan(
@@ -51,7 +43,7 @@ func (p *PGStore) GetComment(ctx context.Context, commentID string) (*Comment, e
 		SELECT id, story_id, chapter_id, user_id, author_name, parent_id, body, status, like_count, reply_count, created_at, edited_at
 		FROM community.comments WHERE id = $1`, commentID))
 	if err != nil {
-		return nil, pgErr(err, ErrCommentNotFound)
+		return nil, pgmigrate.NotFound(err, ErrCommentNotFound)
 	}
 	return c, nil
 }

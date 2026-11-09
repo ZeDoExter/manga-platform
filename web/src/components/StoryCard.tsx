@@ -125,26 +125,3 @@ export function Rail({ children, className, resetKey }: { children: ReactNode; c
     </div>
   );
 }
-
-export function MiniRow({ story, right, sub }: { story: Story; right?: ReactNode; sub?: ReactNode }) {
-  return (
-    <Link href={`/story/${story.id}`} className="group flex items-center gap-3 rounded-md border-2 border-transparent p-1.5 transition-colors hover:border-line hover:bg-card">
-      <Cover story={story} compact className="w-11 shrink-0 rounded border-2 border-line" />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-extrabold">{story.title}</div>
-        <div className="truncate text-xs text-muted">{sub ?? `${story.genres.slice(0, 2).join(" · ")} · ${fmtNum(story.followers)} followers`}</div>
-      </div>
-      {right}
-    </Link>
-  );
-}
-
-export function RatingLine({ story }: { story: Story }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs">
-      <Stars value={story.rating} size={12} />
-      <b>{story.rating.toFixed(1)}</b>
-      <span className="text-muted">({fmtNum(story.votes)})</span>
-    </span>
-  );
-}

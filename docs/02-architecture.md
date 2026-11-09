@@ -27,13 +27,13 @@
 
 | Service | Responsibility | Demo scope? |
 |---|---|---|
-| `identity` | signup/login, sessions, roles (in-memory) | yes |
+| `identity` | signup/login, sessions, roles (PG-backed, migration 005) | yes |
 | `catalog` | stories, chapters, creator team + split, pricing (PG-backed) | yes |
 | `reader` | serves chapter content; always calls `entitlement` first | yes |
 | `entitlement` | decides can-read + ad-policy per (user, chapter) | yes, embedded in `commerce.CheckEntitlement` (not yet its own process) |
 | `commerce` | wallet, ledger, purchases, creator earnings, reversal (PG-backed) | yes |
 | `library` | reading position, follows, bookmarks, history (PG-backed) | yes |
-| `moderation` | takedown, bans, audit log (in-memory) | yes |
+| `moderation` | takedown, bans, audit log (PG-backed, migration 005) | yes |
 | `media` | image upload/resize/WebP, zip batch, novel HTML sanitize | yes |
 | `community` | chapter comments, replies, likes, reports, moderation state | yes (built early; docs said P0-launch) |
 | `gateway` | edge reverse proxy `/api/` → reader | yes |
@@ -151,8 +151,7 @@ TLS is a real Let's Encrypt certificate (`dootoon-tls`, DNS-01 via Cloudflare), 
 
 - **Demo**: single Azure zone, one replica of each stateful piece, no Redis
   pod (see below), no NAT Gateway/Bastion/Front Door (cost control).
-  Stateful today: Azure PG (catalog/commerce/library schemas) + a PVC for
-  `media` images. `identity`/`moderation`/`community` are still in-memory.
+  Stateful today: Azure PG (catalog/commerce/library/identity/moderation/community schemas, migration 005) + Cloudflare R2 for `media` images.
 - **Production** (documented for the pitch, not built for the demo): two
   zones, zone-redundant load balancer, PostgreSQL HA with standby,
   autoscaling pod replicas per zone. Same Terraform module, `zone_count`

@@ -10,7 +10,7 @@
 |---|---|
 | `web/` | Next.js frontend (standalone) → `https://dootoon.store` |
 | `services/` + `cmd/` | Go microservices: identity, catalog, commerce, reader, library, moderation, community, media, gateway |
-| `deploy/k8s/` | K8s manifests + `gateway-prod.yaml` (TLS) + `gitlab-runner.yaml` (retired) |
+| `deploy/k8s/` | K8s manifests + `gateway-prod.yaml` (TLS) |
 | `infra/` | Terraform: AKS + ACR + PostgreSQL + Key Vault (`demo-day`/`demo-night` scripts) |
 | `docs/` | Spec: goals, requirements (FR-*/NFR-*), architecture, testing, backlog, demo script |
 | `azure-pipelines.yml` | CI/CD เต็มวงจร (MS-hosted, ~17 นาที/รอบ) |

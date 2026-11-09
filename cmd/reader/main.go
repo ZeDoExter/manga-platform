@@ -26,15 +26,6 @@ func main() {
 	mux := http.NewServeMux()
 	httpapi.Health(mux)
 
-	mux.HandleFunc("POST /read", func(w http.ResponseWriter, r *http.Request) {
-		var req api.ReadChapterRequest
-		if err := httpapi.Decode(r, &req); err != nil {
-			httpapi.Fail(w, http.StatusBadRequest, "invalid request body")
-			return
-		}
-		serveRead(w, r, svc, req)
-	})
-
 	mux.HandleFunc("GET /api/chapters/{id}/read", func(w http.ResponseWriter, r *http.Request) {
 		role := identity.Role(r.Header.Get("X-User-Role"))
 		if role == "" {
