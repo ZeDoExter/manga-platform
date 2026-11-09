@@ -31,17 +31,15 @@ export interface PageSpec {
   title: string;
 }
 
-export const DIALOGUE: Record<Mood, string[]> = {
-  dread: ["Did you hear that?", "It's behind us.", "Don't turn around.", "Why is it smiling?", "That wasn't there before.", "Run. Now."],
-  rain: ["It's still raining.", "You came back.", "I remember you.", "Stay a little longer.", "The letter was never sent.", "Listen..."],
-  neon: ["Firmware's lying to us.", "Three seconds. Go!", "Who leased you?", "Trace complete.", "No masters. No leash.", "Sync the blade."],
-  ember: ["Kneel. Or burn.", "I remember every name.", "You swore an oath!", "The crown is hungry.", "Not today.", "Hold the line!"],
-  petal: ["Taste it. Honestly!", "This is... good?", "Don't look at me!", "I made it just for you.", "You're blushing!", "Again tomorrow?"],
-  calm: ["Tea first.", "There's no rush.", "Another quiet day.", "Fate can wait.", "Is that... a dragon?", "Open all night."],
-  stars: ["The line opens at 11:11.", "Who's that for?", "It has your handwriting.", "Look up.", "We were never lost.", "Deliver it anyway."],
-  tide: ["Depth reading's wrong.", "The sea remembers.", "Draw it anyway.", "Hear that singing?", "Hold the line steady.", "Chart it."],
-  snow: ["You're late.", "Come inside.", "I waited.", "Which door was it?", "Stay. Please.", "It's snowing again."],
-};
+const DIALOGUE: Record<Mood, string[]> = { dread: ["Did you hear that?", "It's behind us.", "Don't turn around.", "Why is it smiling?", "That wasn't there before.", "Run. Now."],
+rain: ["It's still raining.", "You came back.", "I remember you.", "Stay a little longer.", "The letter was never sent.", "Listen..."],
+neon: ["Firmware's lying to us.", "Three seconds. Go!", "Who leased you?", "Trace complete.", "No masters. No leash.", "Sync the blade."],
+ember: ["Kneel. Or burn.", "I remember every name.", "You swore an oath!", "The crown is hungry.", "Not today.", "Hold the line!"],
+petal: ["Taste it. Honestly!", "This is... good?", "Don't look at me!", "I made it just for you.", "You're blushing!", "Again tomorrow?"],
+calm: ["Tea first.", "There's no rush.", "Another quiet day.", "Fate can wait.", "Is that... a dragon?", "Open all night."],
+stars: ["The line opens at 11:11.", "Who's that for?", "It has your handwriting.", "Look up.", "We were never lost.", "Deliver it anyway."],
+tide: ["Depth reading's wrong.", "The sea remembers.", "Draw it anyway.", "Hear that singing?", "Hold the line steady.", "Chart it."],
+snow: ["You're late.", "Come inside.", "I waited.", "Which door was it?", "Stay. Please.", "It's snowing again."], }
 const SFX = ["DOON", "ZAAAA", "KRAKK", "SHHH", "THUD", "GOGOGO", "SWISH", "BAM", "...!", "DON!"];
 const CAPTIONS = ["Three days earlier.", "The city never really sleeps.", "Somewhere, a bell rang.", "He had waited a long time for this.", "And then — nothing.", "No one remembers who spoke first."];
 
@@ -111,26 +109,22 @@ function assemble(r: () => number, polys: [number, number][][], mood: Mood, scen
   });
 }
 
-export function pageCount(storyId: string, ch: number): number {
-  return 10 + (hash(`${storyId}#${ch}`) % 7);
-}
+function pageCount(storyId: string, ch: number): number { return 10 + (hash(`${storyId}#${ch}`) % 7); }
 
 const ROW_SETS = [[1, 2, 1], [2, 1, 2], [1, 2, 2], [2, 2, 1], [1, 3, 1], [2, 1, 1, 2], [1, 2, 1, 1]];
 
-export function buildPage(story: { id: string; mood: Mood }, ch: number, n: number, total: number, title: string): PageSpec {
-  const key = `${story.id}:${ch}:${n}`;
-  const r = rng(key);
-  const base = { key, n, seed: hash(key), chapter: ch, title };
-  const full: [number, number][] = [[0, 0], [PAGE_W, 0], [PAGE_W, PAGE_H], [0, PAGE_H]];
-  if (n === 1) return { ...base, kind: "title", panels: [{ id: 0, poly: full, bbox: bboxOf(full), scene: "skyline", seed: base.seed }] };
-  if (n === total) return { ...base, kind: "end", panels: [{ id: 0, poly: full, bbox: bboxOf(full), scene: "dark", seed: base.seed }] };
-  if (r() < 0.12) {
-    const panels = assemble(r, layoutRows(r, [1], 50), story.mood, [pick(r, ["figure", "speed", "skyline"] as Scene[])], 0.3);
-    return { ...base, kind: "splash", panels };
-  }
-  const rows = pick(r, ROW_SETS);
-  return { ...base, kind: "story", panels: assemble(r, layoutRows(r, rows), story.mood) };
+function buildPage(story: { id: string; mood: Mood }, ch: number, n: number, total: number, title: string): PageSpec { const key = `${story.id}:${ch}:${n}`;
+const r = rng(key);
+const base = { key, n, seed: hash(key), chapter: ch, title };
+const full: [number, number][] = [[0, 0], [PAGE_W, 0], [PAGE_W, PAGE_H], [0, PAGE_H]];
+if (n === 1) return { ...base, kind: "title", panels: [{ id: 0, poly: full, bbox: bboxOf(full), scene: "skyline", seed: base.seed }] };
+if (n === total) return { ...base, kind: "end", panels: [{ id: 0, poly: full, bbox: bboxOf(full), scene: "dark", seed: base.seed }] };
+if (r() < 0.12) {
+  const panels = assemble(r, layoutRows(r, [1], 50), story.mood, [pick(r, ["figure", "speed", "skyline"] as Scene[])], 0.3);
+  return { ...base, kind: "splash", panels };
 }
+const rows = pick(r, ROW_SETS);
+return { ...base, kind: "story", panels: assemble(r, layoutRows(r, rows), story.mood) }; }
 
 export function buildChapterPages(story: { id: string; mood: Mood }, ch: number, title: string): PageSpec[] {
   const total = pageCount(story.id, ch);

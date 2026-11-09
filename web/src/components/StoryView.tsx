@@ -424,5 +424,3 @@ function CreatorCard({ story }: { story: Story }) {
     </div>
   );
 }
-
-export { TYPE_LABEL };

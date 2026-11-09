@@ -27,7 +27,7 @@ export type ReaderContent =
   | { kind: "novel"; paragraphs: string[]; title: string }
   | { kind: "manga"; pages: ReaderPageItem[]; title: string };
 
-export function novelParagraphs(story: Pick<Story, "id" | "mood" | "tagline">, n: number): string[] {
+function novelParagraphs(story: Pick<Story, "id" | "mood" | "tagline">, n: number): string[] {
   const pool = NOVEL_POOLS[story.id];
   const r = rng(`${story.id}:novel:${n}`);
   const moodPick = (m: Mood, k: number) => shuffle(r, MOOD_POOLS[m]).slice(0, k);
@@ -117,7 +117,7 @@ export interface Echo {
 }
 
 /* ------------------------------ reader levels ------------------------------ */
-export const LEVEL_TITLES = ["Page Turner", "Night Owl", "Bookmark Keeper", "Chapter Hunter", "Ink Drinker", "Plot Tracker", "Archivist", "Story Warden", "Lorekeeper", "Mythweaver"] as const;
+const LEVEL_TITLES = ["Page Turner", "Night Owl", "Bookmark Keeper", "Chapter Hunter", "Ink Drinker", "Plot Tracker", "Archivist", "Story Warden", "Lorekeeper", "Mythweaver"] as const;
 
 export interface ReaderLevel {
   level: number;

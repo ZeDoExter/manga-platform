@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
-	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	dbmigrations "manga-platform/deploy/postgres"
 	"manga-platform/pkg/httpapi"
 	"manga-platform/pkg/pgmigrate"
@@ -14,15 +13,9 @@ import (
 )
 
 func newService(ctx context.Context) *library.Service {
-	if os.Getenv("DATABASE_URL") == "" {
-		log.Print("library: DATABASE_URL unset, using in-memory store")
-		return library.NewService()
-	}
-	pool := pgmigrate.MustConnect(ctx)
-	if err := pgmigrate.Up(ctx, pool, dbmigrations.Migrations, dbmigrations.Dir); err != nil {
-		log.Fatalf("library: migrate: %v", err)
-	}
-	return library.NewServiceWithStore(library.NewPGStore(pool))
+	return pgmigrate.Boot(ctx, "library", dbmigrations.Migrations, dbmigrations.Dir,
+		library.NewService,
+		func(pool *pgxpool.Pool) *library.Service { return library.NewServiceWithStore(library.NewPGStore(pool)) })
 }
 
 // userFromHeader reads the gateway-injected identity. Never from URL (IDOR).

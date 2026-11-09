@@ -437,5 +437,3 @@ export function MangaReader({ story, chapter, title, nav, content, preview, onCl
     </div>
   );
 }
-
-export { isVisual };

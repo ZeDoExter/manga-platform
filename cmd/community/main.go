@@ -3,11 +3,10 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
-	"os"
 	"strconv"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	dbmigrations "manga-platform/deploy/postgres"
 	"manga-platform/pkg/clients"
 	"manga-platform/pkg/httpapi"
@@ -45,15 +44,9 @@ type blockedWordRequest struct {
 func newService(ctx context.Context) *community.Service {
 	cat := clients.NewCatalog(httpapi.Env("CATALOG_URL", "http://localhost:8082"))
 	com := clients.NewCommerce(httpapi.Env("COMMERCE_URL", "http://localhost:8083"))
-	if os.Getenv("DATABASE_URL") == "" {
-		log.Print("community: DATABASE_URL unset, using in-memory store")
-		return community.NewService(cat, com)
-	}
-	pool := pgmigrate.MustConnect(ctx)
-	if err := pgmigrate.Up(ctx, pool, dbmigrations.Migrations, dbmigrations.Dir); err != nil {
-		log.Fatalf("community: migrate: %v", err)
-	}
-	return community.NewServiceWithStore(cat, com, community.NewPGStore(pool))
+	return pgmigrate.Boot(ctx, "community", dbmigrations.Migrations, dbmigrations.Dir,
+		func() *community.Service { return community.NewService(cat, com) },
+		func(pool *pgxpool.Pool) *community.Service { return community.NewServiceWithStore(cat, com, community.NewPGStore(pool)) })
 }
 
 func main() {

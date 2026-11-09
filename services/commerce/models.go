@@ -3,6 +3,8 @@ package commerce
 import (
 	"errors"
 	"time"
+
+	"manga-platform/services/catalog"
 )
 
 var (
@@ -86,11 +88,9 @@ type Purchase struct {
 	ReversedAt            *time.Time     `json:"reversed_at,omitempty"`
 }
 
-// CreatorSplit defines a team member's revenue share on a story (FR-C3, FR-M4).
-type CreatorSplit struct {
-	CreatorID  string `json:"creator_id"`
-	Percentage int    `json:"percentage"` // e.g. 70 = 70%
-}
+// CreatorSplit aliases catalog's canonical team share (FR-C3, FR-M4).
+// One struct — catalog owns it, commerce reuses it.
+type CreatorSplit = catalog.CreatorSplit
 
 // CreatorEarning records coins credited to a creator from a sale (FR-M4).
 type CreatorEarning struct {

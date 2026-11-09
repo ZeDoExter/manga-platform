@@ -7,7 +7,6 @@ import (
 	"manga-platform/services/commerce"
 	"manga-platform/services/identity"
 )
-
 type CreateUserRequest struct {
 	Email    string        `json:"email"`
 	Password string        `json:"password"`

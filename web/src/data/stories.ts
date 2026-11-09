@@ -1,4 +1,4 @@
-import type { Account, Story, Taste, Motif, Mood, StoryType } from "@/lib/types";
+import type { Account, Story, Taste, Mood, StoryType } from "@/lib/types";
 
 const T = (a: number[]): Taste => ({ darkness: a[0], pace: a[1], romance: a[2], mystery: a[3], action: a[4], humor: a[5], depth: a[6] });
 
@@ -260,4 +260,3 @@ export const CREATOR_MAP: Record<string, Account> = Object.fromEntries(CREATORS.
 
 export const MOODS: Mood[] = ["dread", "rain", "neon", "ember", "petal", "calm", "stars", "tide", "snow"];
 export const TYPES: StoryType[] = ["manga", "manhwa", "manhua", "light-novel", "web-novel", "original"];
-export const MOTIFS: Motif[] = ["moon", "blade", "flame", "bell", "needle", "eye", "lighthouse", "wave", "cloud", "bowl", "note", "flower", "key", "gear", "wolf", "crane", "void", "eclipse", "bone", "train", "airship", "tower", "sun", "city"];

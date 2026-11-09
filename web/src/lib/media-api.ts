@@ -12,7 +12,7 @@ export interface UploadResult {
   animated_dropped: boolean;
 }
 
-export async function uploadImage(
+async function uploadImage(
   file: File, userID: string, storyID = '', chapterID = '',
   onProgress?: (pct: number) => void,
 ): Promise<UploadResult> {

@@ -109,9 +109,9 @@ export interface TopUpInput {
   idempotencyKey: string;
 }
 
-export const COIN_FREE = 0;
-export const COIN_PAID_VISUAL = 30;
-export const COIN_PAID_TEXT = 20;
+const COIN_FREE = 0;
+const COIN_PAID_VISUAL = 30;
+const COIN_PAID_TEXT = 20;
 
 export function chapterKey(storyId: string, chapterNumber: number): string {
   return `${storyId}-ch-${chapterNumber}`;

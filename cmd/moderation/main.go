@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
-	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	dbmigrations "manga-platform/deploy/postgres"
 	"manga-platform/pkg/clients"
 	"manga-platform/pkg/httpapi"
@@ -32,19 +31,13 @@ type banUserRequest struct {
 
 func newService(ctx context.Context) *moderation.Service {
 	secret := []byte(httpapi.Env("HMAC_SECRET", "default-dev-hmac-secret-32-bytes"))
-	store := imagestore.NewMemoryStore(httpapi.Env("CDN_BASE_URL", "https://img.yourmanga.com"), secret)
+	store := imagestore.NewMemoryStore(httpapi.Env("CDN_BASE_URL", "https://img.dootoon.store"), secret)
 	cat := clients.NewCatalog(httpapi.Env("CATALOG_URL", "http://localhost:8082"))
 	com := clients.NewCommerce(httpapi.Env("COMMERCE_URL", "http://localhost:8083"))
 	id := clients.NewIdentity(httpapi.Env("IDENTITY_URL", "http://localhost:8081"))
-	if os.Getenv("DATABASE_URL") == "" {
-		log.Print("moderation: DATABASE_URL unset, using in-memory store")
-		return moderation.NewService(cat, com, id, store)
-	}
-	pool := pgmigrate.MustConnect(ctx)
-	if err := pgmigrate.Up(ctx, pool, dbmigrations.Migrations, dbmigrations.Dir); err != nil {
-		log.Fatalf("moderation: migrate: %v", err)
-	}
-	return moderation.NewServiceWithStore(cat, com, id, store, moderation.NewPGStore(pool))
+	return pgmigrate.Boot(ctx, "moderation", dbmigrations.Migrations, dbmigrations.Dir,
+		func() *moderation.Service { return moderation.NewService(cat, com, id, store) },
+		func(pool *pgxpool.Pool) *moderation.Service { return moderation.NewServiceWithStore(cat, com, id, store, moderation.NewPGStore(pool)) })
 }
 
 func main() {

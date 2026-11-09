@@ -217,7 +217,7 @@ const MOTIFS: Record<Motif, (p: P) => ReactNode> = {
   ),
 };
 
-export const CoverArt = memo(function CoverArt({ story, className }: { story: Pick<Story, "id" | "palette" | "motif">; className?: string }) {
+const CoverArt = memo(function CoverArt({ story, className }: { story: Pick<Story, "id" | "palette" | "motif">; className?: string }) {
   const [a, b, c] = story.palette;
   const d = "#0a0a12";
   const r = rng(story.id);

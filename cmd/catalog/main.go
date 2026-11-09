@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
-	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	dbmigrations "manga-platform/deploy/postgres"
 	"manga-platform/pkg/api"
 	"manga-platform/pkg/httpapi"
@@ -15,15 +14,9 @@ import (
 )
 
 func newService(ctx context.Context) *catalog.Service {
-	if os.Getenv("DATABASE_URL") == "" {
-		log.Print("catalog: DATABASE_URL unset, using in-memory store")
-		return catalog.NewService()
-	}
-	pool := pgmigrate.MustConnect(ctx)
-	if err := pgmigrate.Up(ctx, pool, dbmigrations.Migrations, dbmigrations.Dir); err != nil {
-		log.Fatalf("catalog: migrate: %v", err)
-	}
-	return catalog.NewServiceWithStore(catalog.NewPGStore(pool))
+	return pgmigrate.Boot(ctx, "catalog", dbmigrations.Migrations, dbmigrations.Dir,
+		catalog.NewService,
+		func(pool *pgxpool.Pool) *catalog.Service { return catalog.NewServiceWithStore(catalog.NewPGStore(pool)) })
 }
 
 func main() {
