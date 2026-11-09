@@ -14,7 +14,17 @@ interface Floater {
   x: number;
   y: number;
   mine?: boolean;
+  ttl?: number;
 }
+
+// Read-time TTL: count graphemes (works for TH/JP/KR/emoji/RTL), clamp 5s–8s.
+const READ_MS = 5000;
+const READ_MAX = 8000;
+const READ_PER_CHAR = 60;
+const paidTtl = (text: string) => {
+  const len = [...(text ?? "")].length;
+  return Math.min(READ_MAX, READ_MS + len * READ_PER_CHAR);
+};
 
 
 export interface LivingRoomProps {
@@ -153,7 +163,7 @@ export function LivingRoom({
 
   const pushFloater = (item: Omit<Floater, "id">, ttlMs = 3400) => {
     const id = ++fid.current;
-    setFloaters((f) => [...f.slice(-15), { ...item, id }]);
+    setFloaters((f) => [...f.slice(-15), { ...item, id, ttl: ttlMs }]);
     setTimeout(() => {
       setFloaters((f) => f.filter((x) => x.id !== id));
     }, ttlMs);
@@ -204,7 +214,7 @@ export function LivingRoom({
           y: 44,
           mine: c.mine,
         },
-        8000,
+        paidTtl(c.text),
       );
     }
     let best = { kind: "fire" as EchoKind, total: 0 };
@@ -301,7 +311,7 @@ export function LivingRoom({
           const fresh = rows.filter((c) => Date.now() - c.at < 60000 && !seenPaid.current.has(c.id));
           for (const c of fresh) {
             seenPaid.current.add(c.id);
-            pushFloater({ emoji: "💬", text: c.text, sub: `@${c.user} · 🪙${c.coins} · p.${c.page}`, x: 4, y: 44, mine: c.user === state.accountId }, 8000);
+            pushFloater({ emoji: "💬", text: c.text, sub: `@${c.user} · 🪙${c.coins} · p.${c.page}`, x: 4, y: 44, mine: c.user === state.accountId }, paidTtl(c.text));
           }
         })
         .catch(() => {});
@@ -347,7 +357,7 @@ export function LivingRoom({
       const cid = data.id ?? `mine-${Date.now()}`;
       seenPaid.current.add(cid);
       setFeed((prev) => [{ id: cid, user: state.accountId, text, coins, page, at: Date.now(), mine: true }, ...prev].slice(0, 30));
-      pushFloater({ emoji: "💬", text, sub: `@${state.accountId} · 🪙${coins} · p.${page}`, x: 4, y: 44, mine: true }, 8000);
+      pushFloater({ emoji: "💬", text, sub: `@${state.accountId} · 🪙${coins} · p.${page}`, x: 4, y: 44, mine: true }, paidTtl(text));
       refreshHeat();
       setPaidText("");
       toast(`Comment posted · 🪙${coins}`, "ok");
@@ -418,7 +428,7 @@ export function LivingRoom({
             key={f.id}
             className="flex w-fit max-w-64 items-center gap-2 rounded-2xl border-2 border-[#15120f] bg-[#fbf8f1]/95 px-3 py-1.5 text-xs font-bold text-[#15120f] shadow-[3px_3px_0_#15120f] backdrop-blur-xs sm:max-w-72"
             style={{
-              animation: "echo-rise 8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
+              animation: `echo-rise ${(f.ttl ?? 8000) / 1000}s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
               outline: f.mine ? "2px solid var(--accent)" : undefined,
             }}
           >
