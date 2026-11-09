@@ -266,9 +266,6 @@ export default function LoginPage() {
             <Icon name="arrow" size={14} />
           </button>
         </form>
-        <p className="mt-4 rounded-md border-2 border-dashed border-line/40 p-2.5 text-center font-mono text-[0.68rem] text-muted">
-          Demo: reader@ / creator@ / admin@ + dootoon.store · pass dootoon123
-        </p>
       </div>
     </div>
   );

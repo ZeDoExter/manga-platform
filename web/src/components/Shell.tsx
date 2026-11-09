@@ -129,7 +129,6 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
                 <Link href="/login" onClick={() => setMenu(false)} className="btn btn-accent mb-2 flex w-full items-center justify-center gap-2 !py-2 text-xs font-extrabold">
                   <Icon name="user" size={14} /> Sign in / Google
                 </Link>
-                <p className="px-2 py-1 text-[0.68rem] text-muted">Demo logins: reader@ / creator@ / admin@ + dootoon123</p>
               </div>
             )}
           </div>
