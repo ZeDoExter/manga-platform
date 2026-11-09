@@ -112,8 +112,8 @@ export function Top10() {
         {TOP10.map((s) => (
           <li key={s.id} className="w-[60vw] max-w-[240px] shrink-0 snap-center">
             <Link href={`/story/${s.id}`} className="block" aria-label={`#${s.rank} ${s.title}`}>
-              <div className="flex items-center gap-2">
-                <span className="h-display bg-accent px-2.5 py-0.5 text-2xl text-white [clip-path:polygon(0_0,100%_0,88%_100%,0_100%)]">#{s.rank}</span>
+              <div className="flex items-center gap-2.5">
+                <span className="h-display bg-accent px-2.5 py-0.5 pr-4 text-2xl text-white [clip-path:polygon(0_0,100%_0,88%_100%,0_100%)]">#{s.rank}</span>
                 <TypeBadge type={s.type} />
               </div>
               <div className="relative mt-2 rounded-md border-2 border-line shadow-[5px_5px_0_var(--shadow)]">
