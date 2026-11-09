@@ -268,7 +268,7 @@ export const Cover = memo(function Cover({ story, className, compact, rank, prio
         <>
           <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
           <div className="absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-black/45 to-transparent" />
-          <span className="absolute left-[5cqw] top-[5cqw] rounded-[3px] border border-white/70 bg-black/40 px-[3cqw] py-[1cqw] font-mono text-[4.2cqw] font-bold uppercase tracking-wider text-white backdrop-blur-sm">{TYPE_LABEL[story.type]}</span>
+          {rank === undefined && <span className="absolute left-[5cqw] top-[5cqw] rounded-[3px] border border-white/70 bg-black/40 px-[3cqw] py-[1cqw] font-mono text-[4.2cqw] font-bold uppercase tracking-wider text-white backdrop-blur-sm">{TYPE_LABEL[story.type]}</span>}
           <span className="vtext absolute right-[5cqw] top-[5cqw] font-display text-[6cqw] leading-none text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,.6)]">{story.alt.length < 14 ? story.alt : ""}</span>
           <div className="absolute inset-x-[6cqw] bottom-[6cqw]">
             <div className="h-display text-[10.5cqw] uppercase leading-[0.98] text-white [text-shadow:0_2px_10px_rgba(0,0,0,.7)]">{story.title}</div>
@@ -276,7 +276,7 @@ export const Cover = memo(function Cover({ story, className, compact, rank, prio
         </>
       )}
       {rank !== undefined && (
-        <span className="absolute left-0 top-[13cqw] z-10 grid h-[16cqw] min-w-[16cqw] place-items-center bg-accent px-[3cqw] pr-[5cqw] font-display text-[8cqw] text-white shadow-[2px_2px_0_rgba(0,0,0,.5)] [clip-path:polygon(0_0,100%_0,82%_100%,0_100%)]">{rank}</span>
+        <span className="absolute left-0 top-0 grid h-[16cqw] min-w-[16cqw] place-items-center bg-accent px-[3cqw] font-display text-[8cqw] text-white [clip-path:polygon(0_0,100%_0,82%_100%,0_100%)]">{rank}</span>
       )}
     </div>
   );
