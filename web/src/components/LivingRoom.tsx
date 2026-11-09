@@ -297,7 +297,10 @@ export function LivingRoom({
             return merged.slice(0, 30);
           });
           const fresh = rows.filter((c) => Date.now() - c.at < 60000 && !seenPaid.current.has(c.id));
-          for (const c of fresh) seenPaid.current.add(c.id);
+          for (const c of fresh) {
+            seenPaid.current.add(c.id);
+            pushFloater({ emoji: "💬", text: c.text, sub: `@${c.user} · 🪙${c.coins} · p.${c.page}`, x: 4, y: 44, mine: c.user === state.accountId }, 8000);
+          }
         })
         .catch(() => {});
     };
@@ -342,8 +345,10 @@ export function LivingRoom({
       const cid = data.id ?? `mine-${Date.now()}`;
       seenPaid.current.add(cid);
       setFeed((prev) => [{ id: cid, user: state.accountId, text, coins, page, at: Date.now(), mine: true }, ...prev].slice(0, 30));
+      pushFloater({ emoji: "💬", text, sub: `@${state.accountId} · 🪙${coins} · p.${page}`, x: 4, y: 44, mine: true }, 8000);
       refreshHeat();
       setPaidText("");
+      toast(`Comment posted · 🪙${coins}`, "ok");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Paid comment failed", "warn");
     } finally {
