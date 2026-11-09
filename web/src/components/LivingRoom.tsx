@@ -134,7 +134,8 @@ export function LivingRoom({
     }
     return Object.entries(buckets)
       .map(([z, b]) => {
-        const top = Object.entries(b.kinds).sort((a, c) => c[1] - a[1])[0];
+        const sorted = Object.entries(b.kinds).sort((a, c) => c[1] - a[1]);
+        const top = sorted.find(([k]) => k !== "paid") ?? sorted[0];
         return { zone: Number(z), pct: (Number(z) + 0.5) / 10, kind: top[0] as EchoKind, total: b.total, mine: b.mine };
       })
       .sort((a, b) => a.zone - b.zone);
