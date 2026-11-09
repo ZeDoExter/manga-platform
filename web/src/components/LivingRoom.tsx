@@ -179,6 +179,15 @@ export function LivingRoom({
   }, [visible, open]);
 
   useEffect(() => {
+    if (!open) return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open]);
+
+  useEffect(() => {
     if (quiet || preview) return;
     const prev = prevProg.current;
     prevProg.current = progress;
@@ -441,43 +450,27 @@ export function LivingRoom({
         ))}
       </div>
 
-      {/* Backdrop when Settings popup is open */}
+      {/* Settings: command-palette modal (same shell as ⌘K palette) */}
       {open && (
-        <div
-          className="fixed inset-0 z-[50] bg-black/25 backdrop-blur-[1px]"
-          onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Bottom-Right Floating Dock: Shifted left away from scrollbar & auto-hides with Nav */}
-      <div
-        className={cx(
-          "fixed bottom-16 right-7 z-[55] flex flex-col items-end gap-2.5 transition-all duration-300 sm:bottom-18 sm:right-10 md:right-14",
-          visible || open ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-24 opacity-0",
-        )}
-      >
-        {open && (
-          <div
-            className="flex w-[min(90vw,21.5rem)] flex-col items-end gap-2.5 text-[#15120f] [--card:#fbf8f1] [--ink:#15120f] [--ink2:#3b352e] [--line:#15120f] [--muted:#7a7064] [--paper:#fbf8f1] [--paper2:#e8e1d1] [--shadow:#15120f]"
-            role="dialog"
-            aria-label="Reader settings and echoes"
-          >
-            {/* Card 1: Reader Settings & Mode Controls */}
-            <div className="panel anim-pop w-full space-y-3.5 p-4">
-              <div className="flex items-center justify-between border-b-2 border-dashed border-line/25 pb-2">
-                <span className="flex items-center gap-2 font-display text-sm uppercase tracking-wider">
-                  <Icon name="sliders" size={15} className="text-accent" /> Reader Settings
-                </span>
-                <button
-                  onClick={() => setOpen(false)}
-                  className="grid size-7 place-items-center rounded-md border-2 border-line bg-paper2 text-[#15120f] hover:bg-hl"
-                  aria-label="Close settings"
-                >
-                  <Icon name="x" size={13} />
-                </button>
+        <div className="fixed inset-0 z-[260] flex items-start justify-center p-4 pt-[10vh]" role="dialog" aria-modal="true" aria-label="Reader settings and echoes">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="panel anim-pop relative max-h-[80vh] w-full max-w-xl overflow-hidden text-[#15120f] [--card:#fbf8f1] [--ink:#15120f] [--ink2:#3b352e] [--line:#15120f] [--muted:#7a7064] [--paper:#fbf8f1] [--paper2:#e8e1d1] [--shadow:#15120f]">
+            <div className="flex items-center gap-3 border-b-2 border-line px-4">
+              <Icon name="sliders" size={18} className="text-accent" />
+              <div className="flex h-14 flex-1 items-center font-display text-sm uppercase tracking-wider">
+                Reader Settings
               </div>
-
+              <button
+                onClick={() => setOpen(false)}
+                className="grid size-7 place-items-center rounded-md border-2 border-line bg-paper2 text-[#15120f] hover:bg-hl"
+                aria-label="Close settings"
+              >
+                <Icon name="x" size={13} />
+              </button>
+            </div>
+            <div className="scroll-y max-h-[calc(80vh-3.5rem)] space-y-3.5 p-4">
+            {/* Card 1: Reader Settings & Mode Controls */}
+            <div className="panel-flat w-full space-y-3.5 p-4">
               {/* Custom Mode / Typography / Width Controls injected by MangaReader or NovelReader */}
               {children}
 
@@ -543,7 +536,7 @@ export function LivingRoom({
 
             {/* Card 2: Echoes + paid comment + totals, all in one */}
             {!preview && (
-              <div className="panel anim-pop w-full p-3.5" style={{ animationDelay: "40ms" }}>
+              <div className="panel-flat w-full p-3.5">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="label flex items-center gap-1.5 !text-[#15120f]">
                     <Icon name="heart" size={12} className="text-accent" /> Echoes · {echoLeft}/3
@@ -621,8 +614,18 @@ export function LivingRoom({
                 )}
               </div>
             )}
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* Bottom-Right Floating Dock: Shifted left away from scrollbar & auto-hides with Nav */}
+      <div
+        className={cx(
+          "fixed bottom-16 right-7 z-[55] flex flex-col items-end gap-2.5 transition-all duration-300 sm:bottom-18 sm:right-10 md:right-14",
+          visible || open ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-24 opacity-0",
         )}
+      >
         <div className="flex flex-col items-center gap-2.5">
           <button
             onClick={onScrollTop}
