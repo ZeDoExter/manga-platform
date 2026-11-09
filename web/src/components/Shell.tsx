@@ -109,10 +109,12 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
           <kbd className="hidden rounded border border-line/40 px-1.5 font-mono text-[0.65rem] md:block">⌘K</kbd>
         </button>
 
-        <Link href="/wallet" className="panel-flat hidden h-10 items-center gap-2 px-2.5 transition-shadow hover:shadow-[3px_3px_0_var(--shadow)] sm:flex" aria-label={`Wallet, ${balance} coins`}>
-          <span className="grid size-6 place-items-center rounded-full border-2 border-line bg-hl text-[#15120f]"><Icon name="coin" size={13} /></span>
-          <span className="font-mono text-xs font-extrabold tabular-nums">{balance.toLocaleString()}</span>
-        </Link>
+        {account.role !== "guest" || session?.user ? (
+          <Link href="/wallet" className="panel-flat hidden h-10 items-center gap-2 px-2.5 transition-shadow hover:shadow-[3px_3px_0_var(--shadow)] sm:flex" aria-label={`Wallet, ${balance} coins`}>
+            <span className="grid size-6 place-items-center rounded-full border-2 border-line bg-hl text-[#15120f]"><Icon name="coin" size={13} /></span>
+            <span className="font-mono text-xs font-extrabold tabular-nums">{balance.toLocaleString()}</span>
+          </Link>
+        ) : null}
 
         <button className="btn btn-ghost btn-icon !p-2.5" onClick={() => act.setTheme(night ? "paper" : "night")} aria-label={night ? "Switch to paper theme" : "Switch to night theme"} title={night ? "Paper edition" : "Night edition"}>
           <Icon name={night ? "sun" : "moon"} size={18} />

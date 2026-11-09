@@ -12,6 +12,7 @@ var (
 	ErrAlreadyReversed     = errors.New("purchase already reversed")
 	ErrInvalidSplit        = errors.New("creator split must sum to 100%")
 	ErrInvalidAmount       = errors.New("amount must be greater than zero")
+	ErrGuestNotAllowed     = errors.New("guest top-up is not allowed")
 )
 
 // CoinType distinguishes real-money purchased coins from promotional bonus coins (FR-M2).

@@ -473,3 +473,13 @@ func TestWebEconomy_ListLedgerEntitlementsAndEarnings(t *testing.T) {
 		t.Errorf("expected clawed-back earnings to disappear, got %d across %d", total, len(earnings))
 	}
 }
+
+func TestTopUp_RejectsGuest(t *testing.T) {
+	ctx := context.Background()
+	svc := commerce.NewService()
+	for _, userID := range []string{"", "guest"} {
+		if _, err := svc.TopUp(ctx, userID, 100, commerce.CoinPurchased, "ref", "key-"+userID); err == nil {
+			t.Errorf("expected TopUp(%q) to fail", userID)
+		}
+	}
+}

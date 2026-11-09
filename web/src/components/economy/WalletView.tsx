@@ -121,6 +121,14 @@ export function WalletView() {
     }
   };
 
+  if (account.role === "guest") {
+    return (
+      <div className="wrap py-16">
+        <Empty icon="lock" title="Sign in to open your wallet" text="Guests can't hold or top up coins. Sign in or try a demo account." action={<Link href="/login" className="btn btn-accent">Sign in</Link>} />
+      </div>
+    );
+  }
+
   if (error && !wallet) {
     return (
       <div className="wrap py-16">

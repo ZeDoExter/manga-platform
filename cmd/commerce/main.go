@@ -44,6 +44,8 @@ func main() {
 			httpapi.JSON(w, http.StatusOK, entry)
 		case errors.Is(err, commerce.ErrInvalidAmount):
 			httpapi.Fail(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, commerce.ErrGuestNotAllowed):
+			httpapi.Fail(w, http.StatusUnauthorized, err.Error())
 		default:
 			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
 		}

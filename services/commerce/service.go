@@ -37,6 +37,9 @@ const PlatformUserID = "platform"
 
 // TopUp credits coins to a user's wallet with webhook idempotency (FR-M1, B-A1).
 func (s *Service) TopUp(ctx context.Context, userID string, amount int64, coinType CoinType, refID, idempotencyKey string) (*LedgerEntry, error) {
+	if userID == "" || userID == "guest" {
+		return nil, ErrGuestNotAllowed
+	}
 	if amount <= 0 {
 		return nil, ErrInvalidAmount
 	}
