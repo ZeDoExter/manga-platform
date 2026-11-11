@@ -121,7 +121,7 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
 
         {account.role === "guest" && !session?.user ? (
           <div className="relative" ref={ref}>
-            <button onClick={() => setMenu((m) => !m)} className="btn btn-accent !py-2 text-xs font-extrabold" aria-expanded={menu} aria-haspopup="menu" aria-label="Sign in or try demo">
+            <button onClick={() => setMenu((m) => !m)} className="btn btn-accent !py-2 text-xs font-extrabold" aria-expanded={menu} aria-haspopup="menu" aria-label="Sign in">
               <Icon name="user" size={14} /> <span className="hidden sm:inline">Sign in</span>
             </button>
             {menu && (
