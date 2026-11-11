@@ -483,3 +483,82 @@ func TestTopUp_RejectsGuest(t *testing.T) {
 		}
 	}
 }
+
+func TestTip_PlatformKeeps100_Idempotent(t *testing.T) {
+	ctx := context.Background()
+	svc := commerce.NewService()
+	user := "tipper-1"
+	if _, err := svc.TopUp(ctx, user, 100, commerce.CoinPurchased, "pay", "idem-tip-topup"); err != nil {
+		t.Fatalf("TopUp: %v", err)
+	}
+	entry, err := svc.Tip(ctx, user, 20, "comment-1", "idem-tip-1")
+	if err != nil {
+		t.Fatalf("Tip: %v", err)
+	}
+	if entry.Amount != 20 || entry.UserID != commerce.PlatformUserID {
+		t.Fatalf("platform should keep 20, got %+v", entry)
+	}
+	w, _ := svc.GetWallet(ctx, user)
+	if w.Total() != 80 {
+		t.Fatalf("tipper should have 80 left, got %d", w.Total())
+	}
+	replay, err := svc.Tip(ctx, user, 20, "comment-1", "idem-tip-1")
+	if err != nil {
+		t.Fatalf("replay: %v", err)
+	}
+	if replay.ID != entry.ID {
+		t.Fatalf("replay returned different entry %s vs %s", replay.ID, entry.ID)
+	}
+	w2, _ := svc.GetWallet(ctx, user)
+	if w2.Total() != 80 {
+		t.Fatalf("replay double-charged: %d", w2.Total())
+	}
+}
+
+func TestTip_BonusFirstAndRejects(t *testing.T) {
+	ctx := context.Background()
+	svc := commerce.NewService()
+	user := "tipper-2"
+	if _, err := svc.TopUp(ctx, user, 10, commerce.CoinBonus, "promo", "idem-tip-b"); err != nil {
+		t.Fatalf("TopUp bonus: %v", err)
+	}
+	if _, err := svc.TopUp(ctx, user, 100, commerce.CoinPurchased, "pay", "idem-tip-p"); err != nil {
+		t.Fatalf("TopUp: %v", err)
+	}
+	if _, err := svc.Tip(ctx, user, 15, "", "idem-tip-mix"); err != nil {
+		t.Fatalf("Tip: %v", err)
+	}
+	w, _ := svc.GetWallet(ctx, user)
+	if w.BonusCoins != 0 || w.PurchasedCoins != 95 {
+		t.Fatalf("bonus-first debit wrong: %+v", w)
+	}
+	if _, err := svc.Tip(ctx, user, 4, "", "idem-tip-small"); err == nil {
+		t.Error("expected Tip below minimum to fail")
+	}
+	if _, err := svc.Tip(ctx, user, 1000, "", "idem-tip-broke"); err == nil {
+		t.Error("expected Tip over balance to fail")
+	}
+	if _, err := svc.TopUp(ctx, user, 0, commerce.CoinPurchased, "x", "k0"); err == nil {
+		t.Error("expected zero TopUp to fail")
+	}
+}
+
+func TestPurchaseChapter_RejectsBadInput(t *testing.T) {
+	ctx := context.Background()
+	svc := commerce.NewService()
+	if _, err := svc.PurchaseChapter(ctx, commerce.PurchaseRequest{UserID: "u", Price: -1}); err == nil {
+		t.Error("expected negative price to fail")
+	}
+	bad := commerce.PurchaseRequest{UserID: "u", Price: 10, CreatorSplits: []commerce.CreatorSplit{{CreatorID: "c", Percentage: 50}}}
+	if _, err := svc.PurchaseChapter(ctx, bad); err == nil {
+		t.Error("expected bad split total to fail")
+	}
+}
+
+func TestReversePurchase_Errors(t *testing.T) {
+	ctx := context.Background()
+	svc := commerce.NewService()
+	if err := svc.ReversePurchaseOnTakedown(ctx, "purch-missing", "td-1"); err == nil {
+		t.Error("expected missing purchase to fail")
+	}
+}

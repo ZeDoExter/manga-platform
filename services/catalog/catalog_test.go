@@ -121,3 +121,46 @@ func TestWebSync_ExplicitIDsAndChapterUpdate(t *testing.T) {
 		t.Fatalf("unexpected updated chapter: %+v", updated)
 	}
 }
+
+func TestListStoriesAndChaptersByStory(t *testing.T) {
+	ctx := context.Background()
+	svc := catalog.NewService()
+	s1, err := svc.CreateStory(ctx, "creator-1", catalog.StoryTypeManga, "Story One", "", nil, nil)
+	if err != nil {
+		t.Fatalf("CreateStory: %v", err)
+	}
+	if _, err := svc.CreateStory(ctx, "creator-1", catalog.StoryTypeNovel, "Story Two", "", nil, nil); err != nil {
+		t.Fatalf("CreateStory: %v", err)
+	}
+	stories, err := svc.ListStories(ctx)
+	if err != nil {
+		t.Fatalf("ListStories: %v", err)
+	}
+	if len(stories) != 2 {
+		t.Fatalf("expected 2 stories, got %d", len(stories))
+	}
+	if _, err := svc.CreateChapter(ctx, s1.ID, 1, "Ch 1", 0, nil, "", nil); err != nil {
+		t.Fatalf("CreateChapter: %v", err)
+	}
+	if _, err := svc.CreateChapter(ctx, s1.ID, 2, "Ch 2", 0, nil, "", nil); err != nil {
+		t.Fatalf("CreateChapter: %v", err)
+	}
+	chaps, err := svc.ListChaptersByStory(ctx, s1.ID)
+	if err != nil {
+		t.Fatalf("ListChaptersByStory: %v", err)
+	}
+	if len(chaps) != 2 || chaps[0].OrderIndex != 1 || chaps[1].OrderIndex != 2 {
+		t.Fatalf("chapters not ordered by order_index: %+v", chaps)
+	}
+}
+
+func TestUpdateChapter_RejectsBadInput(t *testing.T) {
+	ctx := context.Background()
+	svc := catalog.NewService()
+	if _, err := svc.UpdateChapter(ctx, "chap-x", "", 10); err == nil {
+		t.Error("expected empty title to fail")
+	}
+	if _, err := svc.UpdateChapter(ctx, "chap-x", "T", -1); err == nil {
+		t.Error("expected negative price to fail")
+	}
+}

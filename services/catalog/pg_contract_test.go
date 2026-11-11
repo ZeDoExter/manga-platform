@@ -82,4 +82,13 @@ func TestPGStore_Contract(t *testing.T) {
 	if _, err := svc.CreateChapter(ctx, "story_missing", 1, "x", 0, []string{}, "", nil); err != catalog.ErrStoryNotFound {
 		t.Fatalf("expected ErrStoryNotFound, got %v", err)
 	}
+	// List paths round-trip on PG too.
+	stories, err := svc.ListStories(ctx)
+	if err != nil || len(stories) == 0 {
+		t.Fatalf("ListStories: %v (%d rows)", err, len(stories))
+	}
+	chaps, err := svc.ListChaptersByStory(ctx, story.ID)
+	if err != nil || len(chaps) == 0 {
+		t.Fatalf("ListChaptersByStory: %v (%d rows)", err, len(chaps))
+	}
 }
