@@ -1,46 +1,55 @@
-// Cloudflare Worker: Maintenance Mode (Direct Fallback - No URL Params Needed)
+// Cloudflare Worker: Maintenance & Circuit Breaker
 // Route: dootoon.store/*, api.dootoon.store/*
-// แสดงหน้า Maintenance ทันทีสำหรับทุกคนที่เข้าเว็บ dootoon.store โดยตรง
-// มีระบบ Admin Bypass ด้วยการเติม ?bypass=1 ในกรณีที่ต้องการเข้าใช้งานเว็บจริง
+// ทำงานอัตโนมัติ: ถ้าเซิร์ฟเวอร์หลังบ้านทำงานปกติ (200 OK) -> ส่งหน้าเว็บจริงให้ผู้ใช้
+// ถ้าเซิร์ฟเวอร์หลังบ้านดับ/ปิดเครื่อง/Error 5xx/522/Timeout -> เสิร์ฟหน้า Maintenance ภาษาอังกฤษธีม DOOTOON ทันที
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // [ADMIN BYPASS]: ถ้าต้องการทะลุเข้าไปดูเว็บจริง ให้พิมพ์ ?bypass=1 หรือ ?live=1
-    const hasBypass = url.searchParams.has('bypass') || url.searchParams.has('live') || (request.headers.get('cookie') || '').includes('dootoon_bypass=1');
-
-    if (hasBypass) {
-      try {
-        const response = await fetch(request);
-        const newHeaders = new Headers(response.headers);
-        newHeaders.append('Set-Cookie', 'dootoon_bypass=1; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600');
-        return new Response(response.body, { status: response.status, headers: newHeaders });
-      } catch (err) {
-        // ถ้า Origin มีปัญหาจริง ค่อยส่งหน้า 522
-        return renderMaintenancePage(522);
-      }
+    // [MANUAL PREVIEW]: อนุญาตให้ทดสอบหน้า maintenance ได้ด้วย ?maintenance=1 หรือ ?preview=1
+    if (url.searchParams.has('maintenance') || url.searchParams.has('preview')) {
+      return renderMaintenancePage(503);
     }
 
-    // [DEFAULT]: แสดงหน้าจอ Maintenance ทันทีสำหรับทุกคน ไม่ต้องพิมพ์ ?maintenance=1
-    return renderMaintenancePage(503);
+    // กำหนดเวลา Timeout รอ Origin สูงสุด 4.5 วินาที
+    const timeoutMs = 4500;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      // 1. ส่งคำขอไปยัง Origin ตามปกติ
+      const response = await fetch(request, {
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      // 2. ถ้าเซิร์ฟเวอร์ตอบกลับเป็น 5xx (500, 502, 503, 504, 520-524) ให้ดักจับและแสดงหน้า Maintenance
+      if (response.status >= 500 && response.status <= 599) {
+        return renderMaintenancePage(response.status);
+      }
+
+      // 3. ถ้าสถานะปกติ (< 500) ส่งหน้าเว็บจริงกลับไปตามปกติ
+      return response;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      // 4. กรณี Origin ปิดเครื่อง หรือต่อไม่ติด (Timeout / 522) แสดงหน้า Maintenance
+      return renderMaintenancePage(522);
+    }
   },
 };
 
 function renderMaintenancePage(code) {
-  const isCircuitBreaker = code === 522;
-  const statusChip = isCircuitBreaker ? 'HTTP 522 INTERCEPTED' : 'MAINTENANCE MODE ACTIVE';
-  const kickerText = isCircuitBreaker ? 'EDGE CIRCUIT BREAKER ACTIVE' : 'SCHEDULED MAINTENANCE · DEMO-NIGHT';
-
   const html = `<!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DOOTOON ดูตูน — พักปรับปรุงระบบชั่วคราว</title>
+  <title>DOOTOON — Scheduled Maintenance</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@600;700;800;900&family=Mitr:wght@600;700&family=Bricolage+Grotesque:opsz,wght@12..96,700..800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,700..800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --paper: #f2ede2;
@@ -55,7 +64,6 @@ function renderMaintenancePage(code) {
       --hl: #ffd43b;
       --mint: #12b58b;
       --font-display: "Kanit", "Bricolage Grotesque", system-ui, sans-serif;
-      --font-thai: "Mitr", "Kanit", system-ui, sans-serif;
       --font-mono: "JetBrains Mono", ui-monospace, monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -74,13 +82,13 @@ function renderMaintenancePage(code) {
       background-size: 24px 24px;
     }
     .card-wrap {
-      max-width: 580px;
+      max-width: 560px;
       width: 100%;
       background: var(--card);
       border: 2.5px solid var(--line);
       border-radius: 12px;
       box-shadow: 6px 6px 0 var(--shadow);
-      padding: 40px 32px;
+      padding: 42px 36px;
       text-align: center;
       position: relative;
     }
@@ -89,7 +97,7 @@ function renderMaintenancePage(code) {
       align-items: center;
       justify-content: center;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
     }
     .brand-badge {
       display: grid;
@@ -98,8 +106,7 @@ function renderMaintenancePage(code) {
       height: 44px;
       background: var(--accent);
       color: #fff;
-      font-family: var(--font-thai);
-      font-weight: 700;
+      font-weight: 800;
       font-size: 1.5rem;
       border: 2px solid var(--line);
       border-radius: 8px;
@@ -109,29 +116,25 @@ function renderMaintenancePage(code) {
     .brand-title {
       font-family: var(--font-display);
       font-weight: 900;
-      font-size: 1.8rem;
+      font-size: 1.9rem;
       letter-spacing: -0.02em;
       line-height: 1;
     }
-    .brand-title small {
-      font-family: var(--font-thai);
+    .brand-title span {
       color: var(--accent);
-      font-weight: 700;
-      font-size: 1.3rem;
-      margin-left: 6px;
     }
     .kicker {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
       font-family: var(--font-mono);
       font-size: 0.72rem;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       background: var(--ink);
       color: var(--paper);
-      padding: 4px 12px;
+      padding: 4px 14px;
       border-radius: 999px;
       margin-bottom: 18px;
     }
@@ -150,19 +153,18 @@ function renderMaintenancePage(code) {
     h1 {
       font-family: var(--font-display);
       font-weight: 900;
-      font-size: clamp(1.6rem, 4vw, 2.1rem);
-      line-height: 1.2;
-      margin-bottom: 10px;
+      font-size: clamp(1.8rem, 4.5vw, 2.3rem);
+      line-height: 1.15;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
     }
-    h1 .th {
-      font-family: var(--font-thai);
+    h1 .accent {
       color: var(--accent);
     }
     .desc {
-      font-family: var(--font-thai);
       color: var(--ink2);
       font-size: 0.98rem;
-      margin-bottom: 24px;
+      margin-bottom: 26px;
       line-height: 1.65;
     }
     .status-panel {
@@ -171,7 +173,7 @@ function renderMaintenancePage(code) {
       border-radius: 8px;
       box-shadow: 3px 3px 0 var(--shadow);
       padding: 16px 20px;
-      margin-bottom: 26px;
+      margin-bottom: 28px;
       text-align: left;
     }
     .status-row {
@@ -202,15 +204,13 @@ function renderMaintenancePage(code) {
     .badge-chip.accent { background: var(--accent); color: #fff; }
     .btn-group {
       display: flex;
-      gap: 12px;
       justify-content: center;
-      flex-wrap: wrap;
     }
     .btn {
       font-family: var(--font-display);
       font-weight: 800;
-      font-size: 0.92rem;
-      padding: 11px 24px;
+      font-size: 0.95rem;
+      padding: 12px 28px;
       border: 2px solid var(--line);
       border-radius: 8px;
       cursor: pointer;
@@ -219,22 +219,11 @@ function renderMaintenancePage(code) {
       align-items: center;
       gap: 8px;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    .btn-accent {
       background: var(--accent);
       color: #fff;
       box-shadow: 4px 4px 0 var(--shadow);
     }
-    .btn-accent:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0 var(--shadow);
-    }
-    .btn-ghost {
-      background: var(--card);
-      color: var(--ink);
-      box-shadow: 4px 4px 0 var(--shadow);
-    }
-    .btn-ghost:hover {
+    .btn:hover {
       transform: translate(-2px, -2px);
       box-shadow: 6px 6px 0 var(--shadow);
     }
@@ -252,42 +241,39 @@ function renderMaintenancePage(code) {
   <div class="card-wrap">
     <div class="brand-header">
       <span class="brand-badge">ด</span>
-      <div class="brand-title">DOOTOON<small>ดูตูน</small></div>
+      <div class="brand-title">DOOTOON <span>STORE</span></div>
     </div>
 
-    <div class="kicker"><span class="pulse-dot"></span> ${kickerText}</div>
+    <div class="kicker"><span class="pulse-dot"></span> SYSTEM MAINTENANCE</div>
 
-    <h1>ระบบกำลังพักผ่อน <span class="th">พักชาร์จแบต</span></h1>
+    <h1>We'll Be <span class="accent">Back Soon</span></h1>
     <p class="desc">
-      เซิร์ฟเวอร์ Azure AKS อยู่ในโหมดพักประหยัดงบ (Demo-Night Mode) เพื่อควบคุมค่าใช้จ่ายคลาวด์ หากต้องการเข้าชมระบบ กรุณาลองใหม่อีกครั้ง หรือติดต่อทีมงาน
+      Our platform is currently undergoing scheduled maintenance and infrastructure updates. We are working to restore full access as quickly as possible.
     </p>
 
     <div class="status-panel">
       <div class="status-row">
-        <span class="status-label">Cloudflare Edge Proxy</span>
-        <span class="badge-chip green">● ONLINE (Anycast BKK)</span>
+        <span class="status-label">Edge Gateway</span>
+        <span class="badge-chip green">● OPERATIONAL</span>
       </div>
       <div class="status-row">
-        <span class="status-label">Azure AKS Cluster</span>
-        <span class="badge-chip warn">STANDBY / SLEEP</span>
+        <span class="status-label">Core Application Services</span>
+        <span class="badge-chip warn">UPDATING</span>
       </div>
       <div class="status-row">
-        <span class="status-label">Edge Protection</span>
-        <span class="badge-chip accent">${statusChip}</span>
+        <span class="status-label">Estimated Downtime</span>
+        <span class="badge-chip accent">FEW MINUTES</span>
       </div>
     </div>
 
     <div class="btn-group">
-      <button class="btn btn-accent" onclick="location.href='/?refresh='+Date.now()">
-        ↻ ลองโหลดหน้าเว็บใหม่
+      <button class="btn" onclick="location.href='/?retry='+Date.now()">
+        ↻ Check Again
       </button>
-      <a href="https://github.com/navapoltawan" target="_blank" rel="noopener" class="btn btn-ghost">
-        GitHub Repository ↗
-      </a>
     </div>
 
     <div class="footer-text">
-      DOOTOON Multi-Cloud Architecture · Edge Fallback via Cloudflare Worker
+      DOOTOON · Digital Manga & Light Novel Reading Platform
     </div>
   </div>
 
