@@ -210,7 +210,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (x.ownerId !== "x" && ACCOUNT_MAP[x.ownerId]) return true;
             return remoteIds.has(x.id);
           });
-          if (pruned.length === s.studio.length) return s;
           return { ...s, studio: pruned };
         });
       } catch {
