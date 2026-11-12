@@ -156,4 +156,19 @@ stages:
                         kubectl -n default set image "deployment/$dep" "$dep=$ACR/$img:$SHORT"
                       done
                       kubectl -n default rollout status deployment/web --timeout=180s
-                      kubectl -n default get pods -l 'app.kubernetes.io/part-of=manga-platform' --no-headers | head -12
+                      kubectl -n default get pods -l 'app.kubernetes.io/part-of=manga-platform'
+
+                - script: |
+                    set -euo pipefail
+                    if [ -n "${CLOUDFLARE_API_TOKEN:-}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+                      echo "=== Deploying Cloudflare Workers via Wrangler ==="
+                      npx --yes wrangler deploy infra/cloudflare/r2-gate-worker.js --name dootoon-r2-gate --compatibility-date 2024-01-01
+                      npx --yes wrangler deploy infra/cloudflare/maintenance-worker.js --name dootoon-maintenance --compatibility-date 2024-01-01
+                      echo "Cloudflare Workers deployed successfully."
+                    else
+                      echo "Notice: CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set. Skipping Cloudflare Workers deployment."
+                    fi
+                  displayName: "Deploy Cloudflare Workers (Edge)"
+                  env:
+                    CLOUDFLARE_API_TOKEN: $(CLOUDFLARE_API_TOKEN)
+                    CLOUDFLARE_ACCOUNT_ID: $(CLOUDFLARE_ACCOUNT_ID)

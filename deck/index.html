@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOOTOON ดูตูน — Demo Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@700;800;900&family=Mitr:wght@600;700&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Literata:opsz,wght@7..72,400..700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f2ede2; --paper2:#e8e1d1; --card:#fbf8f1;
+  --ink:#15120f; --ink2:#3b352e; --muted:#7a7064;
+  --line:#15120f; --shadow:#15120f;
+  --accent:#ff4a22; --accent2:#3340ff; --hl:#ffd43b; --mint:#12b58b;
+  --font-display:"Kanit","Bricolage Grotesque",system-ui,sans-serif;
+  --font-thai:"Mitr","Kanit",system-ui,sans-serif;
+  --font-sans:"Bricolage Grotesque",system-ui,sans-serif;
+  --font-serif:"Literata",Georgia,serif;
+  --font-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+[data-theme="night"]{
+  --paper:#0d0c12; --paper2:#15141c; --card:#1a1923;
+  --ink:#f4efe4; --ink2:#cfc8b9; --muted:#8d889b;
+  --line:#f4efe4; --shadow:#000000;
+  --accent:#ff5a33; --accent2:#7b86ff; --mint:#2fd4a7;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);margin:0;line-height:1.6;-webkit-font-smoothing:antialiased}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:200;opacity:.14;
+  background-image:radial-gradient(rgba(21,18,15,.16) 1px,transparent 0);background-size:24px 24px}
+[data-theme="night"] body::after{background-image:radial-gradient(rgba(244,239,228,.14) 1px,transparent 0)}
+::selection{background:var(--accent);color:#fff}
+.hud{position:fixed;right:1rem;bottom:.9rem;z-index:120;display:flex;align-items:center;gap:.6rem;pointer-events:none}
+.hud .brand{font-family:var(--font-display);font-weight:900;font-size:.8rem;color:var(--paper);background:#15120f;border:2px solid #15120f;border-radius:8px;padding:.3rem .7rem;box-shadow:3px 3px 0 var(--accent)}
+.hud .brand small{font-family:var(--font-thai);color:var(--accent);margin-left:.35rem}
+.hud .pg{font-family:var(--font-mono);font-weight:700;font-size:.8rem;color:#f4efe4;background:#15120f;border:2px solid #15120f;border-radius:8px;padding:.3rem .7rem;box-shadow:3px 3px 0 var(--accent);font-variant-numeric:tabular-nums}
+[data-theme="night"] .hud .brand,[data-theme="night"] .hud .pg{background:#000;border-color:#f4efe4}
+.progress{position:fixed;left:0;right:0;bottom:0;height:4px;z-index:119;background:transparent}
+.progress i{display:block;height:100%;width:0;background:var(--accent);box-shadow:0 0 12px var(--accent),0 0 4px var(--accent)}
+html,body{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
+.slide{min-height:100svh;display:flex;align-items:center;padding:2.5rem 1rem;border-bottom:2px dashed color-mix(in srgb,var(--line) 25%,transparent)}
+.wrap{max-width:1180px;margin:auto;width:100%}
+.kicker{display:inline-block;font-family:var(--font-mono);font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  background:var(--ink);color:var(--paper);padding:.3rem .8rem;border-radius:99px;margin-bottom:.6rem}
+.kicker.act{background:var(--accent);color:#fff}
+h1{font-family:var(--font-display);font-weight:900;line-height:1.1;margin:.2rem 0 .8rem;font-size:clamp(1.7rem,4vw,2.6rem)}
+h1 .th{font-family:var(--font-thai);color:var(--accent);font-weight:600}
+.cap{font-family:var(--font-mono);font-size:.75rem;color:var(--muted);margin-top:.7rem}
+.cap b{color:var(--accent)}
+a{color:var(--accent2)}
+.diagram{background:var(--card);border:2px solid var(--line);border-radius:8px;box-shadow:4px 4px 0 var(--shadow);padding:1rem}
+.diagram svg{width:100%;height:auto;display:block}
+.nd{fill:var(--card);stroke:var(--line);stroke-width:2}
+.nd-ink{fill:var(--ink);stroke:var(--line);stroke-width:2}
+.nd-accent{fill:var(--accent);stroke:var(--line);stroke-width:2}
+.nd-hl{fill:var(--hl);stroke:var(--line);stroke-width:2}
+.nd-mint{fill:var(--mint);stroke:var(--line);stroke-width:2}
+.nd-ghost{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:6 4}
+.zone{fill:var(--paper2);stroke:var(--line);stroke-width:2}
+.edge{stroke:var(--muted);stroke-width:2;fill:none}
+.edge-ink{stroke:var(--ink);stroke-width:2.5;fill:none}
+.edge-accent{stroke:var(--accent);stroke-width:2.5;fill:none}
+.edge-dash{stroke:var(--muted);stroke-width:2;fill:none;stroke-dasharray:6 4}
+.mask{fill:var(--card)}
+.t-nm{font-family:var(--font-display);font-weight:800;font-size:15px;fill:var(--ink);text-anchor:middle}
+.t-sb{font-family:var(--font-mono);font-weight:600;font-size:11px;fill:var(--muted);text-anchor:middle}
+.t-el{font-family:var(--font-mono);font-weight:700;font-size:10px;fill:var(--muted);text-anchor:middle;letter-spacing:.06em}
+.t-li{font-family:var(--font-mono);font-weight:600;font-size:11.5px;fill:var(--ink2)}
+.on-dark .t-nm{fill:var(--paper)} .on-dark .t-sb{fill:var(--paper);opacity:.8}
+.on-accent .t-nm{fill:#fff} .on-accent .t-sb{fill:#fff;opacity:.92}
+.on-hl .t-nm{fill:#15120f} .on-hl .t-sb{fill:#15120f;opacity:.78}
+[data-theme="night"] .nd-ghost{stroke:var(--muted);opacity:1}
+[data-theme="night"] svg text.t-sb:not(.on-hl text){fill:#a5a0b3}
+[data-theme="night"] .t-li{fill:var(--ink2)}
+[data-theme="night"] .on-hl .t-nm{fill:#15120f}
+[data-theme="night"] .on-hl .t-sb{fill:#15120f;opacity:.85}
+.chip{display:inline-block;font-family:var(--font-mono);font-size:.68rem;font-weight:600;padding:.18rem .6rem;
+  border:1.5px solid var(--line);border-radius:999px;background:var(--card);white-space:nowrap;margin:.1rem .15rem}
+.chip.hot{background:var(--accent);color:#fff}
+.chip.good{background:var(--mint);color:#fff}
+.chip.warn{background:var(--hl);color:#15120f}
+.panel{background:var(--card);border:2px solid var(--line);border-radius:8px;box-shadow:4px 4px 0 var(--shadow);padding:1rem 1.1rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem}
+@media(max-width:860px){.grid2,.grid3{grid-template-columns:1fr}}
+.cover-badge{font-family:var(--font-thai);font-size:clamp(3rem,10vw,5.5rem);color:var(--ink);line-height:1}
+.toc-list{columns:2;column-gap:2rem;font-size:.9rem}
+.toc-list a{display:block;padding:.28rem 0;color:var(--ink);text-decoration:none;border-bottom:1px dotted color-mix(in srgb,var(--line) 35%,transparent)}
+.toc-list a:hover{color:var(--accent)}
+.toc-list .tn{font-family:var(--font-mono);color:var(--accent);font-weight:700;margin-right:.5rem}
+.toc-act{font-family:var(--font-mono);font-size:.72rem;font-weight:700;letter-spacing:.1em;color:var(--accent);margin:.9rem 0 .1rem;text-transform:uppercase}
+@media(max-width:860px){.toc-list{columns:1}}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin:.8rem 0}
+.kpi .panel{text-align:center}
+.kpi .v{font-family:var(--font-display);font-weight:900;font-size:1.7rem}
+.kpi .l{font-size:.75rem;color:var(--muted)}
+@media(max-width:860px){.kpi{grid-template-columns:1fr 1fr}}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:.6rem;align-items:center;margin:.6rem 0}
+.vs .panel{text-align:center;margin:0}
+.vs .x{font-family:var(--font-display);font-weight:900;font-size:1.4rem;color:var(--accent)}
+.vs .w{font-family:var(--font-mono);font-size:.7rem;color:var(--mint);font-weight:700}
+.vs .l{font-family:var(--font-mono);font-size:.7rem;color:var(--muted)}
+pre.code{background:#15141b;color:#ece7d9;border:2px solid var(--line);border-radius:8px;
+  box-shadow:4px 4px 0 var(--shadow);padding:1rem 1.1rem;overflow-x:auto;
+  font-family:var(--font-mono);font-size:.78rem;line-height:1.65;margin:.7rem 0;max-height:62vh;overflow-y:auto}
+pre.code code{background:none;border:none;padding:0;color:inherit;font-size:1em}
+[data-theme="night"] pre.code{background:#0a0a10}
+.morph-zoom{transform-origin:center;animation:morphZoom .55s ease}
+@keyframes morphZoom{from{transform:scale(.82);opacity:0}to{transform:scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.morph-zoom{animation:none}}
+#spot{position:fixed;inset:0;z-index:150;pointer-events:none;display:none;background:radial-gradient(circle 180px at var(--sx,50%) var(--sy,50%),transparent 0,transparent 170px,rgba(10,8,5,.82) 185px)}
+[data-theme="night"] #spot{background:radial-gradient(circle 180px at var(--sx,50%) var(--sy,50%),transparent 0,transparent 170px,rgba(0,0,0,.88) 185px)}
+body.spot-on{cursor:none}
+body.spot-on a,body.spot-on button{cursor:none}
+.hook-big{font-family:var(--font-display);font-weight:900;font-size:clamp(2.4rem,7vw,4.5rem);line-height:1.05;margin:.4rem 0}
+.hook-big .em{color:var(--accent)}
+
+/* ================= MOTION (active only when <html class="motion">) ================= */
+@keyframes riseIn{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:translateY(24px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes svIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes drawIn{from{stroke-dashoffset:var(--len);opacity:0}20%{opacity:1}to{stroke-dashoffset:0}}
+@keyframes dashFlow{from{stroke-dashoffset:0}to{stroke-dashoffset:-32}}
+@keyframes pgBump{0%{transform:scale(1)}40%{transform:scale(1.22) rotate(-4deg)}100%{transform:scale(1)}}
+@keyframes liveDot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:.6}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 40%,transparent)}50%{box-shadow:0 0 0 8px transparent}}
+
+.motion .progress i{transition:width .45s cubic-bezier(.16,1,.3,1)}
+.motion .kpi .v{font-variant-numeric:tabular-nums}
+.motion .chip.hot{animation:glowPulse 2.4s infinite ease-in-out}
+.motion .chip.good::before{content:"● ";font-size:.6em;display:inline-block;animation:liveDot 1.8s infinite ease-in-out;color:#fff}
+
+/* 1) slide content rises in, staggered */
+.motion .slide:not(.in) .wrap>*{opacity:0;transform:translateY(24px)}
+.motion .slide.in .wrap>*{animation:riseIn .65s cubic-bezier(.16,1,.3,1) backwards;animation-delay:calc(var(--i,0)*85ms)}
+
+/* 2) cards pop in one by one with spring */
+.motion .slide:not(.in) :is(.grid2,.grid3,.kpi,.vs)>*{opacity:0;transform:translateY(18px) scale(.96)}
+.motion .slide.in :is(.grid2,.grid3,.kpi,.vs)>*{animation:popIn .6s cubic-bezier(.16,1,.3,1) backwards;animation-delay:calc(var(--pd,0)*95ms + 180ms)}
+.motion .panel{transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s ease,border-color .2s ease;will-change:transform}
+.motion .panel:hover{transform:translate(-3px,-3px);box-shadow:6px 6px 0 var(--accent)}
+
+/* 3) diagrams: boxes + labels sweep in left to right */
+.motion .slide:not(.in) .diagram svg .sv{opacity:0}
+.motion .slide.in .diagram svg .sv{animation:svIn .55s cubic-bezier(.16,1,.3,1) backwards;animation-delay:var(--d,0ms)}
+
+/* 4) arrows draw themselves */
+.motion .slide.in .diagram svg .sv.draw{stroke-dasharray:var(--len);animation:drawIn .75s cubic-bezier(.16,1,.3,1) backwards;animation-delay:var(--d,0ms)}
+
+/* 5) dashed lines keep flowing (shows live data moving across services) */
+.motion .slide.in .diagram svg .sv.edge-dash{stroke-dasharray:6 4;animation:svIn .5s ease backwards,dashFlow 1.2s linear infinite;animation-delay:var(--d,0ms),0s}
+
+.motion .hud .pg.bump{animation:pgBump .35s cubic-bezier(.16,1,.3,1)}
+@media print{.slide .wrap>*,.slide .panel,.slide svg .sv{opacity:1!important;transform:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="hud"><span class="brand">DOOTOON<small>ดูตูน</small></span><span class="pg" id="pgnum">01 / 25</span></div>
+<div class="progress"><i id="pbar"></i></div>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+<marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker>
+<marker id="arrI" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker>
+</defs></svg>
+
+<main>
+
+<!-- SLIDE 1 · COVER & WHAT IT DOES -->
+<section class="slide" id="s1"><div class="wrap">
+  <span class="kicker act">DOOTOON · Multi-Cloud Architecture</span>
+  <h1 style="font-size:clamp(2.2rem,6vw,3.6rem);margin:.2rem 0 .6rem">DooToon <span class="th">ดูตูน</span></h1>
+  <p style="margin-bottom:1.5rem">
+    <span class="chip hot">LIVE · dootoon.store</span>
+    <span class="chip">Multi-Cloud · Azure AKS + Cloudflare R2 + Stripe</span>
+    <span class="chip">Next.js SSR + Go × 9 + PG16</span>
+    <span class="chip good">p95 251ms · error 0%</span>
+  </p>
+  <div class="grid3">
+    <div class="panel"><h3 style="font-family:var(--font-display);color:var(--accent)">1. Readers (คนอ่าน)</h3>
+      <p>เข้าเว็บ <b>dootoon.store</b> เปิดอ่านตอนฟรีได้เลยไม่ต้องสมัคร (3 ตอนแรก + ตอนล่าสุดฟรี) ถ้าถูกใจค่อยเติมเหรียญผ่าน Stripe/PromptPay ซื้อเฉพาะตอนที่อยากอ่าน</p></div>
+    <div class="panel"><h3 style="font-family:var(--font-display);color:var(--accent)">2. Creators (ทีมนักเขียน/แปล)</h3>
+      <p>อัปโหลดมังงะ/นิยาย ตั้งราคาและสัดส่วนทีมไว้ล่วงหน้า ทุกครั้งที่มีคนซื้อ ระบบหักค่าแพลตฟอร์ม 30% แล้ว<b>แบ่งรายได้ 70% ตามสัดส่วนทีมอัตโนมัติ</b>ทันที</p></div>
+    <div class="panel"><h3 style="font-family:var(--font-display);color:var(--accent)">3. Platform / Admin (ผู้ดูแล)</h3>
+      <p>ถ้าตอนไหนถูกร้องเรียนลิขสิทธิ์ แอดมินกด <b>Takedown ปุ่มเดียว</b> ระบบซ่อนตอน ลบรูปใน Cloud และ<b>ดึงรายได้คืนมาคืนเหรียญให้คนซื้อทุกคนอัตโนมัติ</b></p></div>
+  </div>
+  <p class="cap">ผู้ใช้ทั้ง 3 กลุ่มเข้าผ่านเว็บไซต์เดียวกัน (dootoon.store) · 1 coin = 1 THB · บัญชีเที่ยงตรงระดับธนาคาร (ACID)</p>
+</div></section>
+
+<!-- SLIDE 2 · HOW IT WORKS -->
+<section class="slide" id="s2"><div class="wrap">
+  <span class="kicker act">Act 1 · How It Works</span>
+  <h1>End-to-end flow <span class="th">7 ขั้นตอนการทำงานจริง</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1120 200" role="img" aria-labelledby="d14t d14d"><title id="d14t">End-to-end user flow 7 steps</title><desc id="d14d">Guest reads free, signup, topup, purchase, read, takedown, refund.</desc>
+    <g>
+      <line x1="132" y1="100" x2="162" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="292" y1="100" x2="322" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="452" y1="100" x2="482" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="612" y1="100" x2="642" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="772" y1="100" x2="802" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="932" y1="100" x2="962" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
+    </g>
+    <g>
+      <rect x="12" y="40" width="120" height="120" rx="6" class="nd"/><text x="72" y="92" class="t-nm">1. อ่านฟรี</text><text x="72" y="114" class="t-sb">guest · 3 ตอนแรก</text>
+      <rect x="172" y="40" width="120" height="120" rx="6" class="nd"/><text x="232" y="92" class="t-nm">2. สมัคร</text><text x="232" y="114" class="t-sb">better-auth + Go</text>
+      <rect x="332" y="40" width="120" height="120" rx="6" class="nd-hl"/><g class="on-hl"><text x="392" y="92" class="t-nm">3. เติม 100c</text><text x="392" y="114" class="t-sb">Stripe · กันเบิ้ล</text></g>
+      <rect x="492" y="40" width="120" height="120" rx="6" class="nd-hl"/><g class="on-hl"><text x="552" y="92" class="t-nm">4. ซื้อ 40c</text><text x="552" y="114" class="t-sb">แบ่ง 30/70 ทันที</text></g>
+      <rect x="652" y="40" width="120" height="120" rx="6" class="nd"/><text x="712" y="92" class="t-nm">5. เปิดอ่าน</text><text x="712" y="114" class="t-sb">Signed URL 15m</text>
+      <rect x="812" y="40" width="120" height="120" rx="6" class="nd"/><text x="872" y="92" class="t-nm">6. Takedown</text><text x="872" y="114" class="t-sb">ซ่อน + ลบรูป R2</text>
+      <rect x="972" y="40" width="120" height="120" rx="6" class="nd-accent"/><g class="on-accent"><text x="1032" y="92" class="t-nm">7. คืนเงิน</text><text x="1032" y="114" class="t-sb">คนซื้อได้คืน 100%</text></g>
+    </g>
+  </svg></div>
+  <p class="cap">เล่าโฟลวตั้งแต่ต้นจนจบ: อ่านฟรี > สมัคร > เติมเหรียญ > ซื้อตอน > อ่านรูปผ่าน Signed URL > แอดมินลบ > คืนเงินอัตโนมัติ</p>
+</div></section>
+
+<!-- SLIDE 3 · CONSTRAINTS -->
+<section class="slide" id="s3"><div class="wrap">
+  <span class="kicker act">Act 1 · Constraints</span>
+  <h1>Constraints <span class="th">โจทย์ 3 ข้อที่กำหนดหน้าตา Cloud</span></h1>
+  <div class="grid3">
+    <div class="panel"><h3 style="font-family:var(--font-display)">1. เงินห้ามพลาด (ACID 100%)</h3>
+      <p>หักเหรียญ + เปิดสิทธิ์อ่าน + แบ่งรายได้ทีมนักเขียน ต้องสำเร็จพร้อมกันใน PostgreSQL Transaction เดียว พังขั้นไหนย้อนกลับทั้งหมด</p></div>
+    <div class="panel"><h3 style="font-family:var(--font-display)">2. รูปคือ 95% ของทราฟฟิก</h3>
+      <p>ไฟล์รูปมังงะห้ามวิ่งผ่าน Go server บน Azure เด็ดขาด เพราะค่า Egress bandwidth จะกลืนกำไรหมด จึงแยกไปไว้บน <b>Cloudflare R2 (Egress $0)</b></p></div>
+    <div class="panel"><h3 style="font-family:var(--font-display)">3. งบนักศึกษา (~$20/เดือน)</h3>
+      <p>คุมงบ Azure ให้อยู่ในเครดิตนักศึกษา ($30/mo budget alert) ตัดของแพงที่ไม่จำเป็น (NAT Gateway, Bastion, Front Door, Redis) ออกทั้งหมด</p></div>
+  </div>
+</div></section>
+
+<!-- ACT 2 · CLOUD ARCHITECTURE OVERVIEW (เน้นภาพรวมก่อน!) -->
+<section class="slide" id="s4"><div class="wrap">
+  <span class="kicker act">Act 2 · Cloud Architecture (Big Picture)</span>
+  <h1>Full Cloud Architecture <span class="th">ภาพรวมทั้งระบบในหน้าเดียว</span></h1>
+  <div class="diagram" style="padding:.5rem;text-align:center"><img src="../docs/cloud-architecture.webp" alt="DOOTOON Multi-Cloud Architecture" style="width:100%;max-height:68vh;object-fit:contain;border-radius:6px;background:#fff;display:block;margin:auto"></div>
+  <p class="cap"><b>Multi-Cloud:</b> บนซ้าย = <b>Cloudflare</b> (DNS/WAF Proxy + R2 เก็บรูป) · บนขวา = <b>Stripe</b> · ล่าง = <b>Azure VNet</b> (AKS รันเว็บ+Go 9 ตัว และ Postgres ปิด Public IP) · ซ้ายล่าง = <b>CI/CD &amp; Terraform</b> (<a href="../docs/cloud-architecture.webp" target="_blank">เปิดรูปเต็มจอ ↗</a>)</p>
+</div></section>
+
+<section class="slide" id="s5"><div class="wrap">
+  <span class="kicker act">Act 2 · Cloud Architecture (Big Picture)</span>
+  <h1>Cloud overview <span class="th">แบ่งภาพใหญ่เป็น 4 โซนหลัก (22 resources)</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 540" role="img" aria-labelledby="d17t d17d"><title id="d17t">Cloud overview 4 zones</title><desc id="d17d">Zone 1 Cloudflare Edge and R2, Zone 2 AKS subnet, Zone 3 DB subnet, Zone 4 ACR KeyVault Stripe DevOps.</desc>
+    <g>
+      <!-- Zone 1: Cloudflare -->
+      <rect x="30" y="55" width="190" height="105" rx="6" class="nd-ink"/><g class="on-dark"><text x="125" y="88" class="t-nm">1. Cloudflare Edge</text><text x="125" y="112" class="t-sb">DNS · WAF · DDoS · CDN</text><text x="125" y="132" class="t-sb">ด่านหน้ารับ HTTPS 443</text></g>
+      <!-- Azure VNet Box -->
+      <rect x="260" y="30" width="810" height="310" rx="6" class="zone"/>
+      <text x="288" y="62" class="t-li" style="font-family:var(--font-display);font-size:13.5px">Azure Resource Group (manga-demo-rg) · VNet 10.42.0.0/16 · งบ $30/mo</text>
+      <!-- Zone 2: snet-aks -->
+      <rect x="288" y="82" width="380" height="235" rx="6" class="nd"/>
+      <rect x="288" y="82" width="380" height="54" rx="6" class="nd-ink"/><g class="on-dark"><text x="478" y="106" class="t-nm" style="font-size:14px">2. ซอยประมวลผล · snet-aks (10.42.0.0/24)</text><text x="478" y="125" class="t-sb">NSG เปิดรับเฉพาะ HTTPS 443 จากภายนอก</text></g>
+      <text x="478" y="164" class="t-nm">AKS (manga-demo-aks · B2s × 2)</text>
+      <text x="312" y="192" class="t-li">• Envoy Gateway :443 (TLS Let's Encrypt)</text>
+      <text x="312" y="216" class="t-li">• Website รันที่นี่: web:3000 (Next.js SSR + BFF)</text>
+      <text x="312" y="240" class="t-li">• Go Microservices × 9 ตัว (:8080–:8088)</text>
+      <text x="312" y="264" class="t-li">• OTel Collector + OpenObserve :5080</text>
+      <text x="312" y="290" class="t-sb" style="text-anchor:start">HPA ขยาย reader อัตโนมัติ 1→4 pods เมื่อ CPU 70%</text>
+      <!-- Zone 3: snet-db -->
+      <rect x="710" y="82" width="335" height="235" rx="6" class="nd-accent"/><g class="on-accent">
+        <text x="877" y="118" class="t-nm">3. ซอยฐานข้อมูล · snet-db</text>
+        <text x="877" y="142" class="t-sb">10.42.1.0/24 · Delegated Subnet</text>
+        <text x="877" y="178" class="t-nm">PostgreSQL 16 Flexible</text>
+        <text x="877" y="204" class="t-sb">ปิด Public IP 100% · Private DNS</text>
+        <text x="877" y="228" class="t-sb">NSG: รับพอร์ต 5432 จาก snet-aks เท่านั้น</text>
+        <text x="877" y="252" class="t-sb">DB เดียว 6 schemas (เงิน ACID)</text>
+      </g>
+      <!-- Zone 4: Managed & External -->
+      <rect x="30" y="400" width="245" height="110" rx="6" class="nd"/><text x="152" y="432" class="t-nm">4A. ACR Registry</text>
+      <text x="52" y="460" class="t-li">เก็บ 10 Docker images</text>
+      <text x="52" y="484" class="t-li">AKS ดึงผ่านสิทธิ์ AcrPull</text>
+      <rect x="295" y="400" width="255" height="110" rx="6" class="nd"/><text x="422" y="432" class="t-nm">4B. Azure Key Vault</text>
+      <text x="317" y="460" class="t-li">เก็บ DB URL · HMAC · R2 keys</text>
+      <text x="317" y="484" class="t-li">จ่ายเข้า Pod ผ่าน CSI Driver</text>
+      <rect x="570" y="400" width="255" height="110" rx="6" class="nd-ink"/><g class="on-dark"><text x="697" y="432" class="t-nm">4C. Cloudflare R2</text><text x="697" y="460" class="t-sb">เก็บไฟล์รูปมังงะ .webp</text><text x="697" y="484" class="t-sb">Worker ตรวจ HMAC · Egress $0</text></g>
+      <rect x="845" y="400" width="225" height="110" rx="6" class="nd-hl"/><g class="on-hl"><text x="957" y="432" class="t-nm">4D. Stripe + DevOps</text><text x="957" y="460" class="t-sb">Stripe: จ่าย THB + Webhook</text><text x="957" y="484" class="t-sb">Pipelines + Terraform IaC</text></g>
+    </g>
+    <g>
+      <line x1="220" y1="108" x2="288" y2="108" class="edge-ink" marker-end="url(#arrI)"/>
+      <rect x="223" y="78" width="60" height="18" class="mask"/><text x="253" y="91" class="t-el">443 TLS</text>
+      <line x1="668" y1="200" x2="710" y2="200" class="edge-ink" marker-end="url(#arrI)"/>
+      <rect x="664" y="170" width="52" height="18" class="mask"/><text x="690" y="183" class="t-el">:5432</text>
+      <path d="M 350 317 L 350 365 L 152 365 L 152 400" class="edge" marker-end="url(#arr)"/>
+      <line x1="422" y1="317" x2="422" y2="400" class="edge" marker-end="url(#arr)"/>
+      <path d="M 550 317 L 550 365 L 697 365 L 697 400" class="edge-dash" marker-end="url(#arr)"/>
+      <path d="M 610 317 L 610 352 L 957 352 L 957 400" class="edge-dash" marker-end="url(#arr)"/>
+    </g>
+  </svg></div>
+  <p class="cap">สรุปภาพใหญ่: <b>Cloudflare</b> เป็นแค่ทางผ่าน + เก็บรูป R2 · ส่วน <b>ตัวเว็บไซต์ (web:3000) และ Go Backend รันอยู่ใน AKS บน Azure 100%</b></p>
+</div></section>
+
+<section class="slide" id="s6"><div class="wrap">
+  <span class="kicker act">Act 2 · Cloud Architecture (Traffic Routing)</span>
+  <h1>Traffic routing <span class="th">ทราฟฟิกวิ่งเข้า Cloud แยกเป็น 4 เส้นทาง</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 420" role="img" aria-labelledby="d7t d7d"><title id="d7t">Traffic routing 4 paths</title><desc id="d7d">Three HTTPRoutes on Envoy Gateway plus direct R2 image route.</desc>
+    <g>
+      <line x1="210" y1="155" x2="265" y2="155" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="445" y1="155" x2="500" y2="155" class="edge-ink" marker-end="url(#arrI)"/>
+      <!-- 3 routes from Envoy -->
+      <path d="M 680 125 L 720 125 L 720 65 L 760 65" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="680" y1="155" x2="760" y2="155" class="edge-ink" marker-end="url(#arrI)"/>
+      <path d="M 680 185 L 720 185 L 720 245 L 760 245" class="edge-ink" marker-end="url(#arrI)"/>
+      <!-- Direct R2 image route -->
+      <path d="M 120 195 L 120 350 L 760 350" class="edge-dash" marker-end="url(#arrI)"/>
+      <rect x="330" y="336" width="290" height="22" class="mask"/><text x="475" y="351" class="t-el">เส้นทางที่ 4 · โหลดรูปมังงะ (ไม่ผ่าน Go / AKS)</text>
+    </g>
+    <g>
+      <rect x="30" y="115" width="180" height="80" rx="6" class="nd-ink"/><g class="on-dark"><text x="120" y="148" class="t-nm">Users / Clients</text><text x="120" y="170" class="t-sb">Reader · Creator · Admin</text></g>
+      <rect x="265" y="115" width="180" height="80" rx="6" class="nd-ink"/><g class="on-dark"><text x="355" y="148" class="t-nm">Cloudflare Edge</text><text x="355" y="170" class="t-sb">Proxy · WAF · Full Strict</text></g>
+      <rect x="500" y="115" width="180" height="80" rx="6" class="nd"/><text x="590" y="148" class="t-nm">Envoy :443</text><text x="590" y="170" class="t-sb">Gateway API (ใน AKS)</text>
+
+      <!-- Route 1 -->
+      <rect x="760" y="25" width="310" height="76" rx="6" class="nd-accent"/><g class="on-accent"><text x="915" y="54" class="t-nm">1. dootoon.store → web:3000</text><text x="915" y="76" class="t-sb">เข้าหน้าเว็บปกติ · Next.js SSR + /admin + BFF</text></g>
+      <!-- Route 2 -->
+      <rect x="760" y="117" width="310" height="76" rx="6" class="nd"/><text x="915" y="146" class="t-nm">2. api.dootoon.store → gateway:8080</text><text x="915" y="168" class="t-sb">ยิง Public API ตรง / k6 Load Test → reader:8084</text>
+      <!-- Route 3 -->
+      <rect x="760" y="209" width="310" height="76" rx="6" class="nd"/><text x="915" y="238" class="t-nm">3. obs.dootoon.store → :5080</text><text x="915" y="260" class="t-sb">DevOps เปิดดู Dashboard Logs / Traces / Metrics</text>
+      <!-- Route 4 -->
+      <rect x="760" y="312" width="310" height="76" rx="6" class="nd-hl"/><g class="on-hl"><text x="915" y="341" class="t-nm">4. img.dootoon.store → R2</text><text x="915" y="363" class="t-sb">Worker ตรวจ ?exp=&amp;token= (HMAC) → เสิร์ฟรูป</text></g>
+    </g>
+  </svg></div>
+  <p class="cap">แยกชัดเจน: เข้าเว็บไป <b>web:3000</b> · ยิง API/เทสต์โหลดไป <b>gateway:8080</b> · ดูกราฟระบบไป <b>openobserve:5080</b> · โหลดรูปไป <b>R2</b></p>
+</div></section>
+
+<!-- ACT 3 · DEEP DIVE (เจาะย่อยทีละส่วนจากหน้าไปหลัง) -->
+<section class="slide" id="s7"><div class="wrap">
+  <span class="kicker act">Act 3 · Deep Dive 1 · Web &amp; BFF</span>
+  <h1>Inside web:3000 <span class="th">หน้าเว็บคุยผ่าน BFF แล้วเรียก Go ตรง</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 250" role="img" aria-labelledby="d8t d8d"><title id="d8t">BFF pattern inside AKS</title><desc id="d8d">Browser fetches Next.js API routes which call Go services directly inside AKS.</desc>
+    <g>
+      <line x1="220" y1="125" x2="280" y2="125" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="510" y1="125" x2="570" y2="125" class="edge-ink" marker-end="url(#arrI)"/>
+      <path d="M 790 100 L 845 65" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="790" y1="125" x2="845" y2="125" class="edge-ink" marker-end="url(#arrI)"/>
+      <path d="M 790 150 L 845 185" class="edge-dash" marker-end="url(#arrI)"/>
+      <rect x="285" y="68" width="215" height="20" class="mask"/><text x="392" y="82" class="t-el">SAME ORIGIN · ไม่เห็น URL หลังบ้าน</text>
+    </g>
+    <g>
+      <rect x="20" y="85" width="200" height="80" rx="6" class="nd"/><text x="120" y="118" class="t-nm">Browser UI</text><text x="120" y="140" class="t-sb">fetch("/api/…")</text>
+      <rect x="280" y="85" width="230" height="80" rx="6" class="nd-accent"/><g class="on-accent"><text x="395" y="118" class="t-nm">web:3000 (/api/*)</text><text x="395" y="140" class="t-sb">Next.js BFF · 20 Server Routes</text></g>
+      <rect x="570" y="85" width="220" height="80" rx="6" class="nd"/><text x="680" y="118" class="t-nm">In-Cluster HTTP</text><text x="680" y="140" class="t-sb">แนบ X-User-ID + Role</text>
+      <rect x="845" y="25" width="235" height="60" rx="6" class="nd-ink"/><g class="on-dark"><text x="962" y="52" class="t-nm" style="font-size:13.5px">Go Services :8081–8088</text><text x="962" y="72" class="t-sb">เรียกตรง: catalog, commerce, …</text></g>
+      <rect x="845" y="95" width="235" height="60" rx="6" class="nd"/><text x="962" y="122" class="t-nm" style="font-size:13.5px">gateway:8080 → reader</text><text x="962" y="142" class="t-sb">เฉพาะตอนเปิดอ่านมังงะ (/access)</text>
+      <rect x="845" y="165" width="235" height="60" rx="6" class="nd-hl"/><g class="on-hl"><text x="962" y="192" class="t-nm" style="font-size:13.5px">Stripe API (HTTPS)</text><text x="962" y="212" class="t-sb">สร้างหน้าจ่ายเงิน + รับ Webhook</text></g>
+    </g>
+  </svg></div>
+  <p class="cap">ย่อยส่วนที่ 1: เบราว์เซอร์คุยแค่ <b>web:3000</b> · ส่วน <b>web:3000 (ฝั่ง Server ใน AKS)</b> ยิงตรงหา Go Services แต่ละตัว และคุยกับ Stripe</p>
+</div></section>
+
+<section class="slide" id="s8"><div class="wrap">
+  <span class="kicker act">Act 3 · Deep Dive 2 · Microservices</span>
+  <h1>Inside AKS <span class="th">Go 9 services แยกหน้าที่ชัดเจน</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 300" role="img" aria-labelledby="d9t d9d"><title id="d9t">Nine Go services</title><desc id="d9d">Grid of nine services with ports.</desc>
+    <g>
+      <rect x="28" y="20" width="330" height="70" rx="6" class="nd"/><text x="193" y="49" class="t-nm">identity :8081</text><text x="193" y="71" class="t-sb">สมัคร · ล็อกอิน · role · แบน</text>
+      <rect x="385" y="20" width="330" height="70" rx="6" class="nd"/><text x="550" y="49" class="t-nm">catalog :8082</text><text x="550" y="71" class="t-sb">เรื่อง · ตอน · ราคา · % ทีม</text>
+      <rect x="742" y="20" width="330" height="70" rx="6" class="nd-hl"/><g class="on-hl"><text x="907" y="49" class="t-nm">commerce :8083</text><text x="907" y="71" class="t-sb">สมุดบัญชีเงิน · สิทธิ์ · แบ่งรายได้ · คืนเงิน</text></g>
+      <rect x="28" y="115" width="330" height="70" rx="6" class="nd-accent"/><g class="on-accent"><text x="193" y="144" class="t-nm">reader :8084</text><text x="193" y="166" class="t-sb">ด่านตรวจสิทธิ์อ่าน · เซ็น URL รูป 15m</text></g>
+      <rect x="385" y="115" width="330" height="70" rx="6" class="nd"/><text x="550" y="144" class="t-nm">moderation :8085</text><text x="550" y="166" class="t-sb">takedown · ลบรูป · สั่งคืนเงิน · audit</text>
+      <rect x="742" y="115" width="330" height="70" rx="6" class="nd"/><text x="907" y="144" class="t-nm">community :8086</text><text x="907" y="166" class="t-sb">คอมเมนต์ · คำห้าม · เมนต์ติดเหรียญ</text>
+      <rect x="28" y="210" width="330" height="70" rx="6" class="nd"/><text x="193" y="239" class="t-nm">library :8087</text><text x="193" y="261" class="t-sb">ตำแหน่งอ่านล่าสุด · ติดตาม · คั่นหน้า</text>
+      <rect x="385" y="210" width="330" height="70" rx="6" class="nd"/><text x="550" y="239" class="t-nm">media :8088</text><text x="550" y="261" class="t-sb">อัปโหลด · แปลง WebP · ส่งขึ้น R2</text>
+      <rect x="742" y="210" width="330" height="70" rx="6" class="nd-ink"/><g class="on-dark"><text x="907" y="239" class="t-nm">gateway :8080</text><text x="907" y="261" class="t-sb">ด่านหน้า Public API → ส่งต่อ reader</text></g>
+    </g>
+  </svg></div>
+  <p><span class="chip">Stateless REST ทุกตัว · เก็บข้อมูลใน PostgreSQL ที่เดียว</span><span class="chip">มี /healthz + /readyz + OTel trace ทุกตัว</span></p>
+</div></section>
+
+<section class="slide" id="s9"><div class="wrap">
+  <span class="kicker act">Act 3 · Deep Dive 3 · Top-Up &amp; Access Flow</span>
+  <h1>Money in <span class="th">BFF รับหน้าเสื่อ Stripe · commerce คุมสมุดบัญชี</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 330" role="img" aria-labelledby="d10t d10d"><title id="d10t">Topup and access flows</title><desc id="d10d">Web BFF creates Stripe session and verifies webhook before calling commerce TopUp; access gate checks reader via gateway.</desc>
+    <text x="28" y="34" class="t-li" style="font-family:var(--font-display);font-size:13px">ขาเติมเหรียญ (Top-up) — web:3000 คุยกับ Stripe แล้วส่งต่อให้ commerce:8083 ลงบัญชี</text>
+    <g>
+      <line x1="218" y1="80" x2="268" y2="80" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="458" y1="80" x2="508" y2="80" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="698" y1="80" x2="748" y2="80" class="edge-ink" marker-end="url(#arrI)"/>
+      <path d="M 603 114 L 603 150 L 843 150 L 843 118" class="edge-dash" marker-end="url(#arr)"/>
+      <rect x="630" y="138" width="185" height="20" class="mask"/><text x="723" y="153" class="t-el">ทางสำรอง · /verify เช็กซ้ำ</text>
+    </g>
+    <g>
+      <rect x="28" y="46" width="190" height="68" rx="6" class="nd"/><text x="123" y="74" class="t-nm">1. BFF /checkout</text><text x="123" y="96" class="t-sb">web:3000 ขอ Session</text>
+      <rect x="278" y="46" width="180" height="68" rx="6" class="nd"/><text x="368" y="74" class="t-nm">2. Stripe THB</text><text x="368" y="96" class="t-sb">บัตร / PromptPay</text>
+      <rect x="518" y="46" width="180" height="68" rx="6" class="nd-hl"/><g class="on-hl"><text x="608" y="74" class="t-nm">3. BFF /webhook</text><text x="608" y="96" class="t-sb">ตรวจลายเซ็น Stripe</text></g>
+      <rect x="758" y="46" width="210" height="68" rx="6" class="nd-hl"/><g class="on-hl"><text x="863" y="74" class="t-nm">4. commerce :8083</text><text x="863" y="96" class="t-sb">TopUp ลง Ledger (กันซ้ำ)</text></g>
+    </g>
+    <text x="28" y="210" class="t-li" style="font-family:var(--font-display);font-size:13px">ขาเปิดตอนอ่าน (Access Gate) — ซิงก์ข้อมูลตอน แล้ววิ่งผ่าน gateway:8080 เข้า reader:8084</text>
+    <g>
+      <line x1="218" y1="260" x2="268" y2="260" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="458" y1="260" x2="508" y2="260" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="698" y1="260" x2="748" y2="260" class="edge-ink" marker-end="url(#arrI)"/>
+    </g>
+    <g>
+      <rect x="28" y="226" width="190" height="68" rx="6" class="nd"/><text x="123" y="254" class="t-nm">1. ReaderPage</text><text x="123" y="276" class="t-sb">POST /api/economy/access</text>
+      <rect x="278" y="226" width="180" height="68" rx="6" class="nd"/><text x="368" y="254" class="t-nm">2. catalog :8082</text><text x="368" y="276" class="t-sb">ซิงก์เรื่อง/ตอน/ราคา</text>
+      <rect x="518" y="226" width="180" height="68" rx="6" class="nd"/><text x="608" y="254" class="t-nm">3. gateway :8080</text><text x="608" y="276" class="t-sb">ส่งต่อ reader :8084</text>
+      <rect x="758" y="226" width="210" height="68" rx="6" class="nd-accent"/><g class="on-accent"><text x="863" y="254" class="t-nm">4. reader :8084</text><text x="863" y="276" class="t-sb">ถาม 3 เจ้า → 200/401/402/410</text></g>
+    </g>
+  </svg></div>
+  <p class="cap">แยกบทบาทชัด: <b>web:3000</b> แค่รับ-ส่งหน้าจ่ายเงินและตรวจลายเซ็น Webhook ส่วนการเสกเหรียญลงบัญชีอยู่ที่ <b>commerce:8083</b> เท่านั้น</p>
+</div></section>
+
+<section class="slide" id="s10"><div class="wrap">
+  <span class="kicker act">Act 3 · Deep Dive 4 · Purchase Transaction</span>
+  <h1>Purchase <span class="th">ซื้อตอนใน commerce:8083 · 5 ขั้นใน 1 Transaction</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 220" role="img" aria-labelledby="d11t d11d"><title id="d11t">Purchase transaction</title><desc id="d11d">Lock, dedupe, bonus-first debit, entitlement, split.</desc>
+    <rect x="28" y="20" width="1044" height="180" rx="6" class="zone"/>
+    <text x="56" y="52" class="t-li" style="font-family:var(--font-display);font-size:13px">commerce.PurchaseChapter (WithTxUser) — พังขั้นไหน Rollback 100%</text>
+    <g>
+      <line x1="238" y1="120" x2="276" y2="120" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="456" y1="120" x2="494" y2="120" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="674" y1="120" x2="712" y2="120" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="892" y1="120" x2="916" y2="120" class="edge-ink" marker-end="url(#arrI)"/>
+    </g>
+    <g>
+      <rect x="48" y="70" width="190" height="100" rx="6" class="nd"/><text x="143" y="110" class="t-nm">1. ล็อกบัญชี</text><text x="143" y="132" class="t-sb">PG Advisory Lock</text><text x="143" y="150" class="t-sb">เรียงชื่อกัน Deadlock</text>
+      <rect x="286" y="70" width="170" height="100" rx="6" class="nd"/><text x="371" y="110" class="t-nm">2. กันซื้อซ้ำ</text><text x="371" y="132" class="t-sb">เช็ก idem key</text><text x="371" y="150" class="t-sb">กดรัวไม่เสียเงินเบิ้ล</text>
+      <rect x="504" y="70" width="170" height="100" rx="6" class="nd"/><text x="589" y="110" class="t-nm">3. หักโบนัสก่อน</text><text x="589" y="132" class="t-sb">bonus → purchased</text><text x="589" y="150" class="t-sb">บันทึกแถว Ledger</text>
+      <rect x="722" y="70" width="170" height="100" rx="6" class="nd"/><text x="807" y="110" class="t-nm">4. ให้สิทธิ์อ่าน</text><text x="807" y="132" class="t-sb">upsert entitlement</text><text x="807" y="150" class="t-sb">เปิดอ่านได้ถาวร</text>
+      <rect x="926" y="70" width="130" height="100" rx="6" class="nd-accent"/><g class="on-accent"><text x="991" y="110" class="t-nm">5. แบ่งเงิน</text><text x="991" y="134" class="t-sb">หัก 30% · ปันทีม 70%</text></g>
+    </g>
+  </svg></div>
+  <p class="cap">ย่อยส่วนที่ 4: การตัดเหรียญและแบ่งรายได้ทั้งหมดรันอยู่ใน <b>commerce:8083</b> ภายใต้ ACID Transaction เดียวของ PostgreSQL</p>
+</div></section>
+
+<section class="slide" id="s11"><div class="wrap">
+  <span class="kicker act">Act 3 · Deep Dive 5 · Read Gates &amp; Takedown</span>
+  <h1>Gates + takedown <span class="th">ด่านตรวจก่อนอ่าน &amp; ลบตอนคืนเงินอัตโนมัติ</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 240" role="img" aria-labelledby="d12t d12d"><title id="d12t">Gates and takedown</title><desc id="d12d">Four gates then serve; takedown hides, blocks, reverses, audits.</desc>
+    <text x="28" y="30" class="t-li" style="font-family:var(--font-display);font-size:13px">reader:8084 ถาม 3 เจ้าก่อนเสมอ: ตอนปกติไหม? (catalog) > ใครอ่าน? (identity) > จ่ายยัง? (commerce) > เซ็น HMAC URL 15 นาที</text>
+    <g>
+      <line x1="208" y1="130" x2="258" y2="130" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="448" y1="130" x2="498" y2="130" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="758" y1="130" x2="808" y2="130" class="edge-ink" marker-end="url(#arrI)"/>
+    </g>
+    <g>
+      <rect x="28" y="70" width="180" height="120" rx="6" class="nd"/><text x="118" y="118" class="t-nm">1. ซ่อนตอน</text><text x="118" y="142" class="t-sb">catalog: taken_down</text>
+      <rect x="268" y="70" width="180" height="120" rx="6" class="nd"/><text x="358" y="118" class="t-nm">2. ลบรูปใน R2</text><text x="358" y="142" class="t-sb">Delete ทุก page key</text>
+      <rect x="508" y="70" width="250" height="120" rx="6" class="nd-hl"/><g class="on-hl"><text x="633" y="114" class="t-nm">3. ย้อนเงิน × N คน</text><text x="633" y="138" class="t-sb">commerce คืนเหรียญคนซื้อ</text><text x="633" y="158" class="t-sb">+ ดึงรายได้ทีมนักเขียนคืน</text></g>
+      <rect x="818" y="70" width="230" height="120" rx="6" class="nd"/><text x="933" y="118" class="t-nm">4. จด Audit Log</text><text x="933" y="142" class="t-sb">ใครลบ · ตอนไหน · เพราะอะไร</text>
+    </g>
+  </svg></div>
+  <p class="cap">ย่อยส่วนที่ 5: บรรทัดบน = กฎเหล็กของ <b>reader:8084</b> · 4 กล่องล่าง = ขั้นตอนเมื่อ Admin กด Takedown ที่ <b>moderation:8085</b></p>
+</div></section>
+
+<section class="slide" id="s12"><div class="wrap">
+  <span class="kicker act">Act 3 · Deep Dive 6 · Data &amp; Auth</span>
+  <h1>Data + auth <span class="th">PostgreSQL 6 Schemas &amp; Header Identity</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 220" role="img" aria-labelledby="d13t d13d"><title id="d13t">Data and auth</title><desc id="d13d">One Postgres with schemas; better-auth syncs best-effort, downstream uses header.</desc>
+    <g>
+      <rect x="28" y="20" width="520" height="180" rx="6" class="zone"/><text x="288" y="50" class="t-nm">manga-demo-pg — 1 Server, 6 Schemas</text>
+      <text x="58" y="82" class="t-li">catalog: stories · chapters · creator_splits</text>
+      <text x="58" y="108" class="t-li">commerce: ledger_entries (append-only) · purchases · earnings</text>
+      <text x="58" y="134" class="t-li">library · identity · moderation · community</text>
+      <text x="58" y="164" class="t-sb" style="text-anchor:start">ไม่มีคอลัมน์ balance ให้แก้ทับกัน — ยอดกระเป๋า = SUM(ledger_entries)</text>
+      <rect x="578" y="20" width="494" height="180" rx="6" class="nd"/><text x="825" y="50" class="t-nm">better-auth → Go Identity Header</text>
+      <text x="608" y="82" class="t-li">ล็อกอิน Email / Google · Cookie อายุ 7 วัน</text>
+      <text x="608" y="108" class="t-li">ซิงก์ผู้ใช้ลง Go identity:8081 แบบ best-effort</text>
+      <text x="608" y="134" class="t-li">คุยกันในคลัสเตอร์แนบแค่ X-User-ID + X-User-Role</text>
+      <text x="608" y="164" class="t-sb" style="text-anchor:start">/admin อยู่ในแอปเดียว: ดู KPI · กราฟ · กด Takedown · ดู Audit</text>
+    </g>
+  </svg></div>
+</div></section>
+
+<!-- ACT 4 · JOURNEY, PIPELINE & LOAD TESTING (การสร้าง, CI/CD และผล Load Test จริง) -->
+<section class="slide" id="s13"><div class="wrap">
+  <span class="kicker act">Act 4 · Journey &amp; Decisions</span>
+  <h1>How we <span class="th">built it in 4 weeks</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 220" role="img" aria-labelledby="d5t d5d"><title id="d5t">Build journey</title><desc id="d5d">Spec, core services, pipeline, cloud, measured.</desc>
+    <g>
+      <line x1="218" y1="110" x2="258" y2="110" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="438" y1="110" x2="478" y2="110" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="658" y1="110" x2="698" y2="110" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="878" y1="110" x2="918" y2="110" class="edge-ink" marker-end="url(#arrI)"/>
+    </g>
+    <g>
+      <rect x="28" y="60" width="190" height="100" rx="6" class="nd"/><text x="123" y="100" class="t-nm">Week 1 · Spec</text><text x="123" y="124" class="t-sb">reqs · arch · schema</text>
+      <rect x="268" y="60" width="170" height="100" rx="6" class="nd"/><text x="353" y="100" class="t-nm">Week 2 · Core</text><text x="353" y="124" class="t-sb">ledger · gates · tests</text>
+      <rect x="488" y="60" width="170" height="100" rx="6" class="nd"/><text x="573" y="100" class="t-nm">Week 3 · Pipe</text><text x="573" y="124" class="t-sb">CI/CD · zero-downtime</text>
+      <rect x="708" y="60" width="170" height="100" rx="6" class="nd"/><text x="793" y="100" class="t-nm">Week 4 · Cloud</text><text x="793" y="124" class="t-sb">AKS · R2 · TLS</text>
+      <rect x="928" y="60" width="144" height="100" rx="6" class="nd-mint"/><g class="on-dark"><text x="1000" y="100" class="t-nm">Measured</text><text x="1000" y="124" class="t-sb">k6 · p95 251ms</text></g>
+    </g>
+  </svg></div>
+  <p class="cap">ไล่ซ้ายไปขวา: สเปก > ของรันได้ > สายพานอัตโนมัติ > ขึ้น Cloud จริง > ยิง Load Test วัดตัวเลข</p>
+</div></section>
+
+<section class="slide" id="s14"><div class="wrap">
+  <span class="kicker act">Act 4 · Architectural Trade-offs</span>
+  <h1>Trade-offs <span class="th">ทำไมเลือกใช้ และทำไมตั้งใจตัดทิ้ง</span></h1>
+  <div class="grid2">
+    <div class="panel"><h3 style="font-family:var(--font-display)">ที่เลือกใช้ + เหตุผล</h3>
+      <p><span class="chip good">Cloudflare R2</span> Egress $0 ประหยัดค่า bandwidth 500× — แลกดูแล 2 vendors</p>
+      <p><span class="chip good">AKS + Envoy GW</span> คุม network/HPA ละเอียด แทน nginx ที่ EOL มี.ค. 2026</p>
+      <p><span class="chip good">PG16 Flexible</span> เงิน ACID 100% + Private subnet ปิด Public IP</p>
+      <p><span class="chip good">Key Vault CSI</span> เก็บ DB URL/HMAC/R2 keys มี audit ไม่ฝังในโค้ด</p>
+      <p><span class="chip good">OpenObserve</span> รันจบใน Pod เดียว รับ OTel traces/logs/metrics ครบ</p>
+    </div>
+    <div class="panel"><h3 style="font-family:var(--font-display)">ที่ตั้งใจตัดทิ้ง + เหตุผล</h3>
+      <p><span class="chip warn">Redis</span> วัดจริงแล้ว PG query ใช้แค่ 0.1ms — ไม่มีคอขวดให้ต้องแคช</p>
+      <p><span class="chip warn">Message Queue</span> ยังไม่มี async consumer (แจ้งเตือนอยู่ Phase 2)</p>
+      <p><span class="chip warn">gRPC</span> งานภายในเป็น CRUD ความถี่ต่ำ REST พอและดีบักด้วย curl ง่าย</p>
+      <p><span class="chip warn">NAT / Bastion / Front Door</span> ประหยัดไป ~$60+/เดือน ใช้ Cloudflare แทน</p>
+      <p><span class="chip warn">บุฟเฟต์อ่านไม่อั้น</span> ทำลายโมเดลแบ่งรายได้รายตอนให้ทีมแปล</p>
+    </div>
+  </div>
+</div></section>
+
+<section class="slide" id="s15"><div class="wrap">
+  <span class="kicker act">Act 4 · Evidence · CI/CD</span>
+  <h1>Pipeline <span class="th">Azure DevOps 4 stages, ~17 min</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 240" role="img" aria-labelledby="d15t d15d"><title id="d15t">Pipeline</title><desc id="d15d">Lint, test with coverage gate, build ten images, deploy with SHA pinning.</desc>
+    <g>
+      <line x1="238" y1="110" x2="288" y2="110" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="498" y1="110" x2="548" y2="110" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="758" y1="110" x2="808" y2="110" class="edge-ink" marker-end="url(#arrI)"/>
+      <rect x="308" y="30" width="170" height="20" class="mask"/><text x="393" y="45" class="t-el">รันทุก BRANCH</text>
+      <rect x="628" y="170" width="170" height="20" class="mask"/><text x="713" y="185" class="t-el">เฉพาะ MASTER</text>
+    </g>
+    <g>
+      <rect x="28" y="60" width="210" height="100" rx="6" class="nd"/><text x="133" y="100" class="t-nm">1. Lint</text><text x="133" y="124" class="t-sb">go vet ./...</text>
+      <rect x="298" y="60" width="200" height="100" rx="6" class="nd-hl"/><g class="on-hl"><text x="398" y="100" class="t-nm">2. Test</text><text x="398" y="124" class="t-sb">PG จริง · cov ≥80%</text></g>
+      <rect x="558" y="60" width="200" height="100" rx="6" class="nd"/><text x="658" y="100" class="t-nm">3. Build</text><text x="658" y="124" class="t-sb">10 images → ACR</text>
+      <rect x="818" y="60" width="220" height="100" rx="6" class="nd-ink"/><g class="on-dark"><text x="928" y="100" class="t-nm">4. Deploy</text><text x="928" y="124" class="t-sb">ปัก SHA · rollout AKS</text></g>
+    </g>
+  </svg></div>
+  <p class="cap">Push โค้ดขึ้น master → รัน Lint > Test > Build 10 images ขึ้น ACR > สั่ง AKS อัปเดตแบบ RollingUpdate (Zero Downtime)</p>
+</div></section>
+
+<section class="slide" id="s16" data-morph="pipe"><div class="wrap">
+  <span class="kicker act">Act 4 · Evidence · Quality Gate</span>
+  <h1>Inside Test <span class="th">ซูมเข้าด่าน Test 3 ชั้น</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 300" role="img" aria-labelledby="d16t d16d"><title id="d16t">Test stage breakdown</title><desc id="d16d">Postgres service plus unit plus integration plus coverage gate.</desc>
+    <g class="morph-zoom">
+      <line x1="330" y1="85" x2="380" y2="85" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="640" y1="85" x2="690" y2="85" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="380" y1="190" x2="640" y2="190" class="edge-dash"/>
+      <rect x="420" y="178" width="180" height="20" class="mask"/><text x="510" y="193" class="t-el">COVERAGE GATE ≥ 80%</text>
+    </g>
+    <g>
+      <rect x="60" y="50" width="270" height="70" rx="6" class="nd"/><text x="195" y="79" class="t-nm">PG จริงใน CI</text><text x="195" y="101" class="t-sb">postgres:16-alpine service</text>
+      <rect x="390" y="50" width="250" height="70" rx="6" class="nd"/><text x="515" y="79" class="t-nm">unit + integration</text><text x="515" y="101" class="t-sb">go test · -tags integration</text>
+      <rect x="700" y="50" width="270" height="70" rx="6" class="nd-hl"/><g class="on-hl"><text x="835" y="79" class="t-nm">coverage gate</text><text x="835" y="101" class="t-sb">commerce &lt; 80% → exit 1</text></g>
+      <rect x="230" y="200" width="560" height="70" rx="6" class="nd-ghost"/><text x="510" y="229" class="t-sb">ต่ำกว่าเกณฑ์ = ตกทั้ง pipeline · ทดสอบยิงซ้ำ 10× · ยิงพร้อมกัน 50 goroutines</text><text x="510" y="251" class="t-sb">PublishCodeCoverageResults ออกรายงานอัตโนมัติทุกครั้ง</text>
+    </g>
+  </svg></div>
+  <p class="cap">เพราะ commerce คือระบบเงิน ถ้า test coverage ต่ำกว่า 80% สายพานจะหยุดทันที ไม่ยอมให้ deploy ขึ้น AKS</p>
+</div></section>
+
+<!-- SLIDE 17 · K8S LOAD TEST & HPA (เพิ่มหน้า Load Test ชัดเจน!) -->
+<section class="slide" id="s17"><div class="wrap">
+  <span class="kicker act">Act 4 · Evidence · k8s Load Test</span>
+  <h1>K8s Load Test <span class="th">ทดสอบยิงโหลด k6 บน AKS จริง (50 VUs)</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 250" role="img" aria-labelledby="dloadt dloadd"><title id="dloadt">k6 Load test on AKS</title><desc id="dloadd">k6 50 VUs load test into Envoy then reader HPA scales 1 to 2 pods.</desc>
+    <g>
+      <line x1="230" y1="125" x2="285" y2="125" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="515" y1="125" x2="570" y2="125" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="800" y1="125" x2="855" y2="125" class="edge-accent" marker-end="url(#arrI)"/>
+      <rect x="290" y="65" width="220" height="20" class="mask"/><text x="400" y="79" class="t-el">https://api.dootoon.store/read</text>
+      <rect x="580" y="65" width="210" height="20" class="mask"/><text x="685" y="79" class="t-el">GATEWAY :8080 → READER</text>
+    </g>
+    <g>
+      <rect x="20" y="85" width="210" height="80" rx="6" class="nd-hl"/><g class="on-hl"><text x="125" y="118" class="t-nm">k6 (50 VUs)</text><text x="125" y="140" class="t-sb">ยิง 5 นาทีต่อเนื่อง · ~35 RPS</text></g>
+      <rect x="285" y="85" width="230" height="80" rx="6" class="nd"/><text x="400" y="118" class="t-nm">Cloudflare → Envoy</text><text x="400" y="140" class="t-sb">Full strict TLS · WAF</text>
+      <rect x="570" y="85" width="230" height="80" rx="6" class="nd-accent"/><g class="on-accent"><text x="685" y="118" class="t-nm">reader Pods (AKS)</text><text x="685" y="140" class="t-sb">CPU พุ่งแตะ 70% เกณฑ์ HPA</text></g>
+      <rect x="855" y="85" width="225" height="80" rx="6" class="nd-mint"/><g class="on-dark"><text x="967" y="118" class="t-nm">HPA Scale-Out</text><text x="967" y="140" class="t-sb">ขยาย 1 → 2 Pods อัตโนมัติ!</text></g>
+    </g>
+  </svg></div>
+  <div class="kpi" style="margin-top:1rem">
+    <div class="panel"><div class="v">10,599</div><div class="l">Total Requests (5 นาที)</div></div>
+    <div class="panel"><div class="v" style="color:var(--mint)">251ms</div><div class="l">p95 Latency (เป้า &lt;300ms · ผ่าน ✅)</div></div>
+    <div class="panel"><div class="v" style="color:var(--mint)">0.00%</div><div class="l">Error Rate (0/10,599 · ผ่าน ✅)</div></div>
+    <div class="panel"><div class="v" style="color:var(--accent)">1 → 2</div><div class="l">HPA Scale Replicas บน AKS</div></div>
+  </div>
+  <p class="cap">ผลการวัดจริง: รองรับ 35 RPS ต่อเนื่องสบายๆ · p90 อยู่ที่ 195ms · ค่าเฉลี่ยเพียง 82ms · Pod ใช้แรมเบามากแค่ 6-14Mi</p>
+</div></section>
+
+<!-- SLIDE 18 · NUMBERS & COST -->
+<section class="slide" id="s18"><div class="wrap">
+  <span class="kicker act">Act 4 · Evidence · Cost &amp; Trade-offs</span>
+  <h1>Numbers <span class="th">ความคุ้มค่าและงบประมาณจริง</span></h1>
+  <div class="kpi">
+    <div class="panel"><div class="v" style="color:var(--mint)">~$17–23</div><div class="l">ค่า Cloud จริง /เดือน (อยู่ในงบ)</div></div>
+    <div class="panel"><div class="v" style="color:var(--mint)">$0/GB</div><div class="l">ค่า Egress รูปบน Cloudflare R2</div></div>
+    <div class="panel"><div class="v">0.1ms</div><div class="l">PG Query (ไม่มี Hotspot จึงตัด Redis)</div></div>
+    <div class="panel"><div class="v">-$60/mo</div><div class="l">ตัด NAT/Bastion ประหยัดงบ</div></div>
+  </div>
+  <div class="vs">
+    <div class="panel"><p class="l">ถ้าเก็บรูปบน AZURE BLOB · 45TB/เดือน</p><p style="font-family:var(--font-display);font-weight:900;font-size:2rem">~$5,414 / เดือน</p></div>
+    <span class="x">VS</span>
+    <div class="panel" style="border-color:var(--mint)"><p class="w">แยกมาเก็บที่ CLOUDFLARE R2 + CDN · 45TB/เดือน</p><p style="font-family:var(--font-display);font-weight:900;font-size:2rem">~$11 / เดือน</p></div>
+  </div>
+  <p class="cap">นี่คือเหตุผลสำคัญที่สุดของสถาปัตยกรรม Multi-Cloud ชุดนี้: ประหยัดค่าส่งรูปได้ถึง ~500 เท่า</p>
+</div></section>
+
+<!-- ACT 5 · ASK -->
+<section class="slide" id="s19"><div class="wrap">
+  <span class="kicker act">Act 5 · Ask</span>
+  <h1>Demo runbook <span class="th">10 minutes</span></h1>
+  <div class="diagram"><svg viewBox="0 0 1100 200" role="img" aria-labelledby="d20t d20d"><title id="d20t">Demo runbook</title><desc id="d20d">Product 2, money 3, platform 3, infra 2, shutdown.</desc>
+    <g>
+      <line x1="238" y1="100" x2="278" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="488" y1="100" x2="528" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="738" y1="100" x2="778" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
+      <line x1="948" y1="100" x2="962" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
+    </g>
+    <g>
+      <rect x="28" y="40" width="210" height="120" rx="6" class="nd"/><text x="133" y="90" class="t-nm">Product 2 min</text><text x="133" y="114" class="t-sb">เปิดตอน · scroll · progress</text>
+      <rect x="288" y="40" width="200" height="120" rx="6" class="nd-hl"/><g class="on-hl"><text x="388" y="90" class="t-nm">Money 3 min</text><text x="388" y="114" class="t-sb">top-up > ซื้อ > takedown</text></g>
+      <rect x="538" y="40" width="200" height="120" rx="6" class="nd"/><text x="638" y="90" class="t-nm">Platform 3 min</text><text x="638" y="114" class="t-sb">dashboard · trace · pipe</text>
+      <rect x="788" y="40" width="160" height="120" rx="6" class="nd"/><text x="868" y="90" class="t-nm">Infra 2 min</text><text x="868" y="114" class="t-sb">kill pod โชว์</text>
+      <rect x="968" y="40" width="104" height="120" rx="6" class="nd-ink"/><g class="on-dark"><text x="1020" y="90" class="t-nm" style="font-size:13px">ปิดไฟ</text><text x="1020" y="114" class="t-sb">demo-night</text></g>
+    </g>
+  </svg></div>
+  <p class="cap">ไล่ซ้ายไปขวาตามเวลา · เหลือง = ช่วงเงิน · ดำ = ปิดเครื่องหลังจบ</p>
+</div></section>
+
+<section class="slide" id="s20"><div class="wrap">
+  <span class="kicker act">Act 5 · Ask</span>
+  <h1>What is next <span class="th">after demo</span></h1>
+  <div class="grid3">
+    <div class="panel"><h3 style="font-family:var(--font-display)">Money P0</h3>
+      <p>Stripe จริง + PromptPay · reconciliation รายวัน · KYC + ถอนเงิน + hold</p></div>
+    <div class="panel"><h3 style="font-family:var(--font-display)">Discovery P0</h3>
+      <p>ค้นหาภาษาไทย · แจ้งเตือน LINE · คอมเมนต์ + moderation เต็มรูป</p></div>
+    <div class="panel"><h3 style="font-family:var(--font-display)">Retention P1</h3>
+      <p>early access · tips · ติดตาม creator · subscription รายเดือน</p></div>
+  </div>
+  <p class="cap">3 กลุ่มงานหลัง demo · เรียงตามความจำเป็นก่อนหลัง</p>
+</div></section>
+
+<section class="slide" id="s21"><div class="wrap" style="text-align:center">
+  <span class="kicker act">Act 5 · Ask</span>
+  <div class="cover-badge">Questions</div>
+</div></section>
+
+<!-- APPENDIX · TOC + CODE -->
+<section class="slide" id="s22"><div class="wrap">
+  <span class="kicker">Appendix · Map + code</span>
+  <h1>What we cover</h1>
+  <div class="toc-list">
+    <div class="toc-act">Act 1 · What &amp; How</div>
+    <a href="#s1"><span class="tn">01</span>DooToon &amp; What It Does (3 roles)</a>
+    <a href="#s2"><span class="tn">02</span>End-to-end flow (7 steps)</a>
+    <a href="#s3"><span class="tn">03</span>Constraints we designed around</a>
+    <div class="toc-act">Act 2 · Cloud Architecture (Big Picture)</div>
+    <a href="#s4"><span class="tn">04</span>Full Cloud Architecture (1 page)</a>
+    <a href="#s5"><span class="tn">05</span>Cloud overview: 4 main zones</a>
+    <a href="#s6"><span class="tn">06</span>Traffic routing: 4 paths</a>
+    <div class="toc-act">Act 3 · Deep Dive (Subsystem Breakdown)</div>
+    <a href="#s7"><span class="tn">07</span>Deep Dive 1: Web &amp; Next.js BFF</a>
+    <a href="#s8"><span class="tn">08</span>Deep Dive 2: 9 Go Microservices</a>
+    <a href="#s9"><span class="tn">09</span>Deep Dive 3: Stripe Top-up &amp; Access</a>
+    <a href="#s10"><span class="tn">10</span>Deep Dive 4: Purchase (5 steps, 1 tx)</a>
+    <a href="#s11"><span class="tn">11</span>Deep Dive 5: Read Gates &amp; Takedown</a>
+    <a href="#s12"><span class="tn">12</span>Deep Dive 6: PostgreSQL &amp; Auth</a>
+    <div class="toc-act">Act 4 · Journey, CI/CD &amp; k8s Load Test</div>
+    <a href="#s13"><span class="tn">13</span>How we built it in 4 weeks</a>
+    <a href="#s14"><span class="tn">14</span>Architectural trade-offs (Kept vs Cut)</a>
+    <a href="#s15"><span class="tn">15</span>CI/CD Pipeline (4 stages)</a>
+    <a href="#s16"><span class="tn">16</span>Inside Test (Coverage Gate ≥80%)</a>
+    <a href="#s17"><span class="tn">17</span>K8s Load Test (k6 50 VUs &amp; HPA scale)</a>
+    <a href="#s18"><span class="tn">18</span>Measured numbers &amp; R2 cost savings</a>
+    <div class="toc-act">Act 5 · Ask &amp; Appendix</div>
+    <a href="#s19"><span class="tn">19</span>Demo runbook (10 min)</a>
+    <a href="#s20"><span class="tn">20</span>What is next</a>
+    <a href="#s21"><span class="tn">21</span>Questions welcome</a>
+    <a href="#s23"><span class="tn">A1</span>Code: Stripe</a>
+    <a href="#s24"><span class="tn">A2</span>Code: purchase + gates</a>
+    <a href="#s25"><span class="tn">A3</span>Code: takedown + Worker</a>
+  </div>
+</div></section>
+
+<section class="slide" id="s23"><div class="wrap">
+  <span class="kicker">Appendix A1 · โค้ด — checkout/route.ts + webhook/route.ts</span>
+  <h1>Stripe <span class="th">real code (abridged)</span></h1>
+  <pre class="code"><code>session = stripe().checkout.sessions.create({
+  mode: "payment", currency: "thb",
+  line_items: [{ price_data: { currency: "thb",
+    unit_amount: pkg.priceTHB * 100,  // สตางค์!
+    product_data: { name: `DOOTOON ${pkg.label} — … coins` }}}],
+  metadata: { accountId, packageId, coins, bonus,
+    idempotencyKey: `stripe_${Date.now()}_${rand}` },
+  success_url: `…/wallet?topup=success&amp;session_id={CHECKOUT_SESSION_ID}`,
+  cancel_url: `…/wallet?topup=cancelled` })
+event = stripe().webhooks.constructEvent(raw, signature, secret)
+if (event.type !== "checkout.session.completed") return { received: true }
+await topUp({ accountId, amount: pkg.coins, coinType: "purchased",
+  idempotencyKey: `stripe_p_${key}` })
+await topUp({ …bonus…, idempotencyKey: `stripe_b_${key}` })
+// พัง > ตอบ 500 ให้ Stripe retry เอง (ยิงซ้ำไม่เบิ้ล)</code></pre>
+</div></section>
+
+<section class="slide" id="s24"><div class="wrap">
+  <span class="kicker">Appendix A2 · โค้ด — service.go:195-288 + reader.go:74-149</span>
+  <h1>Purchase + gates <span class="th">real code (abridged)</span></h1>
+  <pre class="code"><code>// Purchase: ล็อก > กันซ้ำ > หักโบนัสก่อน > ให้สิทธิ์ > แบ่ง 30/70
+err := s.store.WithTxUser(ctx, users, func(tx Tx) error {
+  if p := tx.FindPurchaseByKey(ctx, userID, idemKey); p != nil {
+    return existing  // กดเบิ้ล/webhook ซ้ำ > คืนของเดิม
+  }
+  purchased, bonus := tx.SumBalances(ctx, userID)
+  bonusToDebit, purchasedToDebit = splitBonusFirst(...)
+  tx.AppendLedger(debit bonus); tx.AppendLedger(debit purchased)
+  tx.InsertPurchase(...); tx.UpsertEntitlement(...)
+  feeCoins := (purchasedToDebit * 30) / 100
+  creatorPool := purchasedToDebit - feeCoins  // วนหารตาม % ทีม
+})  // COMMIT พร้อมกัน — พังขั้นไหน rollback 100%
+// Gates: ฟรี > admin/ทีม > เคยซื้อ? > เซ็น URL ทีละหน้า 15 นาที
+if chap.IsFree() { canRead = true }
+else if role == Admin || isCreator { canRead = true }
+else { canRead = commerce.CheckEntitlement(userID, chapterID) }
+if !canRead { guest > 401; user > 402 }  // takedown > 410 ก่อนเสมอ</code></pre>
+</div></section>
+
+<section class="slide" id="s25"><div class="wrap">
+  <span class="kicker">Appendix A3 · โค้ด — moderation.go + r2-gate-worker.js</span>
+  <h1>Takedown + Worker <span class="th">real code (abridged)</span></h1>
+  <pre class="code"><code>// Takedown: ซ่อน > บล็อกรูป > ย้อนเงินทุกคน > audit
+catalog.SetChapterStatus(chapterID, StatusTakenDown)
+for _, k := range chap.PageKeys { storage.Delete(ctx, k) }
+for _, p := range purchases {
+  commerce.ReversePurchaseOnTakedown(ctx, p, takedownID) }  // รันซ้ำได้
+store.InsertAuditLog({chapter_takedown, adminID, reason})
+// Worker เฝ้า R2: ขาด/หมดอายุ/HMAC ผิด > 403
+if (!key || !exp || !token) > 403
+if (now > exp) > 403
+sig = HMAC-SHA256("key:exp", HMAC_SECRET)
+if (!timingSafeVerify(token, sig)) > 403
+obj = IMG_BUCKET.get(key); if (!obj) > 404
+return obj.body + cache-control: max-age=3600</code></pre>
+</div></section>
+
+</main>
+
+<div id="spot"></div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+const bar=document.getElementById('pbar'),pg=document.getElementById('pgnum');
+let cur=0;
+function go(i){cur=Math.max(0,Math.min(slides.length-1,i));slides[cur].scrollIntoView({behavior:'smooth'});slides[cur].classList.add('in');countUp(slides[cur]);update();}
+function update(){bar.style.width=((cur+1)/slides.length*100)+'%';const t=String(cur+1).padStart(2,'0')+' / '+slides.length;if(pg.textContent!==t){pg.textContent=t;pg.classList.remove('bump');void pg.offsetWidth;pg.classList.add('bump');}}
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(cur+1);}
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(cur-1);}
+  if(e.key==='Home')go(0); if(e.key==='End')go(slides.length-1);
+});
+let lastMorph=null;
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  const i=slides.indexOf(e.target);const m=e.target.dataset.morph;
+  if(m&&lastMorph===m&&Math.abs(i-cur)===1){e.target.animate(
+    [{opacity:0,transform:'scale(.94)'},{opacity:1,transform:'scale(1)'}],
+    {duration:450,easing:'ease'});}
+  lastMorph=m||null;cur=i;update();
+}})},{threshold:.5});
+slides.forEach(s=>io.observe(s));
+function toggleTheme(){const n=document.documentElement.dataset.theme==='night';document.documentElement.dataset.theme=n?'':'night';}
+const spot=document.getElementById('spot');
+function toggleSpot(){const on=document.body.classList.toggle('spot-on');spot.style.display=on?'block':'none';}
+addEventListener('mousemove',e=>{spot.style.setProperty('--sx',e.clientX+'px');spot.style.setProperty('--sy',e.clientY+'px');},{passive:true});
+addEventListener('click',e=>{if(document.body.classList.contains('spot-on'))return;if(e.target.closest('a,button'))return;go(e.clientX<innerWidth*0.2?cur-1:cur+1);});
+addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const k=e.key.toLowerCase();if(k==='f')toggleSpot();if(k==='t')toggleTheme();});
+update();
+
+/* ================= MOTION ================= */
+const root=document.documentElement;
+function prepMotion(){
+  slides.forEach(s=>{
+    [...s.querySelectorAll('.wrap>*')].forEach((el,i)=>el.style.setProperty('--i',i));
+    s.querySelectorAll('.grid2,.grid3,.kpi,.vs').forEach(g=>[...g.children].forEach((el,i)=>el.style.setProperty('--pd',i)));
+    s.querySelectorAll('.diagram svg').forEach(svg=>{
+      const w=(svg.viewBox&&svg.viewBox.baseVal&&svg.viewBox.baseVal.width)||1100;
+      svg.querySelectorAll('rect,text,line,path').forEach(el=>{
+        const tag=el.tagName.toLowerCase();let x=0;
+        if(tag==='rect'||tag==='text')x=parseFloat(el.getAttribute('x'))||0;
+        else if(tag==='line')x=Math.min(parseFloat(el.getAttribute('x1'))||0,parseFloat(el.getAttribute('x2'))||0);
+        else{const m=/M\s*([\d.]+)/.exec(el.getAttribute('d')||'');x=m?parseFloat(m[1]):0;}
+        const solidEdge=el.matches('.edge,.edge-ink,.edge-accent');
+        const anyEdge=solidEdge||el.matches('.edge-dash');
+        el.classList.add('sv');
+        el.style.setProperty('--d',Math.round(250+(x/w)*700+(anyEdge?180:0))+'ms');
+        if(solidEdge&&el.getTotalLength){
+          try{el.style.setProperty('--len',Math.ceil(el.getTotalLength()));el.classList.add('draw');}catch(_){}
+        }
+      });
+    });
+  });
+}
+function countUp(s){
+  if(!root.classList.contains('motion'))return;
+  s.querySelectorAll('.kpi .v').forEach(el=>{
+    const txt=el.dataset.txt||(el.dataset.txt=el.textContent);
+    const m=/^(\D*)(\d[\d,]*(?:\.\d+)?)(\D*)$/.exec(txt);if(!m)return;
+    const end=parseFloat(m[2].replace(/,/g,''));if(!end)return;
+    const dec=(m[2].split('.')[1]||'').length,comma=m[2].includes(',');
+    const fmt=v=>{let n=v.toFixed(dec);if(comma)n=n.replace(/\B(?=(\d{3})+(?!\d))/g,',');return m[1]+n+m[3];};
+    const t0=performance.now()+400,dur=900;
+    el.textContent=fmt(0);
+    (function tick(now){
+      const p=Math.min(1,Math.max(0,(now-t0)/dur));
+      if(p<1&&s.classList.contains('in')){el.textContent=fmt(end*(1-Math.pow(1-p,3)));requestAnimationFrame(tick);}
+      else el.textContent=txt;
+    })(performance.now());
+  });
+}
+prepMotion();
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches)root.classList.add('motion');
+const inIO=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){e.target.classList.add('in');countUp(e.target);}
+}),{threshold:0.15});
+const outIO=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)e.target.classList.remove('in');}),{threshold:0.05});
+slides.forEach(s=>{inIO.observe(s);outIO.observe(s);});
+slides[0].classList.add('in');countUp(slides[0]);
+addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;if(e.key.toLowerCase()==='m')root.classList.toggle('motion');});
+addEventListener('beforeprint',()=>root.classList.remove('motion'));
+</script>
+</body>
+</html>
