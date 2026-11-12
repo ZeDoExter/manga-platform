@@ -25,19 +25,37 @@ export function Hero() {
   if (n === 0) {
     return (
       <section className="wrap pt-5 md:pt-8" aria-label="Welcome">
-        <div className="panel relative overflow-hidden !rounded-xl bg-ink p-8 md:p-14 text-white shadow-[6px_6px_0_var(--shadow)]">
-          <div className="label text-accent">// welcome to dootoon</div>
-          <h1 className="h-display mt-2 text-3xl md:text-5xl">Digital Manga & Novel Platform</h1>
-          <p className="mt-3 max-w-xl text-paper2/80 font-thai">
-            แพลตฟอร์มอ่านมังงะและนิยายออนไลน์ สนับสนุนครีเอเตอร์โดยตรงด้วยระบบเหรียญโปร่งใส ไม่มีข้อมูลจำลอง
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/discover" className="btn btn-accent !px-5 !py-3">
-              <Icon name="compass" size={16} /> Explore Discover
-            </Link>
-            <Link href="/studio" className="btn !border-2 !border-white/80 !bg-white/10 !text-white hover:!bg-white/20 !shadow-none !px-5 !py-3">
-              <Icon name="pen" size={15} /> Creator Studio
-            </Link>
+        <div
+          className="panel relative isolate overflow-hidden !rounded-xl border-2 border-line p-8 text-white shadow-[6px_6px_0_var(--shadow)] md:p-14"
+          style={{ background: "linear-gradient(135deg, #0d0c15 0%, #171526 50%, #201726 100%)" }}
+        >
+          {/* subtle manga backdrop & accents */}
+          <div className="pointer-events-none absolute -right-20 -top-20 size-96 rounded-full bg-accent/20 blur-3xl" />
+          <div className="pointer-events-none absolute -right-24 top-0 h-full w-48 -skew-x-12 bg-accent/30 mix-blend-screen" />
+          <div className="tone-lg absolute inset-0 opacity-40" style={{ ["--tone" as string]: "rgba(255,255,255,0.08)" }} />
+
+          <div className="relative z-10 max-w-2xl">
+            <div className="inline-flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
+              <span className="size-2 rounded-full bg-accent animate-pulse" />
+              // welcome to dootoon
+            </div>
+            <h1 className="h-display mt-3 text-3xl font-extrabold tracking-tight text-white md:text-5xl">
+              Digital Manga & Novel Platform
+            </h1>
+            <p className="mt-3.5 text-base font-normal leading-relaxed text-white/85 font-thai">
+              แพลตฟอร์มอ่านมังงะและนิยายออนไลน์ สนับสนุนครีเอเตอร์โดยตรงด้วยระบบเหรียญโปร่งใส ไม่มีข้อมูลจำลอง
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link href="/discover" className="btn btn-accent !px-5 !py-3">
+                <Icon name="compass" size={16} /> Explore Discover
+              </Link>
+              <Link
+                href="/studio"
+                className="btn !border-2 !border-white/80 !bg-white/10 !text-white hover:!bg-white/20 !shadow-none !px-5 !py-3"
+              >
+                <Icon name="pen" size={15} /> Creator Studio
+              </Link>
+            </div>
           </div>
         </div>
       </section>
