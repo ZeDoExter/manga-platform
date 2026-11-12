@@ -17,27 +17,59 @@ type Mode = "scroll" | "page" | "book";
 
 const PageSlot = memo(function PageSlot({ item, idx, style, root, onVisible }: { item: ReaderPageItem; idx: number; style: PageStyle; root: React.RefObject<HTMLDivElement | null>; onVisible: (i: number) => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [near, setNear] = useState(idx < 3);
+  // Preload first 6 pages immediately so reader starts with zero lag
+  const [mounted, setMounted] = useState(idx < 6);
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const a = new IntersectionObserver(([e]) => setNear(e.isIntersecting), { root: root.current, rootMargin: "1600px 0px" });
-    const b = new IntersectionObserver(([e]) => e.isIntersecting && onVisible(idx), { root: root.current, rootMargin: "-46% 0px -46% 0px" });
-    a.observe(el);
+
+    // Buffer 3000px ahead downwards. Once loaded, it stays loaded forever (never unmounts pages above)
+    let a: IntersectionObserver | null = null;
+    if (!mounted) {
+      a = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) {
+          setMounted(true);
+          a?.disconnect();
+        }
+      }, { root: root.current, rootMargin: "3000px 0px 1000px 0px" });
+      a.observe(el);
+    }
+
+    const b = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) onVisible(idx);
+    }, { root: root.current, rootMargin: "-40% 0px -40% 0px" });
     b.observe(el);
-    return () => { a.disconnect(); b.disconnect(); };
-  }, [idx, onVisible, root]);
+
+    return () => { a?.disconnect(); b.disconnect(); };
+  }, [idx, mounted, onVisible, root]);
+
   return (
-    <div ref={ref} data-page={idx} className={cx("relative w-full", !item.src && "aspect-[2/3]")} style={{ background: style.strip ? "#0d0d12" : "#fbfaf6" }}>
-      {near ? (
+    <div
+      ref={ref}
+      data-page={idx}
+      className={cx("relative w-full", !item.src && "aspect-[2/3]")}
+      style={{
+        background: style.strip ? "#0d0d12" : "#fbfaf6",
+        minHeight: item.src ? "400px" : undefined,
+      }}
+    >
+      {mounted ? (
         item.src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={resolveImageUrl(item.src)} alt={`Page ${idx + 1}`} className="block w-full" loading="lazy" />
+          <img
+            src={resolveImageUrl(item.src)}
+            alt={`Page ${idx + 1}`}
+            className="block w-full h-auto"
+            decoding="async"
+          />
         ) : item.spec ? (
           <MangaPageSvg page={item.spec} style={style} className="block h-full w-full" />
         ) : null
       ) : (
-        <div className="absolute inset-0 grid place-items-center text-xs text-black/30">page {idx + 1}</div>
+        <div className="flex h-[75vh] w-full items-center justify-center font-mono text-xs text-white/20">
+          Loading page {idx + 1}…
+        </div>
       )}
     </div>
   );
