@@ -199,7 +199,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   chMap.set(rc.number, { ...existing, pages: rc.pages, text: rc.text || existing.text });
                 }
               }
-              byId.set(r.id, { ...cur, chapters: Array.from(chMap.values()).sort((a, b) => b.number - a.number) });
+              byId.set(r.id, {
+                ...cur,
+                coverImage: cur.coverImage || r.coverImage,
+                chapters: Array.from(chMap.values()).sort((a, b) => b.number - a.number),
+              });
             }
           }
           // Prune: drop synced stories (owner "x" test stubs or missing remotely)
