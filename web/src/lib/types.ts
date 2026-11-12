@@ -136,6 +136,7 @@ export interface StudioPage {
   kind: "preset" | "upload";
   preset?: PagePreset;
   src?: string;
+  label?: string;
 }
 export interface StudioChapter {
   id: string;

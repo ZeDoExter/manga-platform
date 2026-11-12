@@ -112,6 +112,15 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
     setPages(p);
     setSel(j);
   };
+  const sortPagesByName = () => {
+    const sorted = [...pages].sort((a, b) => {
+      const na = a.label || a.src?.split("/").pop() || "";
+      const nb = b.label || b.src?.split("/").pop() || "";
+      return na.localeCompare(nb, undefined, { numeric: true, sensitivity: "base" });
+    });
+    setPages(sorted);
+    toast("Pages sorted by filename (1, 2, 3…) ✓");
+  };
   const upload = async (fl: FileList | null) => {
     if (!fl?.length) return;
     setBusy(true);
@@ -127,7 +136,11 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
 
         const imageEntries = Object.entries(unzipped)
           .filter(([name]) => !name.endsWith("/") && !name.startsWith("__MACOSX") && /\.(jpe?g|png|webp|gif)$/i.test(name))
-          .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
+          .sort(([a], [b]) => {
+            const na = a.split("/").pop() || a;
+            const nb = b.split("/").pop() || b;
+            return na.localeCompare(nb, undefined, { numeric: true, sensitivity: "base" });
+          });
 
         if (imageEntries.length > 0) {
           const extractedFiles = imageEntries.map(([name, data]) => {
@@ -138,22 +151,26 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
             return new File([bytesCopy], cleanName, { type: mime });
           });
 
-          const added: StudioPage[] = [];
           let count = 0;
           setProgress({ active: true, pct: 0, label: `Uploading (0 / ${extractedFiles.length})…` });
 
-          await uploadAll(extractedFiles, state.accountId, story.id, ch.id, 3, (f, res) => {
+          const results = await uploadAll(extractedFiles, state.accountId, story.id, ch.id, 3, (f, res) => {
             count++;
             const pct = Math.round((count / extractedFiles.length) * 100);
             setProgress({ active: true, pct, label: `Uploading (${count} / ${extractedFiles.length})…` });
-            if (!(res instanceof Error) && res?.key) {
-              added.push({ id: uid("pg"), kind: "upload", src: res.key });
-            }
           });
+
+          const added: StudioPage[] = [];
+          for (let i = 0; i < extractedFiles.length; i++) {
+            const res = results[i];
+            if (res && !(res instanceof Error) && res.key) {
+              added.push({ id: uid("pg"), kind: "upload", src: res.key, label: extractedFiles[i].name });
+            }
+          }
 
           if (added.length) {
             setPages([...pages, ...added]);
-            toast(`${added.length} pages added ✓`);
+            toast(`${added.length} pages added in order ✓`);
           }
         } else {
           // Fallback to server batch if fflate didn't find images
@@ -177,21 +194,28 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
       }
       return;
     }
-    const imgs = files.filter((f) => !/\.(zip|rar)$/i.test(f.name));
-    const added: StudioPage[] = [];
+    const imgs = files
+      .filter((f) => !/\.(zip|rar)$/i.test(f.name))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+
     let count = 0;
-    setProgress({ active: true, pct: 0, label: `Uploading 0 / ${imgs.length}…` });
-    await uploadAll(imgs, state.accountId, story.id, ch.id, 3, (f, res) => {
+    setProgress({ active: true, pct: 0, label: `Uploading (0 / ${imgs.length})…` });
+    const results = await uploadAll(imgs, state.accountId, story.id, ch.id, 3, (f, res) => {
       count++;
       const pct = Math.round((count / imgs.length) * 100);
-      setProgress({ active: true, pct, label: `Uploading (${count}/${imgs.length})…` });
-      if (!(res instanceof Error) && res?.key) {
-        added.push({ id: uid("pg"), kind: "upload", src: res.key });
-      }
+      setProgress({ active: true, pct, label: `Uploading (${count} / ${imgs.length})…` });
     });
+
+    const added: StudioPage[] = [];
+    for (let i = 0; i < imgs.length; i++) {
+      const res = results[i];
+      if (res && !(res instanceof Error) && res.key) {
+        added.push({ id: uid("pg"), kind: "upload", src: res.key, label: imgs[i].name });
+      }
+    }
     if (added.length) {
       setPages([...pages, ...added]);
-      toast(`${added.length} pages added ✓`);
+      toast(`${added.length} pages added in order ✓`);
     }
     setProgress(null);
     setBusy(false);
@@ -257,6 +281,11 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
                     <button className="btn btn-accent btn-sm" onClick={() => files.current?.click()} disabled={busy}>
                       <Icon name="upload" size={13} /> {busy ? "Uploading…" : "Upload pages / ZIP"}
                     </button>
+                    {pages.length > 1 && (
+                      <button className="btn btn-ghost btn-sm text-xs font-bold" onClick={sortPagesByName} title="Sort pages by filename (1, 2, 3…)">
+                        <Icon name="sliders" size={12} /> Sort 1–{pages.length}
+                      </button>
+                    )}
                     {pages.length > 0 && (
                       <button className="btn btn-ghost btn-sm text-xs !text-muted hover:!text-accent" onClick={() => { if (confirm("Clear all pages in this chapter?")) { setPages([]); setSel(0); } }}>
                         Clear all
@@ -306,7 +335,9 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
                             </span>
                           </button>
                           <div className="mt-1.5 flex items-center justify-between px-0.5">
-                            <span className="font-mono text-[0.65rem] font-bold text-muted">Page {i + 1}</span>
+                            <span className="font-mono text-[0.65rem] font-bold text-muted truncate max-w-[65px]" title={p.label || `Page ${i + 1}`}>
+                              {p.label ? p.label.replace(/\.[^/.]+$/, "") : `Page ${i + 1}`}
+                            </span>
                             <div className="flex gap-1">
                               <button
                                 className="grid size-5 place-items-center rounded border border-line/30 bg-paper hover:bg-paper2 disabled:opacity-30"
