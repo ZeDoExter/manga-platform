@@ -113,7 +113,7 @@ func TestWebSync_ExplicitIDsAndChapterUpdate(t *testing.T) {
 		t.Fatalf("expected ErrChapterExists, got %v", err)
 	}
 
-	updated, err := svc.UpdateChapter(ctx, chapter.ID, "Chapter 4 - Revised", 35)
+	updated, err := svc.UpdateChapter(ctx, chapter.ID, "Chapter 4 - Revised", 35, nil, "")
 	if err != nil {
 		t.Fatalf("UpdateChapter failed: %v", err)
 	}
@@ -157,10 +157,10 @@ func TestListStoriesAndChaptersByStory(t *testing.T) {
 func TestUpdateChapter_RejectsBadInput(t *testing.T) {
 	ctx := context.Background()
 	svc := catalog.NewService()
-	if _, err := svc.UpdateChapter(ctx, "chap-x", "", 10); err == nil {
+	if _, err := svc.UpdateChapter(ctx, "chap-x", "", 10, nil, ""); err == nil {
 		t.Error("expected empty title to fail")
 	}
-	if _, err := svc.UpdateChapter(ctx, "chap-x", "T", -1); err == nil {
+	if _, err := svc.UpdateChapter(ctx, "chap-x", "T", -1, nil, ""); err == nil {
 		t.Error("expected negative price to fail")
 	}
 }

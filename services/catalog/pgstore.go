@@ -129,12 +129,17 @@ func (p *PGStore) GetChapter(ctx context.Context, chapterID string) (*Chapter, e
 	return c, nil
 }
 
-func (p *PGStore) UpdateChapter(ctx context.Context, chapterID, title string, priceCoins int64) (*Chapter, error) {
+func (p *PGStore) UpdateChapter(ctx context.Context, chapterID, title string, priceCoins int64, pageKeys []string, novelText string) (*Chapter, error) {
 	c := &Chapter{}
 	if err := p.pool.QueryRow(ctx, `
-		UPDATE catalog.chapters SET title = $2, price_coins = $3 WHERE id = $1
+		UPDATE catalog.chapters 
+		SET title = $2, 
+		    price_coins = $3,
+		    page_keys = CASE WHEN $4::text[] IS NOT NULL AND cardinality($4::text[]) > 0 THEN $4 ELSE page_keys END,
+		    novel_text = CASE WHEN $5 != '' THEN $5 ELSE novel_text END
+		WHERE id = $1
 		RETURNING id, story_id, order_index, title, price_coins, page_keys, novel_text, status, auto_unlock_at, created_at`,
-		chapterID, title, priceCoins).Scan(
+		chapterID, title, priceCoins, pageKeys, novelText).Scan(
 		&c.ID, &c.StoryID, &c.OrderIndex, &c.Title, &c.PriceCoins, &c.PageKeys,
 		&c.NovelText, &c.Status, &c.AutoUnlockAt, &c.CreatedAt,
 	); err != nil {

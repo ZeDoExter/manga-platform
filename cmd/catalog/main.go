@@ -127,7 +127,7 @@ func main() {
 			return
 		}
 
-		chapter, err := svc.UpdateChapter(r.Context(), r.PathValue("id"), req.Title, req.PriceCoins)
+		chapter, err := svc.UpdateChapter(r.Context(), r.PathValue("id"), req.Title, req.PriceCoins, req.PageKeys, req.NovelText)
 		switch {
 		case err == nil:
 			httpapi.JSON(w, http.StatusOK, chapter)

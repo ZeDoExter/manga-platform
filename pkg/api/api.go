@@ -56,8 +56,10 @@ type SetChapterStatusRequest struct {
 }
 
 type UpdateChapterRequest struct {
-	Title      string `json:"title"`
-	PriceCoins int64  `json:"price_coins"`
+	Title      string   `json:"title"`
+	PriceCoins int64    `json:"price_coins"`
+	PageKeys   []string `json:"page_keys,omitempty"`
+	NovelText  string   `json:"novel_text,omitempty"`
 }
 
 type TopUpRequest struct {

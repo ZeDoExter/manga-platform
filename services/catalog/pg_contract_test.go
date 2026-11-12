@@ -64,7 +64,7 @@ func TestPGStore_Contract(t *testing.T) {
 	if chap.IsFree() {
 		t.Fatal("paid chapter must not be free")
 	}
-	if _, err := svc.UpdateChapter(ctx, chap.ID, "Ch1 revised", 40); err != nil {
+	if _, err := svc.UpdateChapter(ctx, chap.ID, "Ch1 revised", 40, nil, ""); err != nil {
 		t.Fatalf("UpdateChapter: %v", err)
 	}
 	updated, _ := svc.GetChapter(ctx, chap.ID)

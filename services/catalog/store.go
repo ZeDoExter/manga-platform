@@ -15,6 +15,6 @@ type Store interface {
 	InsertChapter(ctx context.Context, c *Chapter) error
 	GetChapter(ctx context.Context, chapterID string) (*Chapter, error)
 	ListChaptersByStory(ctx context.Context, storyID string) ([]*Chapter, error)
-	UpdateChapter(ctx context.Context, chapterID, title string, priceCoins int64) (*Chapter, error)
+	UpdateChapter(ctx context.Context, chapterID, title string, priceCoins int64, pageKeys []string, novelText string) (*Chapter, error)
 	SetChapterStatus(ctx context.Context, chapterID string, status ContentStatus) error
 }

@@ -130,15 +130,15 @@ func (s *Service) GetChapter(ctx context.Context, chapterID string) (*Chapter, e
 	return s.store.GetChapter(ctx, chapterID)
 }
 
-// UpdateChapter refreshes the editable metadata used by the web sync.
-func (s *Service) UpdateChapter(ctx context.Context, chapterID, title string, priceCoins int64) (*Chapter, error) {
+// UpdateChapter refreshes the editable metadata and page keys used by the web sync.
+func (s *Service) UpdateChapter(ctx context.Context, chapterID, title string, priceCoins int64, pageKeys []string, novelText string) (*Chapter, error) {
 	if title == "" {
 		return nil, ErrInvalidTitle
 	}
 	if priceCoins < 0 {
 		return nil, ErrInvalidPrice
 	}
-	return s.store.UpdateChapter(ctx, chapterID, title, priceCoins)
+	return s.store.UpdateChapter(ctx, chapterID, title, priceCoins, pageKeys, novelText)
 }
 
 // SetChapterStatus updates status (e.g. StatusTakenDown on moderation takedown FR-D1, FR-D2).

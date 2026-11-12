@@ -140,6 +140,8 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             title: ch.title || `Chapter ${ch.number}`,
             price_coins: price,
+            page_keys: pageKeys,
+            novel_text: ch.text ?? "",
           }),
           cache: "no-store",
         });

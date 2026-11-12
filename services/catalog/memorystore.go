@@ -80,7 +80,7 @@ func (m *MemoryStore) GetChapter(_ context.Context, chapterID string) (*Chapter,
 	return copyChapter(c), nil
 }
 
-func (m *MemoryStore) UpdateChapter(_ context.Context, chapterID, title string, priceCoins int64) (*Chapter, error) {
+func (m *MemoryStore) UpdateChapter(_ context.Context, chapterID, title string, priceCoins int64, pageKeys []string, novelText string) (*Chapter, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	c, exists := m.chapters[chapterID]
@@ -89,6 +89,12 @@ func (m *MemoryStore) UpdateChapter(_ context.Context, chapterID, title string, 
 	}
 	c.Title = title
 	c.PriceCoins = priceCoins
+	if len(pageKeys) > 0 {
+		c.PageKeys = append([]string(nil), pageKeys...)
+	}
+	if novelText != "" {
+		c.NovelText = novelText
+	}
 	return copyChapter(c), nil
 }
 
