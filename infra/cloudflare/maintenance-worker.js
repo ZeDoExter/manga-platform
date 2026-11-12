@@ -5,7 +5,14 @@
 
 export default {
   async fetch(request, env) {
-    // กำหนดเวลา Timeout สูงสุดที่รอ Origin (เช่น 4 วินาที)
+    const url = new URL(request.url);
+
+    // [TEST MODE]: ถ้าเปิดด้วย ?maintenance=1 หรือส่ง Header X-Maintenance: 1 ให้แสดงหน้า Maintenance ทันที
+    if (url.searchParams.has('maintenance') || url.searchParams.has('preview') || request.headers.get('X-Maintenance') === '1') {
+      return renderMaintenancePage(522);
+    }
+
+    // กำหนดเวลา Timeout สูงสุดที่รอ Origin (เช่น 4.5 วินาที)
     const timeoutMs = 4500;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
