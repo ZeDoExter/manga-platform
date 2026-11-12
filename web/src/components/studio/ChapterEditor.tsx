@@ -14,6 +14,14 @@ import { CreatorGate, PRESET_LABEL, PreviewOverlay, StatusChip } from "./common"
 import { uploadAll, uploadArchive } from "@/lib/media-api";
 import { resolveImageUrl } from "@/lib/content";
 import * as fflate from "fflate";
+
+function extractPageNumber(str?: string): number | null {
+  if (!str) return null;
+  const clean = str.split("/").pop() || str;
+  const m = clean.match(/(\d+)(?:\.[a-z0-9]+)?$/i) || clean.match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
 export function ChapterEditor({ storyId, chapterId }: { storyId: string; chapterId: string }) {
   return (
     <CreatorGate>
@@ -114,12 +122,17 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
   };
   const sortPagesByName = () => {
     const sorted = [...pages].sort((a, b) => {
+      const numA = extractPageNumber(a.label);
+      const numB = extractPageNumber(b.label);
+      if (numA !== null && numB !== null) {
+        return numA - numB;
+      }
       const na = a.label || a.src?.split("/").pop() || "";
       const nb = b.label || b.src?.split("/").pop() || "";
       return na.localeCompare(nb, undefined, { numeric: true, sensitivity: "base" });
     });
     setPages(sorted);
-    toast("Pages sorted by filename (1, 2, 3…) ✓");
+    toast("Pages sorted naturally (1, 2, 3…) ✓");
   };
   const upload = async (fl: FileList | null) => {
     if (!fl?.length) return;
@@ -139,6 +152,11 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
           .sort(([a], [b]) => {
             const na = a.split("/").pop() || a;
             const nb = b.split("/").pop() || b;
+            const numA = extractPageNumber(na);
+            const numB = extractPageNumber(nb);
+            if (numA !== null && numB !== null) {
+              return numA - numB;
+            }
             return na.localeCompare(nb, undefined, { numeric: true, sensitivity: "base" });
           });
 
@@ -169,8 +187,13 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
           }
 
           if (added.length) {
-            setPages([...pages, ...added]);
-            toast(`${added.length} pages added in order ✓`);
+            if (pages.length > 0 && confirm(`Replace existing ${pages.length} pages with ${added.length} pages from ${archive.name}?`)) {
+              setPages(added);
+              setSel(0);
+            } else {
+              setPages([...pages, ...added]);
+            }
+            toast(`${added.length} pages loaded in order (1 to ${added.length}) ✓`);
           }
         } else {
           // Fallback to server batch if fflate didn't find images
