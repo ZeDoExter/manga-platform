@@ -49,7 +49,10 @@ func NewService(store imagestore.ImageStore, maxConcurrent int) *Service {
 	}
 	return &Service{store: store, sem: make(chan struct{}, maxConcurrent)}
 }
-
+// Get streams an image directly from the underlying image store.
+func (s *Service) Get(ctx context.Context, key string) (io.ReadCloser, error) {
+	return s.store.Get(ctx, key)
+}
 // UploadResult describes a stored image.
 type UploadResult struct {
 	Key         string `json:"key"`

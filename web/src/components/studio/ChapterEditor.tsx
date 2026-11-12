@@ -12,6 +12,7 @@ import { Empty, Icon } from "../ui";
 import { MangaPageSvg, type PageStyle } from "../MangaPage";
 import { CreatorGate, PRESET_LABEL, PreviewOverlay, StatusChip } from "./common";
 import { uploadAll, uploadArchive } from "@/lib/media-api";
+import { resolveImageUrl } from "@/lib/content";
 import * as fflate from "fflate";
 export function ChapterEditor({ storyId, chapterId }: { storyId: string; chapterId: string }) {
   return (
@@ -246,44 +247,109 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
                     </div>
                   </div>
                 )}
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <span className="label">Artwork / Pages <span className="text-accent font-extrabold">*</span></span>
-                  {(Object.keys(PRESET_LABEL) as PagePreset[]).map((p) => <button key={p} className="chip !px-3 !py-1.5" onClick={() => addPreset(p)}>+ {PRESET_LABEL[p]}</button>)}
-                  <input ref={files} type="file" accept="image/*,.zip,.rar" multiple className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} aria-label="Upload manga pages or a zip/rar archive" />
-                  <button className="btn btn-sm ml-auto" onClick={() => files.current?.click()} disabled={busy}><Icon name="upload" size={13} /> {busy ? "Processing…" : "Upload pages / zip"}</button>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b-2 border-line/10 pb-3">
+                  <div>
+                    <span className="label">Pages / Artwork <span className="text-accent font-extrabold">*</span></span>
+                    <div className="text-xs font-bold text-muted">{pages.length} {pages.length === 1 ? "page" : "pages"} in this chapter</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input ref={files} type="file" accept="image/*,.zip,.rar" multiple className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} aria-label="Upload manga pages or a zip/rar archive" />
+                    <button className="btn btn-accent btn-sm" onClick={() => files.current?.click()} disabled={busy}>
+                      <Icon name="upload" size={13} /> {busy ? "Uploading…" : "Upload pages / ZIP"}
+                    </button>
+                    {pages.length > 0 && (
+                      <button className="btn btn-ghost btn-sm text-xs !text-muted hover:!text-accent" onClick={() => { if (confirm("Clear all pages in this chapter?")) { setPages([]); setSel(0); } }}>
+                        Clear all
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {pages.length === 0 ? <Empty icon="image" title="No pages yet" text="Add placeholder frames or upload your own artwork (JPG/PNG)." /> : (
-                  <div className="scroll-x flex gap-3 pb-2">
-                    {pages.map((p, i) => (
-                      <div key={p.id} className="w-28 shrink-0">
-                        <button onClick={() => setSel(i)} aria-pressed={sel === i} className={cx("block w-full overflow-hidden rounded border-2 bg-white", sel === i ? "border-accent shadow-[3px_3px_0_var(--accent)]" : "border-line")} style={{ aspectRatio: "2/3" }}>
-                          {p.kind === "upload" && p.src ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={p.src} alt={`Page ${i + 1}`} className="h-full w-full object-cover" />
-                          ) : (
-                            <MangaPageSvg page={presetPage(p.preset ?? "blank", `${story.id}:${p.id}`, story.mood)} style={style} className="block h-full w-full" />
-                          )}
-                        </button>
-                        <div className="mt-1 flex items-center justify-between">
-                          <span className="font-mono text-[0.62rem] font-bold">{i + 1}</span>
-                          <div className="flex gap-0.5">
-                            <button className="grid size-6 place-items-center rounded border border-line/40 hover:bg-paper2" onClick={() => move(i, -1)} aria-label="Move left"><Icon name="left" size={11} /></button>
-                            <button className="grid size-6 place-items-center rounded border border-line/40 hover:bg-paper2" onClick={() => move(i, 1)} aria-label="Move right"><Icon name="right" size={11} /></button>
-                            <button className="grid size-6 place-items-center rounded border border-line/40 hover:bg-paper2" onClick={() => { setPages(pages.filter((_, k) => k !== i)); setSel(0); }} aria-label="Delete page"><Icon name="trash" size={11} /></button>
+
+                {pages.length === 0 ? (
+                  <Empty
+                    icon="image"
+                    title="No pages uploaded yet"
+                    text="Select a ZIP file or multiple JPG/PNG images to upload pages in order."
+                    action={
+                      <button className="btn btn-accent mt-2" onClick={() => files.current?.click()} disabled={busy}>
+                        <Icon name="upload" size={14} /> Upload ZIP or images
+                      </button>
+                    }
+                  />
+                ) : (
+                  <div className="max-h-[62vh] overflow-y-auto p-1">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      {pages.map((p, i) => (
+                        <div key={p.id} className="group relative flex flex-col rounded-md border-2 border-line bg-card p-1.5 shadow-[2px_2px_0_var(--shadow)] transition-all hover:border-accent">
+                          <button
+                            onClick={() => setSel(i)}
+                            aria-pressed={sel === i}
+                            className={cx(
+                              "relative block w-full overflow-hidden rounded border bg-white",
+                              sel === i ? "border-accent ring-2 ring-accent" : "border-line/30"
+                            )}
+                            style={{ aspectRatio: "2/3" }}
+                          >
+                            {p.src ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={resolveImageUrl(p.src)}
+                                alt={`Page ${i + 1}`}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <MangaPageSvg page={presetPage(p.preset ?? "blank", `${story.id}:${p.id}`, story.mood)} style={style} className="block h-full w-full" />
+                            )}
+                            <span className="absolute bottom-1 right-1 rounded bg-black/75 px-1.5 py-0.5 font-mono text-[0.62rem] font-bold text-white">
+                              #{i + 1}
+                            </span>
+                          </button>
+                          <div className="mt-1.5 flex items-center justify-between px-0.5">
+                            <span className="font-mono text-[0.65rem] font-bold text-muted">Page {i + 1}</span>
+                            <div className="flex gap-1">
+                              <button
+                                className="grid size-5 place-items-center rounded border border-line/30 bg-paper hover:bg-paper2 disabled:opacity-30"
+                                onClick={() => move(i, -1)}
+                                disabled={i === 0}
+                                title="Move earlier"
+                              >
+                                <Icon name="left" size={10} />
+                              </button>
+                              <button
+                                className="grid size-5 place-items-center rounded border border-line/30 bg-paper hover:bg-paper2 disabled:opacity-30"
+                                onClick={() => move(i, 1)}
+                                disabled={i === pages.length - 1}
+                                title="Move later"
+                              >
+                                <Icon name="right" size={10} />
+                              </button>
+                              <button
+                                className="grid size-5 place-items-center rounded border border-line/30 bg-paper text-accent hover:bg-paper2"
+                                onClick={() => { setPages(pages.filter((_, k) => k !== i)); setSel(Math.max(0, sel - 1)); }}
+                                title="Delete page"
+                              >
+                                <Icon name="trash" size={10} />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
+
               {cur && (
-                <div className="panel p-3">
-                  <div className="label mb-2">Page {Math.min(sel, pages.length - 1) + 1} of {pages.length}</div>
-                  <div className="mx-auto max-w-md overflow-hidden rounded border-2 border-line bg-white" style={{ aspectRatio: cur.kind === "upload" ? undefined : "2/3" }}>
-                    {cur.kind === "upload" && cur.src ? (
+                <div className="panel p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="label">Preview: Page {Math.min(sel, pages.length - 1) + 1} of {pages.length}</div>
+                    <span className="font-mono text-xs text-muted">Click any page above to view</span>
+                  </div>
+                  <div className="mx-auto max-w-xl overflow-hidden rounded-md border-2 border-line bg-white shadow-[4px_4px_0_var(--shadow)]">
+                    {cur.src ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={cur.src} alt="" className="w-full" />
+                      <img src={resolveImageUrl(cur.src)} alt={`Page ${sel + 1}`} className="w-full object-contain" />
                     ) : curSpec ? (
                       <MangaPageSvg page={curSpec} style={style} className="block h-full w-full" />
                     ) : null}

@@ -54,6 +54,14 @@ export function defaultPages(count = 6, seed = "p"): StudioPage[] {
   return Array.from({ length: count }, (_, i) => ({ id: `${seed}-${i}`, kind: "preset" as const, preset: presets[i % presets.length] }));
 }
 
+export function resolveImageUrl(src?: string): string {
+  if (!src) return "";
+  if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/") || src.startsWith("data:")) {
+    return src;
+  }
+  return `/api/media/image/${src}`;
+}
+
 export function studioContent(s: StudioStory, chapterId: string): ReaderContent | null {
   const ch = s.chapters.find((c) => c.id === chapterId);
   if (!ch) return null;
@@ -61,13 +69,13 @@ export function studioContent(s: StudioStory, chapterId: string): ReaderContent 
   if (isVisual) {
     const pages = (ch.pages ?? []).map((p) =>
       p.kind === "upload" && p.src
-        ? { key: p.id, src: p.src }
+        ? { key: p.id, src: resolveImageUrl(p.src) }
         : { key: p.id, spec: presetPage(p.preset ?? "blank", `${s.id}:${p.id}`, s.mood) },
     );
-    return { kind: "manga", pages, title: ch.title };
+    return { kind: "manga", pages, title: ch.title || `Chapter ${ch.number}` };
   }
   const paragraphs = (ch.text ?? "").split(/\n{1,}/).map((t) => t.trim()).filter(Boolean);
-  return { kind: "novel", paragraphs, title: ch.title };
+  return { kind: "novel", paragraphs, title: ch.title || `Chapter ${ch.number}` };
 }
 
 export function studioToStory(s: StudioStory, owner: Account | undefined): Story {

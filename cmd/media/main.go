@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
-
 	"manga-platform/pkg/httpapi"
 	"manga-platform/pkg/imagestore"
 	"manga-platform/services/media"
@@ -167,9 +167,18 @@ func main() {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
-
-	// Readers fetch images via imagestore.SignURL (CDN signed URLs, FR-R4);
-	// no direct serve endpoint here by design (paywall must not leak).
-
+	// GET /image/{key...} — streams images directly from storage for studio preview and internal proxy.
+	mux.HandleFunc("GET /image/{key...}", func(w http.ResponseWriter, r *http.Request) {
+		key := r.PathValue("key")
+		rc, err := svc.Get(r.Context(), key)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		defer rc.Close()
+		w.Header().Set("Content-Type", "image/webp")
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+		io.Copy(w, rc)
+	})
 	httpapi.Run("media", mux)
 }

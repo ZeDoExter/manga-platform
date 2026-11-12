@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isVisual } from "@/lib/types";
-import type { ReaderContent, ReaderPageItem } from "@/lib/content";
+import { resolveImageUrl, type ReaderContent, type ReaderPageItem } from "@/lib/content";
 import { useApp } from "@/lib/store";
 import { cx } from "@/lib/util";
 import { MangaPageSvg, type PageStyle } from "../MangaPage";
@@ -32,7 +32,7 @@ const PageSlot = memo(function PageSlot({ item, idx, style, root, onVisible }: {
       {near ? (
         item.src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.src} alt={`Page ${idx + 1}`} className="block w-full" loading="lazy" />
+          <img src={resolveImageUrl(item.src)} alt={`Page ${idx + 1}`} className="block w-full" loading="lazy" />
         ) : item.spec ? (
           <MangaPageSvg page={item.spec} style={style} className="block h-full w-full" />
         ) : null
@@ -46,7 +46,7 @@ const PageSlot = memo(function PageSlot({ item, idx, style, root, onVisible }: {
 function renderSinglePage(item: ReaderPageItem, idx: number, style: PageStyle) {
   if (item.src) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={item.src} alt={`Page ${idx + 1}`} className="h-full w-full object-contain" />;
+    return <img src={resolveImageUrl(item.src)} alt={`Page ${idx + 1}`} className="h-full w-full object-contain" />;
   }
   if (item.spec) {
     return <MangaPageSvg page={item.spec} style={style} className="block h-full w-full" />;
