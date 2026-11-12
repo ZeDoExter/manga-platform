@@ -19,7 +19,7 @@ export default {
     // สำหรับ API Requests (รวมถึงการ Upload ภาพ/ZIP): ส่งตรงเข้า Origin ให้เวลาทำงานเต็มที่ ไม่ดักเป็น HTML
     if (isApi) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // รองรับการอัปโหลดไฟล์ขนาดใหญ่ได้สูงสุด 2 นาที
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes for large manga chapters
       try {
         const response = await fetch(request, { signal: controller.signal });
         clearTimeout(timeoutId);

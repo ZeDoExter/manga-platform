@@ -83,6 +83,7 @@ export async function uploadArchive(
   const form = new FormData();
   form.append('file', file, file.name);
   const xhr = new XMLHttpRequest();
+  xhr.timeout = 300000; // 5 minutes for large manga chapters
   xhr.open('POST', `${BASE}/uploads/batch?story_id=${encodeURIComponent(storyID)}&chapter_id=${encodeURIComponent(chapterID)}`);
   xhr.setRequestHeader('X-User-ID', userID);
   xhr.setRequestHeader('X-User-Role', 'uploader');
