@@ -73,6 +73,17 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, num, text, price]);
 
+  // Warn user if they attempt to leave or refresh while uploading
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (busy) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [busy]);
   const mark = () => (dirty.current = true);
   const nWords = words(text);
   const style: PageStyle = useMemo(() => ({ color: story.type !== "manga", palette: story.palette, strip: story.type !== "manga" }), [story.type, story.palette]);
