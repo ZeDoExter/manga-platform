@@ -52,7 +52,7 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ active: boolean; pct: number; label: string } | null>(null);
   const pages = ch.pages ?? [];
-  const merged = (patch: Partial<StudioChapter> = {}): StudioChapter => ({ ...latest.current, title: title.trim() || "Untitled", number: parseInt(num, 10) || latest.current.number, text: visual ? latest.current.text : text, priceCoins: Math.max(0, Math.min(1000, parseInt(price, 10) || 0)), updatedAt: Date.now(), ...patch });
+  const merged = (patch: Partial<StudioChapter> = {}): StudioChapter => ({ ...latest.current, title: title.trim() || `Chapter ${num || latest.current.number}`, number: parseInt(num, 10) || latest.current.number, text: visual ? latest.current.text : text, priceCoins: Math.max(0, Math.min(1000, parseInt(price, 10) || 0)), updatedAt: Date.now(), ...patch });
 
   useEffect(() => {
     if (!dirty.current) return;
@@ -191,7 +191,7 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-[90px_1fr]">
             <label><span className="label">No. <span className="text-accent font-extrabold">*</span></span><input className="field mt-1 text-center font-display text-lg" inputMode="numeric" value={num} onChange={(e) => { setNum(e.target.value.replace(/\D/g, "")); mark(); }} aria-label="Chapter number" /></label>
-            <label><span className="label">Chapter title <span className="text-accent font-extrabold">*</span></span><input className="field mt-1 text-lg font-bold" value={title} onChange={(e) => { setTitle(e.target.value); mark(); }} maxLength={80} /></label>
+            <label><span className="label">Chapter title <span className="normal-case tracking-normal text-muted font-normal">(optional)</span></span><input className="field mt-1 text-lg font-bold" value={title} onChange={(e) => { setTitle(e.target.value); mark(); }} maxLength={80} placeholder={`Chapter ${num || ch.number}`} /></label>
           </div>
 
           {!visual ? (
