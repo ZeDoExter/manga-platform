@@ -83,10 +83,11 @@ type BatchResult struct {
 	Error  string        `json:"error,omitempty"`
 }
 
-// archEntry is one extracted image file.
+// archEntry is one extracted image file (either pre-read data or lazy opener).
 type archEntry struct {
 	name string
 	data []byte
+	open func() (io.ReadCloser, error)
 }
 
 // naturalLess sorts "1, 2, 10" (not "1, 10, 2"); handles "001" == 1.
@@ -188,7 +189,25 @@ func (s *Service) UploadBatch(ctx context.Context, r io.Reader, filename, storyI
 
 	results := make([]BatchResult, 0, len(entries))
 	for i, e := range entries {
-		out, w, h, animated, err := processOne(e.data)
+		var imgBytes []byte
+		if e.open != nil {
+			rc, err := e.open()
+			if err != nil {
+				results = append(results, BatchResult{Index: i + 1, Name: e.name, Error: err.Error()})
+				continue
+			}
+			imgBytes, err = io.ReadAll(io.LimitReader(rc, MaxUploadBytes+1))
+			rc.Close()
+			if err != nil {
+				results = append(results, BatchResult{Index: i + 1, Name: e.name, Error: err.Error()})
+				continue
+			}
+		} else {
+			imgBytes = e.data
+		}
+
+		out, w, h, animated, err := processOne(imgBytes)
+		imgBytes = nil // free memory immediately
 		if err != nil {
 			results = append(results, BatchResult{Index: i + 1, Name: e.name, Error: err.Error()})
 			continue
@@ -198,12 +217,14 @@ func (s *Service) UploadBatch(ctx context.Context, r io.Reader, filename, storyI
 		if storyID != "" && chapterID != "" {
 			key = fmt.Sprintf("stories/%s/%s/%s.webp", storyID, chapterID, hex.EncodeToString(sum[:]))
 		}
-		if err := s.store.Put(ctx, key, bytes.NewReader(out), int64(len(out)), "image/webp"); err != nil {
+		sizeBytes := int64(len(out))
+		if err := s.store.Put(ctx, key, bytes.NewReader(out), sizeBytes, "image/webp"); err != nil {
 			results = append(results, BatchResult{Index: i + 1, Name: e.name, Error: err.Error()})
 			continue
 		}
+		out = nil // free memory immediately
 		results = append(results, BatchResult{Index: i + 1, Name: e.name, Result: &UploadResult{
-			Key: key, Width: w, Height: h, SizeBytes: int64(len(out)),
+			Key: key, Width: w, Height: h, SizeBytes: sizeBytes,
 			ContentType: "image/webp", Animated: animated,
 		}})
 	}
@@ -244,16 +265,8 @@ func readZipEntries(raw []byte) ([]archEntry, error) {
 		if total > MaxZipUnpacked {
 			return nil, ErrZipTooLarge
 		}
-		rc, err := f.Open()
-		if err != nil {
-			continue
-		}
-		data, err := io.ReadAll(io.LimitReader(rc, MaxUploadBytes+1))
-		rc.Close()
-		if err != nil || len(data) > MaxUploadBytes {
-			return nil, fmt.Errorf("%w: entry %s too large", ErrZipTooLarge, base)
-		}
-		out = append(out, archEntry{name: base, data: data})
+		zipFile := f
+		out = append(out, archEntry{name: base, open: zipFile.Open})
 		if len(out) > MaxZipFiles {
 			return nil, ErrZipTooMany
 		}
