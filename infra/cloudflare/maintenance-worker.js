@@ -1,40 +1,59 @@
-// Cloudflare Worker: Maintenance & Circuit Breaker
+// Cloudflare Worker: Maintenance & Circuit Breaker (Origin Protection)
 // Route: dootoon.store/*, api.dootoon.store/*
-// ทำงานอัตโนมัติ: ถ้าเซิร์ฟเวอร์หลังบ้านทำงานปกติ (200 OK) -> ส่งหน้าเว็บจริงให้ผู้ใช้
-// ถ้าเซิร์ฟเวอร์หลังบ้านดับ/ปิดเครื่อง/Error 5xx/522/Timeout -> เสิร์ฟหน้า Maintenance ภาษาอังกฤษธีม DOOTOON ทันที
+// กฎการทำงาน:
+// 1. เส้นทาง API (/api/*): ส่งผ่านตรงไปยัง Origin เสมอ ไม่ใช้ Timeout 4.5s และไม่ส่งหน้า Maintenance HTML (เพื่อไม่ให้พังการ Upload/Batch)
+// 2. หน้าเว็บทั่วไป: ถ้าเซิร์ฟเวอร์หลังบ้านทำงานปกติ -> ส่งหน้าเว็บจริง
+//    ถ้าเซิร์ฟเวอร์หลังบ้านปิดเครื่อง/ล่ม (5xx/522/Timeout) -> เสิร์ฟหน้า Maintenance UI สวยงามอัตโนมัติ
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // [MANUAL PREVIEW]: อนุญาตให้ทดสอบหน้า maintenance ได้ด้วย ?maintenance=1 หรือ ?preview=1
+    // [MANUAL PREVIEW]: เปิดทดสอบหน้า Maintenance ได้ด้วย ?maintenance=1
     if (url.searchParams.has('maintenance') || url.searchParams.has('preview')) {
       return renderMaintenancePage(503);
     }
 
-    // กำหนดเวลา Timeout รอ Origin สูงสุด 4.5 วินาที
+    const isApi = url.pathname.startsWith('/api/');
+
+    // สำหรับ API Requests (รวมถึงการ Upload ภาพ/ZIP): ส่งตรงเข้า Origin ให้เวลาทำงานเต็มที่ ไม่ดักเป็น HTML
+    if (isApi) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // รองรับการอัปโหลดไฟล์ขนาดใหญ่ได้สูงสุด 2 นาที
+      try {
+        const response = await fetch(request, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        return new Response(JSON.stringify({ error: "Service temporarily unavailable. Please retry." }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+    }
+
+    // สำหรับหน้าเว็บบราวเซอร์ทั่วไป:
     const timeoutMs = 4500;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      // 1. ส่งคำขอไปยัง Origin ตามปกติ
       const response = await fetch(request, {
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
-      // 2. ถ้าเซิร์ฟเวอร์ตอบกลับเป็น 5xx (500, 502, 503, 504, 520-524) ให้ดักจับและแสดงหน้า Maintenance
+      // ถ้าเซิร์ฟเวอร์หลังบ้านตอบ 5xx ให้แสดงหน้า Maintenance
       if (response.status >= 500 && response.status <= 599) {
         return renderMaintenancePage(response.status);
       }
 
-      // 3. ถ้าสถานะปกติ (< 500) ส่งหน้าเว็บจริงกลับไปตามปกติ
       return response;
     } catch (err) {
       clearTimeout(timeoutId);
-      // 4. กรณี Origin ปิดเครื่อง หรือต่อไม่ติด (Timeout / 522) แสดงหน้า Maintenance
+      // Origin ปิดเครื่อง หรือไม่ตอบสนอง (Timeout 522)
       return renderMaintenancePage(522);
     }
   },

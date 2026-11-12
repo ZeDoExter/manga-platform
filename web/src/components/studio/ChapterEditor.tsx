@@ -50,8 +50,8 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
   const ta = useRef<HTMLTextAreaElement>(null);
   const files = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ active: boolean; pct: number; label: string } | null>(null);
   const pages = ch.pages ?? [];
-
   const merged = (patch: Partial<StudioChapter> = {}): StudioChapter => ({ ...latest.current, title: title.trim() || "Untitled", number: parseInt(num, 10) || latest.current.number, text: visual ? latest.current.text : text, priceCoins: Math.max(0, Math.min(1000, parseInt(price, 10) || 0)), updatedAt: Date.now(), ...patch });
 
   useEffect(() => {
@@ -115,44 +115,60 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
     if (!fl?.length) return;
     setBusy(true);
     const files = Array.from(fl);
-    // Single .zip/.rar goes to the batch endpoint; images use parallel singles.
     const archive = files.length === 1 && /\.(zip|rar)$/i.test(files[0].name) ? files[0] : null;
     if (archive) {
+      setProgress({ active: true, pct: 0, label: "Uploading archive…" });
       try {
-        const items = await uploadArchive(archive, state.accountId, story.id, ch.id);
+        const items = await uploadArchive(
+          archive,
+          state.accountId,
+          story.id,
+          ch.id,
+          (pct) => {
+            setProgress({
+              active: true,
+              pct: Math.min(95, pct),
+              label: pct < 100 ? `Uploading (${pct}%)…` : "Extracting and processing pages…",
+            });
+          }
+        );
         const added: StudioPage[] = [];
-        let failed = 0;
         for (const it of items) {
-          if (it.result) {
-            if (it.result.animated_dropped) toast(`${it.name}: animation dropped`, "warn");
+          if (it.result?.key) {
             added.push({ id: uid("pg"), kind: "upload", src: it.result.key });
-          } else {
-            failed++;
           }
         }
-        if (added.length) { setPages([...pages, ...added]); toast(`${added.length} pages from ${archive.name} ✓`); }
-        if (failed) toast(`${failed} entries skipped (not JPG/PNG or too large)`, "warn");
-      } catch (e) {
-        toast(e instanceof Error ? e.message : "Archive upload failed", "warn");
+        if (added.length) {
+          setPages([...pages, ...added]);
+          toast(`${added.length} pages added ✓`);
+        } else {
+          toast("No valid image pages found in archive", "warn");
+        }
+      } catch {
+        toast("Upload could not be processed. Please try again.", "warn");
       } finally {
+        setProgress(null);
         setBusy(false);
       }
       return;
     }
-    const imgs = files.filter((f) => !/\.(zip|rar)$/i.test(f.name)).slice(0, 12);
+    const imgs = files.filter((f) => !/\.(zip|rar)$/i.test(f.name)).slice(0, 30);
     const added: StudioPage[] = [];
-    let failed = files.length - imgs.length;
+    let count = 0;
+    setProgress({ active: true, pct: 0, label: `Uploading 0 / ${imgs.length}…` });
     await uploadAll(imgs, state.accountId, story.id, ch.id, 3, (f, res) => {
-      if (res instanceof Error) {
-        failed++;
-        toast(`Skipped ${f.name}: ${res.message}`, "warn");
-      } else {
-        if (res.animated_dropped) toast(`${f.name}: animation dropped (first frame kept)`, "warn");
+      count++;
+      const pct = Math.round((count / imgs.length) * 100);
+      setProgress({ active: true, pct, label: `Uploading (${count}/${imgs.length})…` });
+      if (!(res instanceof Error) && res?.key) {
         added.push({ id: uid("pg"), kind: "upload", src: res.key });
       }
     });
-    if (added.length) { setPages([...pages, ...added]); toast(`${added.length} page${added.length > 1 ? "s" : ""} uploaded ✓`); }
-    if (failed) toast(`${failed} file${failed > 1 ? "s" : ""} rejected`, "warn");
+    if (added.length) {
+      setPages([...pages, ...added]);
+      toast(`${added.length} pages added ✓`);
+    }
+    setProgress(null);
     setBusy(false);
   };
   const cur = pages[Math.min(sel, pages.length - 1)];
@@ -192,6 +208,20 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
           ) : (
             <div className="space-y-4">
               <div className="panel p-3">
+                {progress?.active && (
+                  <div className="mb-3 rounded-md border-2 border-line bg-paper2 p-3">
+                    <div className="mb-1.5 flex items-center justify-between text-xs font-bold">
+                      <span className="font-display">{progress.label}</span>
+                      <span className="font-mono text-accent">{progress.pct}%</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full border border-line bg-card">
+                      <div
+                        className="h-full bg-accent transition-all duration-200"
+                        style={{ width: `${progress.pct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span className="label">Add a placeholder page</span>
                   {(Object.keys(PRESET_LABEL) as PagePreset[]).map((p) => <button key={p} className="chip !px-3 !py-1.5" onClick={() => addPreset(p)}>+ {PRESET_LABEL[p]}</button>)}
