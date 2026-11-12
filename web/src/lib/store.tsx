@@ -192,7 +192,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const cur = byId.get(r.id)!;
               const chMap = new Map(cur.chapters.map((c) => [c.number, c]));
               for (const rc of r.chapters) {
-                if (!chMap.has(rc.number)) chMap.set(rc.number, rc);
+                const existing = chMap.get(rc.number);
+                if (!existing) {
+                  chMap.set(rc.number, rc);
+                } else if ((rc.pages?.length ?? 0) > (existing.pages?.length ?? 0)) {
+                  chMap.set(rc.number, { ...existing, pages: rc.pages, text: rc.text || existing.text });
+                }
               }
               byId.set(r.id, { ...cur, chapters: Array.from(chMap.values()).sort((a, b) => b.number - a.number) });
             }
