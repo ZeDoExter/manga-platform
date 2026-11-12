@@ -32,8 +32,12 @@ export function Hero() {
             แพลตฟอร์มอ่านมังงะและนิยายออนไลน์ สนับสนุนครีเอเตอร์โดยตรงด้วยระบบเหรียญโปร่งใส ไม่มีข้อมูลจำลอง
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/discover" className="btn btn-accent">Explore Discover</Link>
-            <Link href="/studio" className="btn btn-ghost !border-white/40 !text-white">Creator Studio</Link>
+            <Link href="/discover" className="btn btn-accent !px-5 !py-3">
+              <Icon name="compass" size={16} /> Explore Discover
+            </Link>
+            <Link href="/studio" className="btn !border-2 !border-white/80 !bg-white/10 !text-white hover:!bg-white/20 !shadow-none !px-5 !py-3">
+              <Icon name="pen" size={15} /> Creator Studio
+            </Link>
           </div>
         </div>
       </section>
