@@ -1,12 +1,3 @@
-# Azure DevOps pipeline for DOOTOON (manga-platform).
-# Parity with .gitlab-ci.yml: lint -> test (+coverage gate) -> build (ACR) -> deploy (AKS).
-# Triggers: all branches run lint+test; only master builds images and deploys to https://dootoon.store.
-# Required setup (one-time, see docs/agents/azure-devops.md):
-#   1. Azure DevOps project + repo (import from GitLab or move remote to Azure Repos).
-#   2. Service connection "dootoon-azure" (Azure Resource Manager, Workload Identity federation).
-#      Needs AcrPush on mangademoacr + Azure Kubernetes Service Cluster Admin on manga-demo-aks.
-#   3. Grant the pipeline permission to use the service connection when first run prompts.
-
 trigger:
   branches:
     include:
