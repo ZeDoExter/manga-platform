@@ -12,7 +12,7 @@ import { Empty, Icon } from "../ui";
 import { MangaPageSvg, type PageStyle } from "../MangaPage";
 import { CreatorGate, PRESET_LABEL, PreviewOverlay, StatusChip } from "./common";
 import { uploadAll, uploadArchive } from "@/lib/media-api";
-
+import * as fflate from "fflate";
 export function ChapterEditor({ storyId, chapterId }: { storyId: string; chapterId: string }) {
   return (
     <CreatorGate>
@@ -117,32 +117,56 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
     const files = Array.from(fl);
     const archive = files.length === 1 && /\.(zip|rar)$/i.test(files[0].name) ? files[0] : null;
     if (archive) {
-      setProgress({ active: true, pct: 0, label: "Uploading archive…" });
+      setProgress({ active: true, pct: 0, label: "Scanning archive…" });
       try {
-        const items = await uploadArchive(
-          archive,
-          state.accountId,
-          story.id,
-          ch.id,
-          (pct) => {
-            setProgress({
-              active: true,
-              pct: Math.min(95, pct),
-              label: pct < 100 ? `Uploading (${pct}%)…` : "Extracting and processing pages…",
-            });
+        const buf = new Uint8Array(await archive.arrayBuffer());
+        const { promise: unzipPromise, resolve: resolveUnzip, reject: rejectUnzip } = Promise.withResolvers<Record<string, Uint8Array>>();
+        fflate.unzip(buf, (err, data) => (err ? rejectUnzip(err) : resolveUnzip(data)));
+        const unzipped = await unzipPromise;
+
+        const imageEntries = Object.entries(unzipped)
+          .filter(([name]) => !name.endsWith("/") && !name.startsWith("__MACOSX") && /\.(jpe?g|png|webp|gif)$/i.test(name))
+          .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
+
+        if (imageEntries.length > 0) {
+          const extractedFiles = imageEntries.map(([name, data]) => {
+            const cleanName = name.split("/").pop() || name;
+            const mime = /\.png$/i.test(cleanName) ? "image/png" : /\.webp$/i.test(cleanName) ? "image/webp" : "image/jpeg";
+            const bytesCopy = new Uint8Array(data.length);
+            bytesCopy.set(data);
+            return new File([bytesCopy], cleanName, { type: mime });
+          });
+
+          const added: StudioPage[] = [];
+          let count = 0;
+          setProgress({ active: true, pct: 0, label: `Uploading (0 / ${extractedFiles.length})…` });
+
+          await uploadAll(extractedFiles, state.accountId, story.id, ch.id, 3, (f, res) => {
+            count++;
+            const pct = Math.round((count / extractedFiles.length) * 100);
+            setProgress({ active: true, pct, label: `Uploading (${count} / ${extractedFiles.length})…` });
+            if (!(res instanceof Error) && res?.key) {
+              added.push({ id: uid("pg"), kind: "upload", src: res.key });
+            }
+          });
+
+          if (added.length) {
+            setPages([...pages, ...added]);
+            toast(`${added.length} pages added ✓`);
           }
-        );
-        const added: StudioPage[] = [];
-        for (const it of items) {
-          if (it.result?.key) {
-            added.push({ id: uid("pg"), kind: "upload", src: it.result.key });
-          }
-        }
-        if (added.length) {
-          setPages([...pages, ...added]);
-          toast(`${added.length} pages added ✓`);
         } else {
-          toast("No valid image pages found in archive", "warn");
+          // Fallback to server batch if fflate didn't find images
+          const items = await uploadArchive(archive, state.accountId, story.id, ch.id, (pct) => {
+            setProgress({ active: true, pct: Math.min(95, pct), label: `Uploading (${pct}%)…` });
+          });
+          const added: StudioPage[] = [];
+          for (const it of items) {
+            if (it.result?.key) added.push({ id: uid("pg"), kind: "upload", src: it.result.key });
+          }
+          if (added.length) {
+            setPages([...pages, ...added]);
+            toast(`${added.length} pages added ✓`);
+          }
         }
       } catch {
         toast("Upload could not be processed. Please try again.", "warn");
@@ -152,7 +176,7 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
       }
       return;
     }
-    const imgs = files.filter((f) => !/\.(zip|rar)$/i.test(f.name)).slice(0, 30);
+    const imgs = files.filter((f) => !/\.(zip|rar)$/i.test(f.name));
     const added: StudioPage[] = [];
     let count = 0;
     setProgress({ active: true, pct: 0, label: `Uploading 0 / ${imgs.length}…` });
