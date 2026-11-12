@@ -97,12 +97,12 @@ export async function POST(req: NextRequest) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         id: story.id,
-        owner_id: story.ownerId || "ren-akitsuki",
+        owner_id: story.ownerId || "creator",
         type: storyType,
         title: story.title,
         synopsis: story.synopsis || story.tagline || "",
         tags: story.tags?.length ? story.tags : story.genres ?? [],
-        splits: [{ creator_id: story.ownerId || "ren-akitsuki", percentage: 100 }],
+        splits: [{ creator_id: story.ownerId || "creator", percentage: 100 }],
       }),
       cache: "no-store",
     });

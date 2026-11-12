@@ -50,7 +50,7 @@ export default function AdminPage() {
     try {
       const [audit, renEarnings, creator1Earnings] = await Promise.all([
         fetchAuditLogs().catch(() => [] as AuditLog[]),
-        economyApi.creatorEarnings("ren-akitsuki").catch(() => ({ total_coins: 0, entries: [] })),
+        economyApi.creatorEarnings("creator").catch(() => ({ total_coins: 0, entries: [] })),
         economyApi.creatorEarnings("creator-1").catch(() => ({ total_coins: 0, entries: [] })),
       ]);
       setLogs(Array.isArray(audit) ? audit : []);
@@ -332,7 +332,7 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="space-y-3">
-            <Field label="CHAPTER ID" value={chapterID} onChange={setChapterID} placeholder="e.g. hollow-moon-courier:2" />
+            <Field label="CHAPTER ID" value={chapterID} onChange={setChapterID} placeholder="e.g. story-id:1" />
             <Field label="REASON (RECORDED IN AUDIT LOG)" value={takedownReason} onChange={setTakedownReason} placeholder="e.g. DMCA notice #2026-041" />
             <button onClick={onTakedown} disabled={busy !== null} className="btn w-full justify-center bg-accent text-white">
               {busy === "takedown" ? "Taking down…" : "Take down chapter"}

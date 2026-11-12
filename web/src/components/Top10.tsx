@@ -32,7 +32,8 @@ function Heat({ value }: { value: number }) {
 export function Top10() {
   const [active, setActive] = useState(0);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { me, act } = useApp();
+  const { catalog, me, act } = useApp();
+  const list = catalog.slice(0, 10);
 
   useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
 
@@ -41,11 +42,19 @@ export function Top10() {
     hoverTimer.current = setTimeout(() => setActive(i), 35);
   };
 
+  if (list.length === 0) {
+    return (
+      <div className="panel p-8 text-center text-muted">
+        No ranked stories yet. Be the first creator to publish!
+      </div>
+    );
+  }
+
   return (
     <div id="top10" aria-label="Top 10 titles this week">
       {/* desktop: expanding panel strip */}
       <ol className="hidden h-[600px] list-none md:flex" onMouseLeave={() => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }}>
-        {TOP10.map((s, i) => {
+        {list.map((s, i) => {
           const on = i === active;
           const rank = s.rank ?? i + 1;
           const poly = i === 0 ? `polygon(0 0,100% 0,calc(100% - ${SK}px) 100%,0 100%)` : i === TOP10.length - 1 ? `polygon(${SK}px 0,100% 0,100% 100%,0 100%)` : `polygon(${SK}px 0,100% 0,calc(100% - ${SK}px) 100%,0 100%)`;
@@ -109,7 +118,7 @@ export function Top10() {
 
       {/* mobile: snap carousel */}
       <ol className="scroll-x -mx-4 flex snap-x list-none gap-4 px-4 pb-4 md:hidden">
-        {TOP10.map((s) => (
+        {list.map((s) => (
           <li key={s.id} className="w-[60vw] max-w-[240px] shrink-0 snap-center">
             <Link href={`/story/${s.id}`} className="block" aria-label={`#${s.rank} ${s.title}`}>
               <div className="flex items-center gap-2.5">

@@ -19,7 +19,7 @@ import {
 } from "./library-api";
 import { fetchRemoteCatalog, syncCatalogStory } from "./catalog-api";
 import { useSession } from "./auth-client";
-const KEY = "dootoon.v2";
+const KEY = "dootoon.v3";
 
 interface ToastItem {
   id: number;
@@ -156,6 +156,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       next = null;
     }
     if (!next) next = { ...makeInitialState(t), hydrated: true };
+    if (!ACCOUNT_MAP[next.accountId]) next.accountId = "guest";
     setNow(t);
     setState(next);
     // Pull remote progress (library service) and merge last-write-wins.

@@ -89,7 +89,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const storyId = typeof body?.storyId === "string" ? body.storyId.slice(0, 80) : "hollow-moon-courier";
+    const storyId = typeof body?.storyId === "string" ? body.storyId.slice(0, 80) : "";
     const chapter = Number(body?.chapter) || 1;
     const pct = Math.max(0, Math.min(1, Number(body?.pct) || 0));
     const kind = ["fire", "tears", "gasp", "heart", "mind", "laugh", "cry", "think"].includes(body?.kind)
@@ -131,12 +131,12 @@ export async function POST(request: Request) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           id: storyId,
-          owner_id: "ren-akitsuki",
+          owner_id: "creator",
           type: "manga",
           title: storyId,
           synopsis: "",
           tags: [],
-          splits: [{ creator_id: "ren-akitsuki", percentage: 100 }],
+          splits: [{ creator_id: "creator", percentage: 100 }],
         }),
       }).catch(() => {});
       await fetch(`${CATALOG_URL}/stories/${encodeURIComponent(storyId)}/chapters`, {

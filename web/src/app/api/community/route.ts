@@ -63,12 +63,12 @@ export async function POST(req: NextRequest) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         id: storyId,
-        owner_id: "ren-akitsuki",
+        owner_id: "creator",
         type: "manga",
         title: storyId,
         synopsis: "",
         tags: [],
-        splits: [{ creator_id: "ren-akitsuki", percentage: 100 }],
+        splits: [{ creator_id: "creator", percentage: 100 }],
       }),
     }).catch(() => {});
     await fetch(`${CATALOG_URL}/stories/${encodeURIComponent(storyId)}/chapters`, {

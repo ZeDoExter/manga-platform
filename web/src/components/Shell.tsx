@@ -239,8 +239,8 @@ function Footer() {
         </div>
         {[
           ["Read", [["Discover", "/discover"], ["Top 10", "/#top10"], ["Library", "/library"]]],
-          ["Create", [["Creator Studio", "/studio"], ["New story", "/studio/new"], ["Uploader profile", "/u/ren-akitsuki"]]],
-          ["Features", [["Living Reading Room", "/read/hollow-moon-courier/1"], ["Taste Lab", "/#taste"]]],
+          ["Create", [["Creator Studio", "/studio"], ["New story", "/studio/new"], ["Uploader profile", "/u/creator"]]],
+          ["Features", [["Community Discover", "/discover"], ["Taste Lab", "/#taste"]]],
         ].map(([h, ls]) => (
           <div key={h as string}>
             <div className="label !text-paper/50">{h as string}</div>

@@ -7,8 +7,7 @@ export const dynamic = "force-dynamic";
 // better-auth memory adapter loses data on restart — this re-seeds it.
 // Password for all: dootoon123
 const SEEDS = [
-  { name: "Mika Tanabe", email: "reader@dootoon.store", password: "dootoon123", role: "reader" },
-  { name: "Ren Akitsuki", email: "creator@dootoon.store", password: "dootoon123", role: "creator" },
+  { name: "Creator", email: "creator@dootoon.store", password: "dootoon123", role: "creator" },
   { name: "System Admin", email: "admin@dootoon.store", password: "dootoon123", role: "admin" },
 ] as const;
 

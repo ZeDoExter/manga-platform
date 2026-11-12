@@ -9,22 +9,40 @@ import { resolveImageUrl } from "@/lib/content";
 import { useApp } from "@/lib/store";
 import { Cover } from "./Cover";
 import { Icon, Stars } from "./ui";
-const FEATURED = ["hollow-moon-courier", "ashfall-regalia", "the-ninth-bell", "neon-ronin-protocol", "lighthouse-at-the-end-of-every-door"].map((id) => STORY_MAP[id]);
-
 export function Hero() {
-  const { me, act } = useApp();
+  const { catalog, me, act } = useApp();
+  const featured = catalog.slice(0, 5);
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
-  const s = FEATURED[i];
-  const n = FEATURED.length;
-  const saved = me.library.includes(s.id);
-  const prog = me.progress[s.id];
+  const n = featured.length;
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || n <= 1) return;
     const t = setTimeout(() => setI((x) => (x + 1) % n), 8000);
     return () => clearTimeout(t);
   }, [i, paused, n]);
+
+  if (n === 0) {
+    return (
+      <section className="wrap pt-5 md:pt-8" aria-label="Welcome">
+        <div className="panel relative overflow-hidden !rounded-xl bg-ink p-8 md:p-14 text-white shadow-[6px_6px_0_var(--shadow)]">
+          <div className="label text-accent">// welcome to dootoon</div>
+          <h1 className="h-display mt-2 text-3xl md:text-5xl">Digital Manga & Novel Platform</h1>
+          <p className="mt-3 max-w-xl text-paper2/80 font-thai">
+            แพลตฟอร์มอ่านมังงะและนิยายออนไลน์ สนับสนุนครีเอเตอร์โดยตรงด้วยระบบเหรียญโปร่งใส ไม่มีข้อมูลจำลอง
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/discover" className="btn btn-accent">Explore Discover</Link>
+            <Link href="/studio" className="btn btn-ghost !border-white/40 !text-white">Creator Studio</Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const s = featured[Math.min(i, n - 1)];
+  const saved = me.library.includes(s.id);
+  const prog = me.progress[s.id];
 
   return (
     <section className="wrap pt-5 md:pt-8" aria-roledescription="carousel" aria-label="Featured stories">
@@ -76,7 +94,7 @@ export function Hero() {
 
           {/* cover fan */}
           <div className="relative mx-auto mt-2 h-[240px] w-full max-w-[340px] sm:h-[420px] sm:max-w-[460px] lg:mt-4 lg:h-[470px]" role="group" aria-label="Pick a featured story">
-            {FEATURED.map((f, idx) => {
+            {featured.map((f, idx) => {
               const rel = (idx - i + n) % n;
               const pos = rel === 0 ? 0 : rel === 1 ? 1 : rel === 2 ? 2 : rel === n - 1 ? -1 : 9;
               const T: Record<number, string> = {
@@ -102,7 +120,7 @@ export function Hero() {
               );
             })}
             <div className="absolute -bottom-1 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2">
-              {FEATURED.map((f, idx) => (
+              {featured.map((f, idx) => (
                 <button key={f.id} aria-label={`Go to ${f.title}`} onClick={() => setI(idx)} className="relative h-2 overflow-hidden rounded-full bg-white/30 transition-all" style={{ width: idx === i ? 36 : 12 }}>
                   {idx === i && !paused && <span key={i} className="absolute inset-y-0 left-0 bg-white" style={{ animation: "heroBar 8s linear forwards" }} />}
                   {idx === i && paused && <span className="absolute inset-0 bg-white" />}

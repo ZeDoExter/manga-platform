@@ -205,7 +205,7 @@ function StoryInner({ story }: { story: Story }) {
         />
         <div className="mt-5">
           {tab === "chapters" && <Chapters story={story} />}
-          {tab === "codex" && (detail ? <CharacterWeb detail={detail} maxCh={story.chapters} initial={prog?.chapter ?? 1} /> : <Empty icon="lock" title="Codex coming soon" text={`${creator?.name ?? "The creator"} hasn’t published a character codex for this story yet. Top 10 titles include interactive, spoiler-safe codexes.`} action={<Link href="/story/hollow-moon-courier" className="btn btn-ghost">See an example</Link>} />)}
+          {tab === "codex" && (detail ? <CharacterWeb detail={detail} maxCh={story.chapters} initial={prog?.chapter ?? 1} /> : <Empty icon="lock" title="Codex coming soon" text={`${creator?.name ?? "The creator"} hasn’t published a character codex for this story yet.`} />)}
           {tab === "reviews" && <Reviews story={story} />}
           {tab === "creator" && creator && <CreatorCard story={story} />}
         </div>

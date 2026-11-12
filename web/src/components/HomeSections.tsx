@@ -12,7 +12,9 @@ import { Rail, StoryCard } from "./StoryCard";
 import { Avatar, Empty, Icon, ProgressBar, Tabs, TypeBadge } from "./ui";
 
 export function Ticker() {
-  const items = useMemo(() => [...STORIES].sort((a, b) => a.updatedHours - b.updatedHours).slice(0, 12), []);
+  const { catalog } = useApp();
+  const items = useMemo(() => [...catalog].sort((a, b) => a.updatedHours - b.updatedHours).slice(0, 12), [catalog]);
+  if (!items.length) return null;
   const row = (k: string) => (
     <div key={k} className="flex shrink-0 items-center gap-8 pr-8">
       {items.map((s) => (
@@ -179,12 +181,13 @@ export function NewUpdates() {
 }
 
 export function CreatorSpotlight() {
-  const { me, act } = useApp();
-  const picks = CREATORS.filter((c) => ["hana-mori", "seo-yeon-han", "liang-wei", "ume-kobayashi"].includes(c.id));
+  const { me, act, catalog } = useApp();
+  const picks = CREATORS.filter((c) => c.role === "creator");
+  if (!picks.length) return null;
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {picks.map((c) => {
-        const works = STORIES.filter((s) => s.creator === c.id);
+        const works = catalog.filter((s) => s.creator === c.id);
         const f = me.following.includes(c.id);
         return (
           <div key={c.id} className="panel panel-hover flex flex-col p-4">

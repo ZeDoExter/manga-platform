@@ -5,8 +5,7 @@ import type { NextRequest } from "next/server";
 const handler = toNextJsHandler(auth);
 
 const SEEDS = [
-  { name: "Mika Tanabe", email: "reader@dootoon.store", password: "dootoon123", role: "reader" },
-  { name: "Ren Akitsuki", email: "creator@dootoon.store", password: "dootoon123", role: "creator" },
+  { name: "Creator", email: "creator@dootoon.store", password: "dootoon123", role: "creator" },
   { name: "System Admin", email: "admin@dootoon.store", password: "dootoon123", role: "admin" },
 ] as const;
 
