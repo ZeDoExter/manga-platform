@@ -20,7 +20,7 @@ var (
 	ErrUnsupportedFmt = errors.New("unsupported image format (need JPEG or PNG)")
 	ErrInvalidKey     = errors.New("invalid image key")
 	ErrNotAZip        = errors.New("not a zip archive")
-	ErrZipTooLarge    = errors.New("zip exceeds 50MB or 500MB unpacked")
+	ErrZipTooLarge    = errors.New("zip exceeds 100MB or 1GB unpacked")
 	ErrZipTooMany     = errors.New("zip exceeds 100 images")
 )
 
@@ -30,8 +30,8 @@ const (
 	MaxWidth       = 1600
 	MaxHeight      = 16000
 	WebPQuality    = 80
-	MaxZipBytes    = 50 << 20
-	MaxZipUnpacked = 500 << 20
+	MaxZipBytes    = 100 << 20
+	MaxZipUnpacked = 1000 << 20
 	MaxZipFiles    = 100
 )
 

@@ -190,7 +190,7 @@ export default function LoginPage() {
           {mode === "signup" && (
             <>
               <div>
-                <label className="label block pb-1">Display name</label>
+                <label className="label block pb-1">Display name <span className="text-accent">*</span></label>
                 <input
                   type="text"
                   required
@@ -201,7 +201,7 @@ export default function LoginPage() {
                 />
               </div>
               <div>
-                <label className="label block pb-1">Account role</label>
+                <label className="label block pb-1">Account role <span className="text-accent">*</span></label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -231,7 +231,7 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label className="label block pb-1">Email</label>
+            <label className="label block pb-1">Email <span className="text-accent">*</span></label>
             <input
               type="email"
               required
@@ -243,7 +243,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="label block pb-1">Password</label>
+            <label className="label block pb-1">Password <span className="text-accent">*</span></label>
             <input
               type="password"
               required

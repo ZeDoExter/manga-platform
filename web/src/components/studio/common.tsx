@@ -107,10 +107,13 @@ export function PreviewOverlay({ story, chapter, onClose }: { story: StudioStory
 
 export const MOTIF_PICKS: Motif[] = ["moon", "blade", "flame", "bell", "needle", "eye", "lighthouse", "wave", "cloud", "bowl", "note", "flower", "key", "gear", "wolf", "crane", "void", "eclipse", "bone", "train", "airship", "tower", "sun", "city"];
 
-export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+export function Field({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="label flex justify-between"><span>{label}</span>{hint && <span className="normal-case tracking-normal">{hint}</span>}</span>
+      <span className="label flex justify-between">
+        <span>{label}{required && <span className="ml-1 text-accent font-extrabold">*</span>}</span>
+        {hint && <span className="normal-case tracking-normal">{hint}</span>}
+      </span>
       <div className="mt-1.5">{children}</div>
     </label>
   );

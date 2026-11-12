@@ -85,21 +85,21 @@ function Wizard() {
         <div className="panel space-y-6 p-5 md:p-6">
           {step === 0 && (
             <>
-              <Field label="Title" hint={`${title.length}/60`}><input className="field text-lg font-bold" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60} placeholder="e.g. The Lanternkeeper’s Apprentice" autoFocus /></Field>
+              <Field label="Title" hint={`${title.length}/60`} required><input className="field text-lg font-bold" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60} placeholder="e.g. The Lanternkeeper’s Apprentice" autoFocus /></Field>
               <div>
-                <span className="label">Format</span>
+                <span className="label">Format <span className="text-accent font-extrabold">*</span></span>
                 <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {TYPES.map((t) => <button key={t} onClick={() => setType(t)} aria-pressed={type === t} className={cx("rounded-md border-2 border-line p-3 text-left transition-all", type === t ? "bg-ink text-paper shadow-[3px_3px_0_var(--accent)]" : "bg-card hover:-translate-y-0.5")}><div className="text-sm font-extrabold">{TYPE_LABEL[t]}</div><div className="font-mono text-[0.62rem] opacity-70">{isVisual(t) ? "pages / panels" : "text editor"}</div></button>)}
                 </div>
               </div>
               <Field label="Tagline" hint="one line that sells it"><input className="field" value={tagline} onChange={(e) => setTagline(e.target.value)} maxLength={90} placeholder="She maps the places that were never built." /></Field>
-              <Field label="Synopsis" hint={`${synopsis.length}/500 · min 20`}><textarea className="field min-h-32" value={synopsis} onChange={(e) => setSynopsis(e.target.value)} maxLength={500} placeholder="Introduce your world, your hook, and the question readers can’t put down…" /></Field>
+              <Field label="Synopsis" hint={`${synopsis.length}/500 · min 20`} required><textarea className="field min-h-32" value={synopsis} onChange={(e) => setSynopsis(e.target.value)} maxLength={500} placeholder="Introduce your world, your hook, and the question readers can’t put down…" /></Field>
               {!valid0 && <p className="text-xs font-semibold text-accent">Add a title (3+ chars) and a synopsis (20+ chars) to continue.</p>}
             </>
           )}
           {step === 1 && (
             <>
-              <div><span className="label">Genres <span className="normal-case">(pick up to 4)</span></span><div className="mt-2 flex flex-wrap gap-1.5">{ALL_GENRES.map((g) => <button key={g} className={cx("chip !px-3 !py-1.5", genres.includes(g) && "chip-on")} aria-pressed={genres.includes(g)} onClick={() => setGenres(tog(genres, g, 4))}>{g}</button>)}</div></div>
+              <div><span className="label">Genres <span className="text-accent font-extrabold">*</span> <span className="normal-case">(pick up to 4)</span></span><div className="mt-2 flex flex-wrap gap-1.5">{ALL_GENRES.map((g) => <button key={g} className={cx("chip !px-3 !py-1.5", genres.includes(g) && "chip-on")} aria-pressed={genres.includes(g)} onClick={() => setGenres(tog(genres, g, 4))}>{g}</button>)}</div></div>
               <div>
                 <span className="label">Tags</span>
                 <div className="mt-2 flex gap-2"><input className="field" placeholder="Type a tag and press Enter" value={tagIn} onChange={(e) => setTagIn(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const t = tagIn.trim(); if (t && tags.length < 8 && !tags.includes(t)) setTags([...tags, t]); setTagIn(""); } }} /><button className="btn" onClick={() => { const t = tagIn.trim(); if (t && tags.length < 8 && !tags.includes(t)) setTags([...tags, t]); setTagIn(""); }}>Add</button></div>

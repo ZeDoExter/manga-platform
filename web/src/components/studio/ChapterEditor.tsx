@@ -190,8 +190,8 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
       <div className="mt-6 grid items-start gap-6 lg:grid-cols-[1fr_300px]">
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-[90px_1fr]">
-            <label><span className="label">No.</span><input className="field mt-1 text-center font-display text-lg" inputMode="numeric" value={num} onChange={(e) => { setNum(e.target.value.replace(/\D/g, "")); mark(); }} aria-label="Chapter number" /></label>
-            <label><span className="label">Chapter title</span><input className="field mt-1 text-lg font-bold" value={title} onChange={(e) => { setTitle(e.target.value); mark(); }} maxLength={80} /></label>
+            <label><span className="label">No. <span className="text-accent font-extrabold">*</span></span><input className="field mt-1 text-center font-display text-lg" inputMode="numeric" value={num} onChange={(e) => { setNum(e.target.value.replace(/\D/g, "")); mark(); }} aria-label="Chapter number" /></label>
+            <label><span className="label">Chapter title <span className="text-accent font-extrabold">*</span></span><input className="field mt-1 text-lg font-bold" value={title} onChange={(e) => { setTitle(e.target.value); mark(); }} maxLength={80} /></label>
           </div>
 
           {!visual ? (
@@ -223,7 +223,7 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
                   </div>
                 )}
                 <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <span className="label">Add a placeholder page</span>
+                  <span className="label">Artwork / Pages <span className="text-accent font-extrabold">*</span></span>
                   {(Object.keys(PRESET_LABEL) as PagePreset[]).map((p) => <button key={p} className="chip !px-3 !py-1.5" onClick={() => addPreset(p)}>+ {PRESET_LABEL[p]}</button>)}
                   <input ref={files} type="file" accept="image/*,.zip,.rar" multiple className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} aria-label="Upload manga pages or a zip/rar archive" />
                   <button className="btn btn-sm ml-auto" onClick={() => files.current?.click()} disabled={busy}><Icon name="upload" size={13} /> {busy ? "Processing…" : "Upload pages / zip"}</button>
