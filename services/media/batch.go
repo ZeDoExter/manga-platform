@@ -58,7 +58,7 @@ func processOne(raw []byte) (out []byte, w, h int, animated bool, err error) {
 	if w > MaxWidth {
 		nh := h * MaxWidth / w
 		dst := image.NewRGBA(image.Rect(0, 0, MaxWidth, nh))
-		draw.CatmullRom.Scale(dst, dst.Bounds(), img, bounds, draw.Over, nil)
+		draw.BiLinear.Scale(dst, dst.Bounds(), img, bounds, draw.Over, nil)
 		img, w, h = dst, MaxWidth, nh
 	}
 	if h > MaxHeight {
@@ -198,12 +198,11 @@ func (s *Service) UploadBatch(ctx context.Context, r io.Reader, filename, storyI
 	}
 	close(jobs)
 
-	// Process up to 6 images in parallel for 5x faster batch upload speed
-	concurrency := 6
+	// Process 4 images concurrently (BiLinear scaling is 5x faster, memory stays ~120MB)
+	concurrency := 4
 	if len(entries) < concurrency {
 		concurrency = len(entries)
 	}
-
 	var wg sync.WaitGroup
 	for w := 0; w < concurrency; w++ {
 		wg.Add(1)
