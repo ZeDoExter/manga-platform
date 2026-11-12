@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const MEDIA_URL = (process.env.MEDIA_URL ?? "http://localhost:8088").replace(/\/+$/, "");
+export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
+const MEDIA_URL = (process.env.MEDIA_URL ?? "http://localhost:8088").replace(/\/+$/, "");
 async function proxy(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   const target = `${MEDIA_URL}/${path.join("/")}${req.nextUrl.search}`;
@@ -17,6 +19,7 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
       headers,
       body,
       cache: "no-store",
+      signal: AbortSignal.timeout(300000),
     });
     const out = await res.arrayBuffer();
     return new NextResponse(out, {
