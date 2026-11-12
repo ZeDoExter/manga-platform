@@ -1,45 +1,37 @@
-// Cloudflare Worker: Maintenance & Circuit Breaker (Fallback Page on 522/Origin Timeout)
+// Cloudflare Worker: Maintenance Mode (Direct Fallback - No URL Params Needed)
 // Route: dootoon.store/*, api.dootoon.store/*
-// เมื่อ Origin (Azure AKS) ปิดเครื่อง (run demo-night.ps1) หรือเกิด Error 522 / 502 / 504
-// Worker ตัวนี้จะดักจับและเสิร์ฟหน้า Maintenance UI สวยงามตามธีมแท้ของ DOOTOON ทันที
+// แสดงหน้า Maintenance ทันทีสำหรับทุกคนที่เข้าเว็บ dootoon.store โดยตรง
+// มีระบบ Admin Bypass ด้วยการเติม ?bypass=1 ในกรณีที่ต้องการเข้าใช้งานเว็บจริง
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // [TEST MODE]: ถ้าเปิดด้วย ?maintenance=1 หรือส่ง Header X-Maintenance: 1 ให้แสดงหน้า Maintenance ทันที
-    if (url.searchParams.has('maintenance') || url.searchParams.has('preview') || request.headers.get('X-Maintenance') === '1') {
-      return renderMaintenancePage(522);
-    }
+    // [ADMIN BYPASS]: ถ้าต้องการทะลุเข้าไปดูเว็บจริง ให้พิมพ์ ?bypass=1 หรือ ?live=1
+    const hasBypass = url.searchParams.has('bypass') || url.searchParams.has('live') || (request.headers.get('cookie') || '').includes('dootoon_bypass=1');
 
-    // กำหนดเวลา Timeout สูงสุดที่รอ Origin (เช่น 4.5 วินาที)
-    const timeoutMs = 4500;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      // ลองยิงคำขอไปยัง Origin (Azure AKS) ตามปกติ
-      const response = await fetch(request, {
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      // ถ้า Origin ตอบกลับมาเป็น Error 502, 503, 504 หรือ 522 ให้เสิร์ฟหน้า Maintenance
-      if ([502, 503, 504, 520, 521, 522, 523, 524].includes(response.status)) {
-        return renderMaintenancePage(response.status);
+    if (hasBypass) {
+      try {
+        const response = await fetch(request);
+        const newHeaders = new Headers(response.headers);
+        newHeaders.append('Set-Cookie', 'dootoon_bypass=1; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600');
+        return new Response(response.body, { status: response.status, headers: newHeaders });
+      } catch (err) {
+        // ถ้า Origin มีปัญหาจริง ค่อยส่งหน้า 522
+        return renderMaintenancePage(522);
       }
-
-      return response;
-    } catch (err) {
-      clearTimeout(timeoutId);
-      // เกิด Timeout หรือเชื่อมต่อ Origin ไม่ได้ (522 Connection Timed Out)
-      return renderMaintenancePage(522);
     }
+
+    // [DEFAULT]: แสดงหน้าจอ Maintenance ทันทีสำหรับทุกคน ไม่ต้องพิมพ์ ?maintenance=1
+    return renderMaintenancePage(503);
   },
 };
 
 function renderMaintenancePage(code) {
+  const isCircuitBreaker = code === 522;
+  const statusChip = isCircuitBreaker ? 'HTTP 522 INTERCEPTED' : 'MAINTENANCE MODE ACTIVE';
+  const kickerText = isCircuitBreaker ? 'EDGE CIRCUIT BREAKER ACTIVE' : 'SCHEDULED MAINTENANCE · DEMO-NIGHT';
+
   const html = `<!DOCTYPE html>
 <html lang="th">
 <head>
@@ -263,11 +255,11 @@ function renderMaintenancePage(code) {
       <div class="brand-title">DOOTOON<small>ดูตูน</small></div>
     </div>
 
-    <div class="kicker"><span class="pulse-dot"></span> EDGE CIRCUIT BREAKER ACTIVE</div>
+    <div class="kicker"><span class="pulse-dot"></span> ${kickerText}</div>
 
     <h1>ระบบกำลังพักผ่อน <span class="th">พักชาร์จแบต</span></h1>
     <p class="desc">
-      เซิร์ฟเวอร์ Azure AKS อยู่ในโหมดพักประหยัดงบ (Demo-Night Mode) หรือกำลังสตาร์ทระบบ กรุณารอระบบบูตเครื่องสักครู่แล้วกดลองใหม่อีกครั้ง
+      เซิร์ฟเวอร์ Azure AKS อยู่ในโหมดพักประหยัดงบ (Demo-Night Mode) เพื่อควบคุมค่าใช้จ่ายคลาวด์ หากต้องการเข้าชมระบบ กรุณาลองใหม่อีกครั้ง หรือติดต่อทีมงาน
     </p>
 
     <div class="status-panel">
@@ -277,11 +269,11 @@ function renderMaintenancePage(code) {
       </div>
       <div class="status-row">
         <span class="status-label">Azure AKS Cluster</span>
-        <span class="badge-chip warn">STANDBY / CONNECTING</span>
+        <span class="badge-chip warn">STANDBY / SLEEP</span>
       </div>
       <div class="status-row">
         <span class="status-label">Edge Protection</span>
-        <span class="badge-chip accent">HTTP ${code} INTERCEPTED</span>
+        <span class="badge-chip accent">${statusChip}</span>
       </div>
     </div>
 
