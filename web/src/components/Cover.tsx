@@ -4,6 +4,7 @@ import { memo, useState, type ReactNode } from "react";
 import type { Motif, Story } from "@/lib/types";
 import { TYPE_LABEL } from "@/lib/types";
 import { cx, hash, rng } from "@/lib/util";
+import { resolveImageUrl } from "@/lib/content";
 
 type P = { a: string; b: string; c: string; d: string };
 
@@ -255,12 +256,13 @@ const CoverArt = memo(function CoverArt({ story, className }: { story: Pick<Stor
 /** Unified cover: AI art or procedural poster, with typographic overlay. */
 export const Cover = memo(function Cover({ story, className, compact, rank, priority }: { story: Pick<Story, "id" | "title" | "alt" | "type" | "palette" | "motif" | "cover">; className?: string; compact?: boolean; rank?: number; priority?: boolean }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const useImg = story.cover && failedSrc !== story.cover;
+  const finalSrc = story.cover ? resolveImageUrl(story.cover) : null;
+  const useImg = Boolean(finalSrc && failedSrc !== finalSrc);
   return (
     <div className={cx("relative isolate aspect-[2/3] overflow-hidden bg-ink [container-type:inline-size]", className)} style={{ background: story.palette[0] }}>
-      {useImg ? (
+      {useImg && finalSrc ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={story.cover} alt={`Cover of ${story.title}`} loading={priority ? "eager" : "lazy"} decoding="async" onError={() => setFailedSrc(story.cover ?? null)} className="absolute inset-0 h-full w-full object-cover" />
+        <img src={finalSrc} alt={`Cover of ${story.title}`} loading={priority ? "eager" : "lazy"} decoding="async" onError={() => setFailedSrc(finalSrc)} className="absolute inset-0 h-full w-full object-cover" />
       ) : (
         <CoverArt story={story} />
       )}

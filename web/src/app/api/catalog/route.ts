@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chapterKey } from "@/lib/economy";
+import { resolveImageUrl } from "@/lib/content";
 import type { StudioChapter, StudioStory } from "@/lib/types";
 
 const CATALOG_URL = (process.env.CATALOG_URL ?? "http://localhost:8082").replace(/\/+$/, "");
@@ -66,6 +67,7 @@ export async function GET() {
           motif: "moon",
           mood: "calm",
           status: s.status === "published" ? "published" : "draft",
+          coverImage: s.cover_key ? resolveImageUrl(s.cover_key) : undefined,
           chapters,
           createdAt: new Date(s.created_at).getTime() || Date.now(),
         };

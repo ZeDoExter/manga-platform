@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 import { STORY_MAP, CREATOR_MAP } from "@/data/stories";
 import { TYPE_LABEL } from "@/lib/types";
 import { cx, fmtNum } from "@/lib/util";
+import { resolveImageUrl } from "@/lib/content";
 import { useApp } from "@/lib/store";
 import { Cover } from "./Cover";
 import { Icon, Stars } from "./ui";
-
 const FEATURED = ["hollow-moon-courier", "ashfall-regalia", "the-ninth-bell", "neon-ronin-protocol", "lighthouse-at-the-end-of-every-door"].map((id) => STORY_MAP[id]);
 
 export function Hero() {
@@ -38,7 +38,7 @@ export function Hero() {
         <div key={s.id} className="absolute inset-0 -z-10 anim-fade-up" style={{ animationDuration: "1s" }}>
           {s.cover && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={s.cover} alt="" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full scale-125 transform-gpu object-cover opacity-45 blur-2xl" />
+            <img src={resolveImageUrl(s.cover)} alt="" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full scale-125 transform-gpu object-cover opacity-45 blur-2xl" />
           )}
           <div className="absolute inset-0" style={{ background: `linear-gradient(100deg, ${s.palette[0]} 8%, ${s.palette[0]}cc 45%, transparent 100%)` }} />
           <div className="tone-lg absolute inset-0 opacity-50 [mask-image:linear-gradient(90deg,transparent,#000_70%)]" style={{ ["--tone" as string]: "rgba(255,255,255,.14)" }} />
