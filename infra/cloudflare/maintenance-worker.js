@@ -1,7 +1,7 @@
 // Cloudflare Worker: Maintenance & Circuit Breaker (Fallback Page on 522/Origin Timeout)
 // Route: dootoon.store/*, api.dootoon.store/*
 // เมื่อ Origin (Azure AKS) ปิดเครื่อง (run demo-night.ps1) หรือเกิด Error 522 / 502 / 504
-// Worker ตัวนี้จะดักจับและเสิร์ฟหน้า Maintenance UI สวยงามทันทีแทนที่จะแสดงหน้าจอ Cloudflare ขาวๆ ดิบๆ
+// Worker ตัวนี้จะดักจับและเสิร์ฟหน้า Maintenance UI สวยงามตามธีมแท้ของ DOOTOON ทันที
 
 export default {
   async fetch(request, env) {
@@ -45,146 +45,260 @@ function renderMaintenancePage(code) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DOOTOON ดูตูน — ระบบกำลังอยู่ระหว่างการบำรุงรักษา</title>
+  <title>DOOTOON ดูตูน — พักปรับปรุงระบบชั่วคราว</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@600;700;800;900&family=Mitr:wght@600;700&family=Bricolage+Grotesque:opsz,wght@12..96,700..800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0d0c12;
-      --card: #16151f;
-      --border: #262438;
-      --text: #f4efe4;
-      --muted: #8d889b;
+      --paper: #f2ede2;
+      --paper2: #e8e1d1;
+      --card: #fbf8f1;
+      --ink: #15120f;
+      --ink2: #3b352e;
+      --muted: #7a7064;
+      --line: #15120f;
+      --shadow: #15120f;
       --accent: #ff4a22;
+      --hl: #ffd43b;
       --mint: #12b58b;
-      --gold: #ffd43b;
+      --font-display: "Kanit", "Bricolage Grotesque", system-ui, sans-serif;
+      --font-thai: "Mitr", "Kanit", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Kanit', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-display);
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 24px;
       line-height: 1.6;
+      background-image: radial-gradient(rgba(21, 18, 15, 0.14) 1.2px, transparent 0);
+      background-size: 24px 24px;
     }
-    .box {
-      background: var(--card);
-      border: 2px solid var(--border);
-      border-radius: 16px;
-      padding: 40px 32px;
+    .card-wrap {
       max-width: 580px;
       width: 100%;
+      background: var(--card);
+      border: 2.5px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 6px 6px 0 var(--shadow);
+      padding: 40px 32px;
       text-align: center;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      position: relative;
     }
-    .badge {
+    .brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .brand-badge {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--font-thai);
+      font-weight: 700;
+      font-size: 1.5rem;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      transform: rotate(-3deg);
+      box-shadow: 3px 3px 0 var(--shadow);
+    }
+    .brand-title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .brand-title small {
+      font-family: var(--font-thai);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 1.3rem;
+      margin-left: 6px;
+    }
+    .kicker {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
       font-weight: 700;
-      color: var(--gold);
-      background: rgba(255, 212, 59, 0.1);
-      border: 1px solid rgba(255, 212, 59, 0.3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--ink);
+      color: var(--paper);
       padding: 4px 12px;
-      border-radius: 9999px;
-      margin-bottom: 20px;
+      border-radius: 999px;
+      margin-bottom: 18px;
     }
     .pulse-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--gold);
+      width: 7px;
+      height: 7px;
+      background: var(--hl);
       border-radius: 50%;
-      box-shadow: 0 0 8px var(--gold);
-      animation: pulse 1.8s infinite;
+      box-shadow: 0 0 8px var(--hl);
+      animation: pulseDot 1.6s infinite ease-in-out;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.5; }
     }
     h1 {
-      font-size: 2rem;
-      font-weight: 800;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(1.6rem, 4vw, 2.1rem);
       line-height: 1.2;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
-    h1 span { color: var(--accent); }
-    p {
-      color: var(--muted);
-      font-size: 0.95rem;
+    h1 .th {
+      font-family: var(--font-thai);
+      color: var(--accent);
+    }
+    .desc {
+      font-family: var(--font-thai);
+      color: var(--ink2);
+      font-size: 0.98rem;
       margin-bottom: 24px;
+      line-height: 1.65;
     }
     .status-panel {
-      background: rgba(0,0,0,0.25);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
-      margin-bottom: 24px;
-      font-size: 0.85rem;
+      background: var(--paper2);
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 3px 3px 0 var(--shadow);
+      padding: 16px 20px;
+      margin-bottom: 26px;
       text-align: left;
     }
     .status-row {
       display: flex;
       justify-content: space-between;
-      padding: 6px 0;
-      border-bottom: 1px dashed rgba(255,255,255,0.08);
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1.5px dashed color-mix(in srgb, var(--line) 25%, transparent);
+      font-size: 0.88rem;
     }
     .status-row:last-child { border-bottom: none; }
-    .status-label { color: var(--muted); }
-    .status-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
-    .status-val.warn { color: var(--gold); }
-    .status-val.green { color: var(--mint); }
+    .status-label {
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: var(--ink2);
+    }
+    .badge-chip {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border: 1.5px solid var(--line);
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .badge-chip.green { background: var(--mint); color: #fff; }
+    .badge-chip.warn { background: var(--hl); color: #15120f; }
+    .badge-chip.accent { background: var(--accent); color: #fff; }
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
     .btn {
-      display: inline-block;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.92rem;
+      padding: 11px 24px;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-accent {
       background: var(--accent);
       color: #fff;
-      font-weight: 700;
-      font-size: 0.95rem;
-      padding: 10px 24px;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: opacity 0.2s;
-      cursor: pointer;
-      border: none;
+      box-shadow: 4px 4px 0 var(--shadow);
     }
-    .btn:hover { opacity: 0.9; }
-    .footer-note {
-      font-size: 0.75rem;
+    .btn-accent:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--shadow);
+    }
+    .btn-ghost {
+      background: var(--card);
+      color: var(--ink);
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+    .btn-ghost:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--shadow);
+    }
+    .footer-text {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
       color: var(--muted);
-      margin-top: 20px;
+      margin-top: 24px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="box">
-    <div class="badge"><span class="pulse-dot"></span> EDGE CIRCUIT BREAKER ACTIVE</div>
-    <h1>DOOTOON <span>ดูตูน</span></h1>
-    <p>ระบบอยู่ในช่วง <b>พักปรับปรุงเซิร์ฟเวอร์ (Demo-Night Mode)</b> หรือกำลังเชื่อมต่อไปยัง Azure AKS คลัสเตอร์ กรุณาลองใหม่อีกครั้งในอีกสักครู่</p>
-    
+
+  <div class="card-wrap">
+    <div class="brand-header">
+      <span class="brand-badge">ด</span>
+      <div class="brand-title">DOOTOON<small>ดูตูน</small></div>
+    </div>
+
+    <div class="kicker"><span class="pulse-dot"></span> EDGE CIRCUIT BREAKER ACTIVE</div>
+
+    <h1>ระบบกำลังพักผ่อน <span class="th">พักชาร์จแบต</span></h1>
+    <p class="desc">
+      เซิร์ฟเวอร์ Azure AKS อยู่ในโหมดพักประหยัดงบ (Demo-Night Mode) หรือกำลังสตาร์ทระบบ กรุณารอระบบบูตเครื่องสักครู่แล้วกดลองใหม่อีกครั้ง
+    </p>
+
     <div class="status-panel">
       <div class="status-row">
         <span class="status-label">Cloudflare Edge Proxy</span>
-        <span class="status-val green">ONLINE (Anycast)</span>
+        <span class="badge-chip green">● ONLINE (Anycast BKK)</span>
       </div>
       <div class="status-row">
         <span class="status-label">Azure AKS Cluster</span>
-        <span class="status-val warn">STANDBY / CONNECTING</span>
+        <span class="badge-chip warn">STANDBY / CONNECTING</span>
       </div>
       <div class="status-row">
-        <span class="status-label">HTTP Diagnostics</span>
-        <span class="status-val warn">HTTP ${code} (Timeout Intercepted)</span>
+        <span class="status-label">Edge Protection</span>
+        <span class="badge-chip accent">HTTP ${code} INTERCEPTED</span>
       </div>
     </div>
 
-    <button class="btn" onclick="location.reload()">ลองรีเฟรชหน้าเว็บ</button>
-    <div class="footer-note">DOOTOON Multi-Cloud Architecture · Edge Fallback Handler</div>
+    <div class="btn-group">
+      <button class="btn btn-accent" onclick="location.href='/?refresh='+Date.now()">
+        ↻ ลองโหลดหน้าเว็บใหม่
+      </button>
+      <a href="https://github.com/navapoltawan" target="_blank" rel="noopener" class="btn btn-ghost">
+        GitHub Repository ↗
+      </a>
+    </div>
+
+    <div class="footer-text">
+      DOOTOON Multi-Cloud Architecture · Edge Fallback via Cloudflare Worker
+    </div>
   </div>
+
 </body>
 </html>`;
 
