@@ -180,6 +180,44 @@ body.spot-on a,body.spot-on button{cursor:none}
     <span style="font-family:var(--font-mono);font-size:.85rem;color:var(--muted)">66050221</span>
   </div>
 </div></section>
+<!-- SLIDE 2 · AGENDA / WHAT WE COVER -->
+<section class="slide" id="s22"><div class="wrap">
+  <span class="kicker act">Overview · Agenda</span>
+  <h1>What we cover <span class="th">Agenda</span></h1>
+  <div class="toc-list">
+    <div class="toc-act">Act 1 · What &amp; How</div>
+    <a href="#s1"><span class="tn">01</span>DooToon</a>
+    <a href="#s22"><span class="tn">02</span>What we cover (Agenda)</a>
+    <a href="#s1b"><span class="tn">03</span>Users (3 roles)</a>
+    <a href="#s1c"><span class="tn">04</span>Goals &amp; Scope (In / Out-of-Scope)</a>
+    <a href="#s2"><span class="tn">05</span>End-to-end flow (7 steps)</a>
+    <a href="#s3"><span class="tn">06</span>Constraints we designed around</a>
+    <div class="toc-act">Act 2 · Cloud Architecture (Big Picture)</div>
+    <a href="#s4"><span class="tn">07</span>Full Cloud Architecture (1 page)</a>
+    <a href="#s6"><span class="tn">08</span>Traffic routing: 4 paths</a>
+    <div class="toc-act">Act 3 · Deep Dive (Subsystem Breakdown)</div>
+    <a href="#s7"><span class="tn">09</span>Deep Dive 1: Web &amp; Next.js BFF</a>
+    <a href="#s8"><span class="tn">10</span>Deep Dive 2: 9 Go Microservices</a>
+    <a href="#s9"><span class="tn">11</span>Deep Dive 3: Stripe Top-up &amp; Access</a>
+    <a href="#s10"><span class="tn">12</span>Deep Dive 4: Purchase (5 steps, 1 tx)</a>
+    <a href="#s11"><span class="tn">13</span>Deep Dive 5: Read Gates &amp; Takedown</a>
+    <a href="#s12"><span class="tn">14</span>Deep Dive 6: PostgreSQL &amp; Auth</a>
+    <div class="toc-act">Act 4 · Journey, CI/CD &amp; k8s Load Test</div>
+    <a href="#s13"><span class="tn">15</span>How we built it in 4 weeks</a>
+    <a href="#s14"><span class="tn">16</span>Architectural trade-offs (Kept vs Cut)</a>
+    <a href="#s15"><span class="tn">17</span>CI/CD Pipeline (4 stages)</a>
+    <a href="#s16"><span class="tn">18</span>Inside Test (Coverage Gate ≥80%)</a>
+    <a href="#s17"><span class="tn">19</span>K8s Load Test (k6 50 VUs &amp; HPA scale)</a>
+    <a href="#s18"><span class="tn">20</span>Measured numbers &amp; R2 cost savings</a>
+    <div class="toc-act">Act 5 · Ask &amp; Appendix</div>
+    <a href="#s19"><span class="tn">21</span>Demo runbook (10 min)</a>
+    <a href="#s20"><span class="tn">22</span>What is next</a>
+    <a href="#s21"><span class="tn">23</span>Questions welcome</a>
+    <a href="#s23"><span class="tn">A1</span>Code: Stripe</a>
+    <a href="#s24"><span class="tn">A2</span>Code: purchase + gates</a>
+    <a href="#s25"><span class="tn">A3</span>Code: takedown + Worker</a>
+  </div>
+</div></section>
 
 <!-- SLIDE 1b · THREE ROLES -->
 <section class="slide" id="s1b"><div class="wrap">
@@ -188,12 +226,12 @@ body.spot-on a,body.spot-on button{cursor:none}
   <div class="grid3">
     <div class="panel"><h3 style="font-family:var(--font-display);color:var(--accent)">1. Readers (คนอ่าน)</h3>
       <p>อ่านฟรีโดยไม่ต้องสมัคร (3 ตอนแรก + ตอนล่าสุด)<br>ตอนอื่นซื้อด้วยเหรียญ เติมผ่าน Stripe / PromptPay</p></div>
-    <div class="panel"><h3 style="font-family:var(--font-display);color:var(--accent)">2. Creators (ทีมนักเขียน/แปล)</h3>
-      <p>ตั้งราคาและสัดส่วนทีมไว้ล่วงหน้า<br>ทุกการซื้อ: แพลตฟอร์ม 30% · ทีม 70% แบ่งตามสัดส่วน</p></div>
+    <div class="panel"><h3 style="font-family:var(--font-display);color:var(--accent)">2. Creators &amp; Illustrators</h3>
+      <p>ทีมนักเขียน นักแปล และ <b>Illustrator (ผู้วาด)</b><br>ตั้งสัดส่วนแบ่งรายได้ล่วงหน้า (เช่น นักเขียน 70% · Illustrator 30%)<br>เงินโอนตรงเข้ากระเป๋าของแต่ละคนอัตโนมัติตอนซื้อ</p></div>
     <div class="panel"><h3 style="font-family:var(--font-display);color:var(--accent)">3. Platform / Admin (ผู้ดูแล)</h3>
       <p>ตอนที่ถูกร้องเรียนลิขสิทธิ์ลบได้จากหน้า admin<br>ระบบซ่อนตอน ลบรูป และคืนเหรียญให้คนซื้อทุกคน</p></div>
   </div>
-  <p class="cap">ทั้ง 3 กลุ่มใช้เว็บเดียวกัน · 1 coin = 1 THB · ledger แบบ append-only</p>
+  <p class="cap">ทั้ง 3 กลุ่มใช้เว็บเดียวกัน · 1 coin = 1 THB · จ่ายตรงถึง Illustrator ใน 1 ACID transaction</p>
 </div></section>
 <!-- SLIDE 1c · GOALS & PROJECT SCOPE -->
 <section class="slide" id="s1c"><div class="wrap">
@@ -406,10 +444,10 @@ body.spot-on a,body.spot-on button{cursor:none}
       <rect x="286" y="70" width="170" height="100" rx="6" class="nd"/><text x="371" y="110" class="t-nm">2. กันซื้อซ้ำ</text><text x="371" y="132" class="t-sb">ตรวจ idempotency key</text><text x="371" y="150" class="t-sb">ซื้อซ้ำไม่หักเงินซ้ำ</text>
       <rect x="504" y="70" width="170" height="100" rx="6" class="nd"/><text x="589" y="110" class="t-nm">3. หักโบนัสก่อน</text><text x="589" y="132" class="t-sb">bonus → purchased</text><text x="589" y="150" class="t-sb">บันทึกแถว Ledger</text>
       <rect x="722" y="70" width="170" height="100" rx="6" class="nd"/><text x="807" y="110" class="t-nm">4. ให้สิทธิ์อ่าน</text><text x="807" y="132" class="t-sb">upsert entitlement</text><text x="807" y="150" class="t-sb">เปิดอ่านได้ถาวร</text>
-      <rect x="926" y="70" width="130" height="100" rx="6" class="nd-accent"/><g class="on-accent"><text x="991" y="110" class="t-nm">5. แบ่งเงิน</text><text x="991" y="134" class="t-sb">หัก 30% · ปันทีม 70%</text></g>
+      <rect x="926" y="70" width="130" height="100" rx="6" class="nd-accent"/><g class="on-accent"><text x="991" y="104" class="t-nm">5. แบ่งเงิน</text><text x="991" y="125" class="t-sb">Platform 30%</text><text x="991" y="142" class="t-sb">Author 70%</text><text x="991" y="159" class="t-sb">Illustrator 30%</text></g>
     </g>
   </svg></div>
-  <p class="cap">ทั้งหมดรันใน <b>commerce:8083</b> ภายใน transaction เดียว</p>
+  <p class="cap">ทั้งหมดรันใน <b>commerce:8083</b> ใน 1 ACID transaction · ส่วนแบ่ง 70% จ่ายตรงเข้ากระเป๋า Author &amp; Illustrator แยกอิสระ</p>
 </div></section>
 
 <section class="slide" id="s11"><div class="wrap">
@@ -617,43 +655,6 @@ body.spot-on a,body.spot-on button{cursor:none}
   <div class="cover-badge">Questions</div>
 </div></section>
 
-<!-- APPENDIX · TOC + CODE -->
-<section class="slide" id="s22"><div class="wrap">
-  <span class="kicker">Appendix · Map + code</span>
-  <h1>What we cover</h1>
-  <div class="toc-list">
-    <div class="toc-act">Act 1 · What &amp; How</div>
-    <a href="#s1"><span class="tn">01</span>DooToon &amp; What It Does (3 roles)</a>
-    <a href="#s1b"><span class="tn">01b</span>Users (3 roles)</a>
-    <a href="#s1c"><span class="tn">01c</span>Goals &amp; Scope (In / Out-of-Scope)</a>
-    <a href="#s2"><span class="tn">02</span>End-to-end flow (7 steps)</a>
-    <a href="#s3"><span class="tn">03</span>Constraints we designed around</a>
-    <div class="toc-act">Act 2 · Cloud Architecture (Big Picture)</div>
-    <a href="#s4"><span class="tn">04</span>Full Cloud Architecture (1 page)</a>
-    <a href="#s6"><span class="tn">05</span>Traffic routing: 4 paths</a>
-    <div class="toc-act">Act 3 · Deep Dive (Subsystem Breakdown)</div>
-    <a href="#s7"><span class="tn">06</span>Deep Dive 1: Web &amp; Next.js BFF</a>
-    <a href="#s8"><span class="tn">07</span>Deep Dive 2: 9 Go Microservices</a>
-    <a href="#s9"><span class="tn">08</span>Deep Dive 3: Stripe Top-up &amp; Access</a>
-    <a href="#s10"><span class="tn">09</span>Deep Dive 4: Purchase (5 steps, 1 tx)</a>
-    <a href="#s11"><span class="tn">10</span>Deep Dive 5: Read Gates &amp; Takedown</a>
-    <a href="#s12"><span class="tn">11</span>Deep Dive 6: PostgreSQL &amp; Auth</a>
-    <div class="toc-act">Act 4 · Journey, CI/CD &amp; k8s Load Test</div>
-    <a href="#s13"><span class="tn">12</span>How we built it in 4 weeks</a>
-    <a href="#s14"><span class="tn">13</span>Architectural trade-offs (Kept vs Cut)</a>
-    <a href="#s15"><span class="tn">14</span>CI/CD Pipeline (4 stages)</a>
-    <a href="#s16"><span class="tn">15</span>Inside Test (Coverage Gate ≥80%)</a>
-    <a href="#s17"><span class="tn">16</span>K8s Load Test (k6 50 VUs &amp; HPA scale)</a>
-    <a href="#s18"><span class="tn">17</span>Measured numbers &amp; R2 cost savings</a>
-    <div class="toc-act">Act 5 · Ask &amp; Appendix</div>
-    <a href="#s19"><span class="tn">18</span>Demo runbook (10 min)</a>
-    <a href="#s20"><span class="tn">19</span>What is next</a>
-    <a href="#s21"><span class="tn">20</span>Questions welcome</a>
-    <a href="#s23"><span class="tn">A1</span>Code: Stripe</a>
-    <a href="#s24"><span class="tn">A2</span>Code: purchase + gates</a>
-    <a href="#s25"><span class="tn">A3</span>Code: takedown + Worker</a>
-  </div>
-</div></section>
 
 <section class="slide" id="s23"><div class="wrap">
   <span class="kicker">Appendix A1 · โค้ด — checkout/route.ts + webhook/route.ts</span>

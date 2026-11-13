@@ -310,11 +310,12 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
                     <span className="label">Pages / Artwork <span className="text-accent font-extrabold">*</span></span>
                     <div className="text-xs font-bold text-muted">{pages.length} {pages.length === 1 ? "page" : "pages"} in this chapter</div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <input ref={files} type="file" accept="image/*,.zip,.rar" multiple className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} aria-label="Upload manga pages or a zip/rar archive" />
                     <button className="btn btn-accent btn-sm" onClick={() => files.current?.click()} disabled={busy}>
                       <Icon name="upload" size={13} /> {busy ? "Uploading…" : "Upload pages / ZIP"}
                     </button>
+                    <span className="font-mono text-[0.68rem] text-muted">(ZIP สูงสุด 100MB · รูปเดี่ยว ≤ 10MB)</span>
                     {pages.length > 1 && (
                       <button className="btn btn-ghost btn-sm text-xs font-bold" onClick={sortPagesByName} title="Sort pages by filename (1, 2, 3…)">
                         <Icon name="sliders" size={12} /> Sort 1–{pages.length}
@@ -332,11 +333,14 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
                   <Empty
                     icon="image"
                     title="No pages uploaded yet"
-                    text="Select a ZIP file or multiple JPG/PNG images to upload pages in order."
+                    text="เลือกไฟล์ .ZIP หรือภาพ JPG/PNG/WebP (ระบบเรียงหน้า 1, 2, 3... ให้อัตโนมัติ)"
                     action={
-                      <button className="btn btn-accent mt-2" onClick={() => files.current?.click()} disabled={busy}>
-                        <Icon name="upload" size={14} /> Upload ZIP or images
-                      </button>
+                      <div className="mt-2 flex flex-col items-center gap-1.5">
+                        <button className="btn btn-accent" onClick={() => files.current?.click()} disabled={busy}>
+                          <Icon name="upload" size={14} /> Upload ZIP or images
+                        </button>
+                        <span className="font-mono text-[0.68rem] text-muted">ZIP สูงสุด 100MB · รูปเดี่ยว ≤ 10MB · ไม่เกิน 100 หน้า</span>
+                      </div>
                     }
                   />
                 ) : (
