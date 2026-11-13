@@ -43,7 +43,7 @@ export function Hero() {
               Digital Manga & Novel Platform
             </h1>
             <p className="mt-3.5 text-base font-normal leading-relaxed text-white/85 font-thai">
-              แพลตฟอร์มอ่านมังงะและนิยายออนไลน์ สนับสนุนครีเอเตอร์โดยตรงด้วยระบบเหรียญโปร่งใส ไม่มีข้อมูลจำลอง
+              แพลตฟอร์มอ่านมังงะและนิยายออนไลน์ ที่ให้คุณได้สัมผัสเรื่องราวจากนักเขียนและนักวาดมากมายทั่วโลก
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link href="/discover" className="btn btn-accent !px-5 !py-3">

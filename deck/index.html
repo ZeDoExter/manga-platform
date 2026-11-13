@@ -155,7 +155,7 @@ body.spot-on a,body.spot-on button{cursor:none}
 </head>
 <body>
 
-<div class="hud"><span class="brand">DOOTOON<small>ดูตูน</small></span><span class="pg" id="pgnum">01 / 25</span></div>
+<div class="hud"><span class="brand">DOOTOON<small>ดูตูน</small></span><span class="pg" id="pgnum">01 / 26</span></div>
 <div class="progress"><i id="pbar"></i></div>
 
 <svg width="0" height="0" style="position:absolute"><defs>
@@ -169,12 +169,16 @@ body.spot-on a,body.spot-on button{cursor:none}
 <section class="slide" id="s1"><div class="wrap">
   <span class="kicker act">DOOTOON · Multi-Cloud Architecture</span>
   <h1 style="font-size:clamp(2.2rem,6vw,3.6rem);margin:.2rem 0 .6rem">DooToon <span class="th">ดูตูน</span></h1>
-  <p style="font-size:1.15rem;color:var(--ink2);margin:0 0 1.2rem">เว็บอ่านมังงะและนิยายไทย · จ่ายถึงคนทำ · ลบแล้วคืนเงินอัตโนมัติ</p>
-  <p style="margin-bottom:1.5rem">
+  <p style="margin-bottom:1.2rem">
     <span class="chip">dootoon.store</span>
     <span class="chip">Azure AKS + Cloudflare R2 + Stripe</span>
     <span class="chip">Next.js + Go × 9 + PostgreSQL 16</span>
   </p>
+  <div style="margin-top:1.2rem;display:inline-flex;align-items:center;gap:.75rem;padding:.5rem .9rem;background:var(--card);border:2px solid var(--line);border-radius:8px;box-shadow:3px 3px 0 var(--shadow)">
+    <span style="font-family:var(--font-mono);font-size:.7rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em">ผู้จัดทำ</span>
+    <span style="font-weight:800;font-size:.95rem;color:var(--ink)">นวพล โพธิ์แหบ</span>
+    <span style="font-family:var(--font-mono);font-size:.85rem;color:var(--muted)">66050221</span>
+  </div>
 </div></section>
 
 <!-- SLIDE 1b · THREE ROLES -->
@@ -190,6 +194,41 @@ body.spot-on a,body.spot-on button{cursor:none}
       <p>ตอนที่ถูกร้องเรียนลิขสิทธิ์ลบได้จากหน้า admin<br>ระบบซ่อนตอน ลบรูป และคืนเหรียญให้คนซื้อทุกคน</p></div>
   </div>
   <p class="cap">ทั้ง 3 กลุ่มใช้เว็บเดียวกัน · 1 coin = 1 THB · ledger แบบ append-only</p>
+</div></section>
+<!-- SLIDE 1c · GOALS & PROJECT SCOPE -->
+<section class="slide" id="s1c"><div class="wrap">
+  <span class="kicker act">Act 1 · Scope</span>
+  <h1>เป้าหมายหลักและขอบเขต <span class="th">สิ่งที่ทำและไม่ทำในโครงการ</span></h1>
+  <div class="grid2">
+    <div class="panel">
+      <h3 style="font-family:var(--font-display);color:var(--accent);margin-bottom:.5rem">เป้าหมายหลัก (Core Goals)</h3>
+      <ul style="font-size:.92rem;line-height:1.6;padding-left:1.2rem;margin:0">
+        <li><b>End-to-End Money Flow</b> พิสูจน์วงจรเงินจริง อ่านฟรี → สมัคร → เติมเงิน → ซื้อตอน (แบ่ง 30/70) → ลบตอนและคืนเงินอัตโนมัติ</li>
+        <li><b>Microservices Architecture</b> เป็นภาษา Go (Stateless) บน Azure AKS พร้อมเชื่อม PostgreSQL 16 (6 Schemas)</li>
+        <li><b>Zero-Downtime Deployment</b> Azure DevOps CI/CD อัตโนมัติ 4 ขั้นตอนพร้อม Quality Gate (Coverage ≥ 80%)</li>
+        <li><b>Observability</b> ตรวจสอบได้ทั้งระบบด้วย OpenTelemetry Traces, Logs และ Metrics บน OpenObserve Dashboard</li>
+        <li><b>Lean FinOps</b> ควบคุมค่าใช้จ่ายให้อยู่ในงบ ($17–23/เดือน)</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3 style="font-family:var(--font-display);color:var(--mint);margin-bottom:.5rem">ขอบเขตที่ทำ &amp; ไม่ทำ (Scope)</h3>
+      <div style="font-size:.9rem;line-height:1.55">
+        <p style="margin:0 0 .5rem"><b>ขอบเขตในโครงการ (In-Scope):</b></p>
+        <ul style="padding-left:1.2rem;margin:0 0 .8rem">
+          <li>Next.js 16 Web UI &amp; BFF + Go Microservices</li>
+          <li>สมุดบัญชีเหรียญ Append-Only Ledger (ACID Transaction)</li>
+          <li>ตรวจสิทธิ์อ่าน (Read Gates) + ออก HMAC Signed URL (15 นาที)</li>
+          <li>ระบบลบตอนละเมิดลิขสิทธิ์พร้อมคืนเหรียญผู้ซื้อทุกคน 100%</li>
+        </ul>
+        <p style="margin:0 0 .5rem"><b>สิ่งที่อยู่นอกขอบเขต (Non-Goals เพื่อความสมจริง):</b></p>
+        <ul style="padding-left:1.2rem;margin:0;color:var(--muted)">
+          <li><b>ไม่ทำ AI ตรวจลิขสิทธิ์ล่วงหน้า</b> ใช้สัญญารับรอง + ระบบ Takedown และคืนเงินอัตโนมัติแทน</li>
+          <li><b>ไม่ทำ Native Mobile App</b> เน้นทำ Responsive Web รองรับทุกอุปกรณ์</li>
+          <li><b>ไม่ทำ Unlimited Subscription </b> เพื่อรักษาความโปร่งใสของการแบ่งรายได้ให้ผู้สร้างรายตอน</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div></section>
 
 <!-- SLIDE 2 · HOW IT WORKS -->
@@ -435,15 +474,15 @@ body.spot-on a,body.spot-on button{cursor:none}
 
 <section class="slide" id="s14"><div class="wrap">
   <span class="kicker act">Act 4 · Architectural Trade-offs</span>
-  <h1>Trade-offs <span class="th">ทำไมเลือกใช้ และทำไมตั้งใจตัดทิ้ง</span></h1>
+  <h1>Trade-offs <span class="th">เลือกใช้ และตัดทิ้ง</span></h1>
   <div class="grid2">
-    <div class="panel"><h3 style="font-family:var(--font-display)">ที่เลือกใช้ + เหตุผล</h3>
+    <div class="panel"><h3 style="font-family:var(--font-display)">ที่เลือกใช้และเหตุผล</h3>
       <p><span class="chip good">Cloudflare R2</span> egress $0 · ต้องดูแล 2 vendors</p>
       <p><span class="chip good">AKS + Envoy GW</span> คุม network/HPA · แทน ingress-nginx ที่ EOL</p>
       <p><span class="chip good">PG16 Flexible</span> ACID สำหรับเงิน · private subnet</p>
     </div>
-    <div class="panel"><h3 style="font-family:var(--font-display)">ที่ตั้งใจตัดทิ้ง + เหตุผล</h3>
-      <p><span class="chip warn">Redis</span> PG query ~0.1ms · ยังไม่มีคอขวด</p>
+    <div class="panel"><h3 style="font-family:var(--font-display)">ที่ตั้งใจตัดทิ้งและเหตุผล</h3>
+      <p><span class="chip warn">Redis</span> PG query ~0.1ms</p>
       <p><span class="chip warn">Message Queue</span> ยังไม่มี async consumer</p>
       <p><span class="chip warn">gRPC</span> REST พอสำหรับงานภายใน</p>
     </div>
@@ -586,6 +625,7 @@ body.spot-on a,body.spot-on button{cursor:none}
     <div class="toc-act">Act 1 · What &amp; How</div>
     <a href="#s1"><span class="tn">01</span>DooToon &amp; What It Does (3 roles)</a>
     <a href="#s1b"><span class="tn">01b</span>Users (3 roles)</a>
+    <a href="#s1c"><span class="tn">01c</span>Goals &amp; Scope (In / Out-of-Scope)</a>
     <a href="#s2"><span class="tn">02</span>End-to-end flow (7 steps)</a>
     <a href="#s3"><span class="tn">03</span>Constraints we designed around</a>
     <div class="toc-act">Act 2 · Cloud Architecture (Big Picture)</div>
@@ -686,8 +726,8 @@ let cur=0;
 function go(i){cur=Math.max(0,Math.min(slides.length-1,i));slides[cur].scrollIntoView({behavior:'smooth'});update();}
 function update(){bar.style.width=((cur+1)/slides.length*100)+'%';const t=String(cur+1).padStart(2,'0')+' / '+slides.length;if(pg.textContent!==t){pg.textContent=t;pg.classList.remove('bump');void pg.offsetWidth;pg.classList.add('bump');}}
 addEventListener('keydown',e=>{
-  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(cur+1);}
-  if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(cur-1);}
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(cur+1);}
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();go(cur-1);}
   if(e.key==='Home')go(0); if(e.key==='End')go(slides.length-1);
 });
 let lastMorph=null;
@@ -703,7 +743,6 @@ function toggleTheme(){const n=document.documentElement.dataset.theme==='night';
 const spot=document.getElementById('spot');
 function toggleSpot(){const on=document.body.classList.toggle('spot-on');spot.style.display=on?'block':'none';}
 addEventListener('mousemove',e=>{spot.style.setProperty('--sx',e.clientX+'px');spot.style.setProperty('--sy',e.clientY+'px');},{passive:true});
-addEventListener('click',e=>{if(document.body.classList.contains('spot-on'))return;if(e.target.closest('a,button'))return;go(e.clientX<innerWidth*0.2?cur-1:cur+1);});
 addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const k=e.key.toLowerCase();if(k==='f')toggleSpot();if(k==='t')toggleTheme();});
 update();
 

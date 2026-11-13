@@ -24,10 +24,11 @@ export const options = {
   },
 };
 
-const API = __ENV.API_URL;
+const API = __ENV.API_URL || 'https://api.dootoon.store';
+const CHAPTER_ID = __ENV.CHAPTER_ID || 'chap_k6demo1';
 
 export default function () {
-  const res = http.get(`${API}/api/chapters/chap_k6demo1/read`, {
+  const res = http.get(`${API}/api/chapters/${CHAPTER_ID}/read`, {
     headers: { 'X-User-ID': `k6-user-${__VU}`, 'X-User-Role': 'reader' },
   });
   check(res, { 'read 200': (r) => r.status === 200 });
