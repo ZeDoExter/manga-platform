@@ -65,9 +65,11 @@ export const StoryCard = memo(function StoryCard({ story, match, className, rank
         <div className="mt-3 px-0.5">
           <div className="flex items-center gap-1.5">
             <TypeBadge type={story.type} />
-            <span className="flex items-center gap-1 font-mono text-[0.68rem] font-semibold">
-              <Icon name="star" size={11} fill className="text-hl" /> {story.rating.toFixed(1)}
-            </span>
+            {story.rating > 0 && (
+              <span className="flex items-center gap-1 font-mono text-[0.68rem] font-semibold">
+                <Icon name="star" size={11} fill className="text-hl" /> {story.rating.toFixed(1)}
+              </span>
+            )}
           </div>
           <h3 className="mt-1.5 line-clamp-1 text-[0.95rem] font-extrabold leading-tight">{story.title}</h3>
           <p className="line-clamp-1 text-xs text-muted">

@@ -79,7 +79,7 @@ function StoryInner({ story }: { story: Story }) {
             <h1 className="h-display mt-4 text-[clamp(2.2rem,6vw,5rem)] uppercase [text-shadow:4px_4px_0_rgba(0,0,0,.35)]">{story.title}</h1>
             <p className="mt-1 font-display text-base tracking-[0.2em] text-white/60">{story.alt}</p>
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-              <span className="flex items-center gap-2"><Stars value={story.rating} size={16} /><b className="text-lg">{story.rating.toFixed(1)}</b><span className="text-white/60">{fmtNum(story.votes)} ratings</span></span>
+              <span className="flex items-center gap-2"><Stars value={story.rating} size={16} /><b className="text-lg">{story.votes > 0 ? story.rating.toFixed(1) : "—"}</b><span className="text-white/60">{story.votes > 0 ? `${fmtNum(story.votes)} ratings` : "No ratings yet"}</span></span>
               {creator && <Link href={`/u/${creator.id}`} className="flex items-center gap-2 font-bold hover:underline"><Avatar account={creator} size={26} /> {creator.name}</Link>}
             </div>
             <div className="mt-4 flex flex-wrap gap-1.5">

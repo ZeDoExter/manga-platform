@@ -14,3 +14,8 @@ export async function syncCatalogStory(story: StudioStory, chapter?: StudioChapt
     body: JSON.stringify({ story, chapter }),
   });
 }
+export async function deleteRemoteStory(id: string): Promise<void> {
+  await fetch(`/api/catalog?id=${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}

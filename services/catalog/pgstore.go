@@ -188,6 +188,10 @@ func (p *PGStore) ListStories(ctx context.Context) ([]*Story, error) {
 	}
 	return out, nil
 }
+func (p *PGStore) DeleteStory(ctx context.Context, storyID string) error {
+	_, err := p.pool.Exec(ctx, `DELETE FROM catalog.stories WHERE id = $1`, storyID)
+	return err
+}
 
 func (p *PGStore) ListChaptersByStory(ctx context.Context, storyID string) ([]*Chapter, error) {
 	rows, err := p.pool.Query(ctx, `

@@ -17,7 +17,7 @@ import {
   setFollow,
   type GuestItem,
 } from "./library-api";
-import { fetchRemoteCatalog, syncCatalogStory } from "./catalog-api";
+import { deleteRemoteStory, fetchRemoteCatalog, syncCatalogStory } from "./catalog-api";
 import { useSession } from "./auth-client";
 const KEY = "dootoon.v3";
 
@@ -416,6 +416,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
       deleteStory(id) {
         setState((s) => ({ ...s, studio: s.studio.filter((x) => x.id !== id) }));
+        void deleteRemoteStory(id).catch(() => {});
         toast("Story deleted", "info");
       },
       upsertChapter(storyId, ch) {

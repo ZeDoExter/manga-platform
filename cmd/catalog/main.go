@@ -79,6 +79,14 @@ func main() {
 			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
 		}
 	})
+	mux.HandleFunc("DELETE /stories/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if err := svc.DeleteStory(r.Context(), id); err != nil {
+			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
 
 	mux.HandleFunc("POST /stories/{id}/chapters", func(w http.ResponseWriter, r *http.Request) {
 		var req api.CreateChapterRequest

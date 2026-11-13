@@ -118,6 +118,13 @@ func (m *MemoryStore) ListStories(_ context.Context) ([]*Story, error) {
 	}
 	return out, nil
 }
+func (m *MemoryStore) DeleteStory(_ context.Context, storyID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.stories, storyID)
+	delete(m.storyChapters, storyID)
+	return nil
+}
 
 func (m *MemoryStore) ListChaptersByStory(_ context.Context, storyID string) ([]*Chapter, error) {
 	m.mu.RLock()

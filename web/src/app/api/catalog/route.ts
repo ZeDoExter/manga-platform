@@ -166,3 +166,24 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "missing id" }, { status: 400 });
+
+    const res = await fetch(`${CATALOG_URL}/stories/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      cache: "no-store",
+    });
+    if (!res.ok && res.status !== 404) {
+      return NextResponse.json({ error: "failed to delete story" }, { status: res.status });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "catalog service unavailable" },
+      { status: 502 },
+    );
+  }
+}

@@ -82,6 +82,10 @@ func (s *Service) GetStory(ctx context.Context, storyID string) (*Story, error) 
 func (s *Service) ListStories(ctx context.Context) ([]*Story, error) {
 	return s.store.ListStories(ctx)
 }
+// DeleteStory permanently removes a story from the catalog.
+func (s *Service) DeleteStory(ctx context.Context, storyID string) error {
+	return s.store.DeleteStory(ctx, storyID)
+}
 
 // ListChaptersByStory returns all chapters of a story ordered by order_index.
 func (s *Service) ListChaptersByStory(ctx context.Context, storyID string) ([]*Chapter, error) {
