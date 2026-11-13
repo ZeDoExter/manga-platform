@@ -168,7 +168,6 @@ spec:
   selector:
     app.kubernetes.io/name: web
 ---
-# Scale-safe: reader (stateless) + catalog/commerce/library/identity/moderation/community (PG-backed, migration 005). Media uses Cloudflare R2.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
