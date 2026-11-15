@@ -140,6 +140,9 @@ jobs:
           kubectl -n "$NS" scale deployment --all --replicas=0 2>/dev/null || true
           kubectl apply -f deploy/k8s/service.yaml -n "$NS"
           kubectl apply -f deploy/k8s/deployment.yaml -n "$NS"
+          # Staging only needs the smoke path (web BFF -> catalog); the other 8
+          # stay at zero so staging fits on small nodes next to prod.
+          kubectl -n "$NS" scale deployment identity commerce reader moderation community library media gateway --replicas=0
           for dep in identity catalog commerce reader moderation community library media gateway web; do
             img="manga-$dep"; [ "$dep" = "gateway" ] && img="manga-gateway"
             kubectl -n "$NS" set image "deployment/$dep" "$dep=$ACR/$img:$SHORT"
