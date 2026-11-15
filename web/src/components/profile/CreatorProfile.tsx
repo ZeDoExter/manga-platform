@@ -6,6 +6,7 @@ import type { Account } from "@/lib/types";
 import { TYPE_LABEL } from "@/lib/types";
 import { cx, fmtAgo, fmtAgoHours, fmtNum } from "@/lib/util";
 import { useApp } from "@/lib/store";
+import { liveRating, useStoryRatings } from "@/lib/ratings";
 import { Avatar, Empty, Icon, Stars, Stat, Tabs, TypeBadge } from "../ui";
 import { Cover } from "../Cover";
 
@@ -17,12 +18,14 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
   const [text, setText] = useState("");
   const following = me.following.includes(account.id);
   const works = useMemo(() => catalog.filter((s) => s.creator === account.id), [catalog, account.id]);
+  const ratings = useStoryRatings(works.map((w) => w.id));
   const owned = isMe ? state.studio.filter((s) => s.ownerId === account.id) : [];
   const ownedIds = new Set(owned.map((o) => o.id));
   const draftOnly = owned.filter((o) => !works.some((w) => w.id === o.id));
   const anns = state.announcements.filter((a) => a.authorId === account.id).sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || b.at - a.at);
-  const weekly = works.reduce((a, w) => a + w.weekly * 1000, 0);
-  const avg = works.length ? works.reduce((a, w) => a + w.rating, 0) / works.length : 0;
+  const totalRatings = works.reduce((a, w) => a + liveRating(ratings, w).count, 0);
+  const ratedAvgs = works.map((w) => liveRating(ratings, w)).filter((r) => r.count > 0);
+  const avg = ratedAvgs.length ? ratedAvgs.reduce((a, r) => a + r.avg, 0) / ratedAvgs.length : 0;
   const upcoming = owned.flatMap((s) => s.chapters.filter((c) => c.status === "scheduled").map((c) => ({ s, c }))).sort((a, b) => (a.c.scheduledFor ?? "").localeCompare(b.c.scheduledFor ?? ""));
   const pending = owned.flatMap((s) => s.chapters.filter((c) => c.status !== "published").map((c) => ({ s, c })));
   const [c1, c2] = account.colors;
@@ -70,7 +73,7 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
             <div className="label">Studio at a glance</div>
             <div className="mt-3 grid grid-cols-2 gap-2.5">
               <Stat label="Followers" value={fmtNum(account.followers + (following ? 1 : 0))} />
-              <Stat label="Weekly readers" value={fmtNum(weekly)} />
+              <Stat label="Ratings" value={fmtNum(totalRatings)} />
               <Stat label="Avg rating" value={avg ? avg.toFixed(2) : "—"} />
               <Stat label="Works" value={works.length + draftOnly.length} />
             </div>
@@ -108,7 +111,7 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
                       <div className="flex flex-wrap items-center gap-2"><TypeBadge type={w.type} /><span className="chip">{w.status}</span>{w.rank && <span className="chip chip-on">Top 10 · #{w.rank}</span>}</div>
                       <Link href={`/story/${w.id}`} className="h-display mt-1.5 block text-xl hover:underline sm:text-2xl">{w.title}</Link>
                       <p className="mt-1 line-clamp-2 text-sm text-ink2">{w.tagline}</p>
-                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs"><span className="flex items-center gap-1"><Stars value={w.rating} size={12} /> {w.rating.toFixed(1)}</span><span>{w.chapters} chapters</span><span>{fmtNum(w.weekly * 1000)} weekly</span><span>updated {fmtAgoHours(w.updatedHours)}</span></div>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs"><span className="flex items-center gap-1"><Stars value={liveRating(ratings, w).avg} size={12} /> {liveRating(ratings, w).avg ? liveRating(ratings, w).avg.toFixed(1) : "—"}</span><span>{w.chapters} chapters</span><span>{fmtNum(liveRating(ratings, w).count)} ratings</span><span>updated {fmtAgoHours(w.updatedHours)}</span></div>
                       <div className="mt-3 flex flex-wrap gap-2"><Link href={`/story/${w.id}`} className="btn btn-sm btn-ghost">View</Link>{ownedIds.has(w.id) && <Link href={`/studio/${w.id}`} className="btn btn-sm"><Icon name="pen" size={12} /> Manage in Studio</Link>}</div>
                     </div>
                   </div>
@@ -174,7 +177,7 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
                   <div key={w.id} className="flex items-center gap-4 p-3">
                     <Cover story={w} compact className="w-10 shrink-0 rounded border-2 border-line" />
                     <div className="min-w-0 flex-1"><div className="truncate text-sm font-extrabold">{w.title}</div><div className="font-mono text-[0.65rem] text-muted">{TYPE_LABEL[w.type]} · {w.chapters} ch</div></div>
-                    <div className="flex items-center gap-1 font-mono text-xs font-bold"><Stars value={w.rating} size={12} /> {w.rating ? w.rating.toFixed(1) : "—"}</div>
+                    <div className="flex items-center gap-1 font-mono text-xs font-bold"><Stars value={liveRating(ratings, w).avg} size={12} /> {liveRating(ratings, w).avg ? liveRating(ratings, w).avg.toFixed(1) : "—"}</div>
                     <div className="w-20 text-right font-mono text-[0.65rem] text-muted">updated {fmtAgoHours(w.updatedHours)}</div>
                   </div>
                 ))}

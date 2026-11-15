@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Story } from "@/lib/types";
 import { TYPE_LABEL } from "@/lib/types";
 import { cx, fmtNum } from "@/lib/util";
 import { useApp } from "@/lib/store";
+import { liveRating, useStoryRatings } from "@/lib/ratings";
 import { Cover } from "./Cover";
 import { Icon, Stars, TypeBadge } from "./ui";
 
@@ -32,7 +33,8 @@ export function Top10() {
   const [active, setActive] = useState(0);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { catalog, me, act } = useApp();
-  const list = catalog.slice(0, 10);
+  const ratings = useStoryRatings(catalog.map((s) => s.id));
+  const list = useMemo(() => [...catalog].sort((a, b) => (liveRating(ratings, b).count - liveRating(ratings, a).count) || (liveRating(ratings, b).avg - liveRating(ratings, a).avg)).slice(0, 10), [catalog, ratings]);
 
   useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
 
@@ -92,9 +94,9 @@ export function Top10() {
                   </div>
                   <h3 className="h-display mt-3 text-3xl uppercase leading-[0.98] xl:text-[2.6rem]">{s.title}</h3>
                   <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-                    <span className="flex items-center gap-1.5"><Stars value={s.rating} size={14} light /> <b>{s.rating.toFixed(1)}</b></span>
-                    <span className="flex items-center gap-1.5 font-semibold"><Icon name="eye" size={14} /> {fmtNum(s.weekly * 1000)} weekly</span>
-                    <Heat value={s.weekly / 3120} />
+                    <span className="flex items-center gap-1.5"><Stars value={liveRating(ratings, s).avg} size={14} light /> <b>{liveRating(ratings, s).avg.toFixed(1)}</b></span>
+                    <span className="flex items-center gap-1.5 font-semibold"><Icon name="flame" size={14} className="text-accent" /> {fmtNum(liveRating(ratings, s).count)} ratings</span>
+                    <Heat value={Math.min(1, liveRating(ratings, s).count / 10)} />
                   </div>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {s.genres.map((g) => <span key={g} className="chip !border-white/60 !bg-white/10 !text-white">{g}</span>)}
@@ -129,8 +131,8 @@ export function Top10() {
               </div>
               <div className="mt-2 line-clamp-1 text-sm font-extrabold">{s.title}</div>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <span className="flex items-center gap-1 font-mono text-xs font-bold"><Icon name="star" size={12} fill className="text-hl" /> {s.rating.toFixed(1)}</span>
-                <span className="flex items-center gap-1 font-mono text-xs text-muted"><Icon name="flame" size={12} className="text-accent" /> {fmtNum(s.weekly * 1000)}</span>
+                <span className="flex items-center gap-1 font-mono text-xs font-bold"><Icon name="star" size={12} fill className="text-hl" /> {liveRating(ratings, s).avg.toFixed(1)}</span>
+                <span className="flex items-center gap-1 font-mono text-xs text-muted"><Icon name="flame" size={12} className="text-accent" /> {fmtNum(liveRating(ratings, s).count)}</span>
               </div>
               <p className="mt-1 line-clamp-1 font-mono text-[0.68rem] text-muted">Ch. {s.chapters} · {s.latest}</p>
             </Link>

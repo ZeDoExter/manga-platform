@@ -5,12 +5,15 @@ import { memo, useEffect, useRef, type ReactNode } from "react";
 import type { Story } from "@/lib/types";
 import { cx, fmtAgoHours, fmtNum } from "@/lib/util";
 import { useApp } from "@/lib/store";
+import { liveRating, useStoryRatings } from "@/lib/ratings";
 import { Cover } from "./Cover";
 import { Icon, Stars, TypeBadge } from "./ui";
 
 export const StoryCard = memo(function StoryCard({ story, match, className, rank, showUpdated, progress }: { story: Story; match?: number; className?: string; rank?: number; showUpdated?: boolean; progress?: number }) {
   const { me, act } = useApp();
   const saved = me.library.includes(story.id);
+  const storyRatings = useStoryRatings([story.id]);
+  const cardRating = liveRating(storyRatings, story);
   const ref = useRef<HTMLDivElement>(null);
   const rectRef = useRef<DOMRect | null>(null);
   const rafRef = useRef<number>(0);
@@ -65,9 +68,9 @@ export const StoryCard = memo(function StoryCard({ story, match, className, rank
         <div className="mt-3 px-0.5">
           <div className="flex items-center gap-1.5">
             <TypeBadge type={story.type} />
-            {story.rating > 0 && (
+            {cardRating.avg > 0 && (
               <span className="flex items-center gap-1 font-mono text-[0.68rem] font-semibold">
-                <Icon name="star" size={11} fill className="text-hl" /> {story.rating.toFixed(1)}
+                <Icon name="star" size={11} fill className="text-hl" /> {cardRating.avg.toFixed(1)}
               </span>
             )}
           </div>

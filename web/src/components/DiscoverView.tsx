@@ -8,6 +8,7 @@ import { matchScore } from "@/lib/content";
 import { suggest } from "@/lib/search";
 import { cx } from "@/lib/util";
 import { useApp } from "@/lib/store";
+import { liveRating, useStoryRatings } from "@/lib/ratings";
 import { StoryCard } from "./StoryCard";
 import { Cover } from "./Cover";
 import { Empty, Icon } from "./ui";
@@ -27,6 +28,7 @@ export function DiscoverView({ initial }: { initial: { q?: string; genre?: strin
   const sp = { get: (k: string) => initial[k as "q" | "genre" | "type"] ?? null };
   const router = useRouter();
   const { catalog, me } = useApp();
+  const ratings = useStoryRatings(catalog.map((s) => s.id));
   const [q, setQ] = useState(sp.get("q") ?? "");
   const [types, setTypes] = useState<StoryType[]>(sp.get("type") ? [sp.get("type") as StoryType] : []);
   const [genres, setGenres] = useState<string[]>(sp.get("genre") ? [sp.get("genre") as string] : []);
@@ -59,7 +61,7 @@ export function DiscoverView({ initial }: { initial: { q?: string; genre?: strin
       .filter((s) => (types.length ? types.includes(s.type) : true))
       .filter((s) => (genres.length ? genres.every((g) => s.genres.includes(g)) : true))
       .filter((s) => (status === "any" ? true : s.status === status))
-      .filter((s) => s.rating >= minRating)
+      .filter((s) => liveRating(ratings, s).avg >= minRating)
       .filter((s) => {
         if (!terms.length) return true;
         const hay = `${s.title} ${s.alt} ${CREATOR_MAP[s.creator]?.name ?? ""} ${s.tags.join(" ")} ${s.genres.join(" ")} ${s.synopsis}`.toLowerCase();
@@ -68,14 +70,14 @@ export function DiscoverView({ initial }: { initial: { q?: string; genre?: strin
       .map((s) => ({ s, m: matchScore(s, me.taste, me.profile.genres) }));
     const by: Record<Sort, (a: { s: (typeof list)[0]["s"]; m: number }, b: { s: (typeof list)[0]["s"]; m: number }) => number> = {
       match: (a, b) => b.m - a.m,
-      trending: (a, b) => b.s.weekly - a.s.weekly,
-      rating: (a, b) => b.s.rating - a.s.rating,
+      trending: (a, b) => liveRating(ratings, b.s).count - liveRating(ratings, a.s).count,
+      rating: (a, b) => liveRating(ratings, b.s).avg - liveRating(ratings, a.s).avg || liveRating(ratings, b.s).count - liveRating(ratings, a.s).count,
       updated: (a, b) => a.s.updatedHours - b.s.updatedHours,
       popular: (a, b) => b.s.followers - a.s.followers,
       chapters: (a, b) => b.s.chapters - a.s.chapters,
     };
     return list.sort(by[sort]);
-  }, [catalog, q, types, genres, status, minRating, sort, me.taste, me.profile.genres]);
+  }, [catalog, q, types, genres, status, minRating, sort, me.taste, me.profile.genres, ratings]);
 
   const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   const activeCount = types.length + genres.length + (status !== "any" ? 1 : 0) + (minRating > 0 ? 1 : 0) + (q ? 1 : 0);

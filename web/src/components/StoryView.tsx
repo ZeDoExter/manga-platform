@@ -7,6 +7,7 @@ import { CREATOR_MAP } from "@/data/stories";
 import { ACCOUNT_MAP } from "@/data/accounts";
 import { TYPE_LABEL, isVisual, type Account, type Story } from "@/lib/types";
 import { relatedStories } from "@/lib/content";
+import { storyRating, type RemoteComment } from "@/lib/ratings";
 import { chapterPrice } from "@/lib/economy";
 import { useEconomy } from "@/lib/economy-store";
 import { cx, fmtAgo, fmtAgoHours, fmtNum } from "@/lib/util";
@@ -311,18 +312,6 @@ function Chapters({ story }: { story: Story }) {
       </ul>
     </div>
   );
-}
-
-type RemoteComment = { id: string; user: string; userId: string; rating: number; text: string; at: number; edited?: boolean };
-
-/** Merge local + server reviews. Your server-side review counts even when this browser never saved it (login switch, another device). Never double-counts. */
-function storyRating(remote: RemoteComment[], accountId: string, mine?: { rating: number; text: string; at: number; editedAt?: number }) {
-  const others = remote.filter((c) => c.userId !== accountId);
-  const self = remote.find((c) => c.userId === accountId);
-  const effective = mine ? { ...mine, edited: mine.editedAt != null } : self ? { rating: self.rating, text: self.text, at: self.at, edited: !!self.edited } : undefined;
-  const ratings = [...(effective ? [effective.rating] : []), ...others.map((c) => c.rating)];
-  const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
-  return { others, effective, avg, count: ratings.length, ratings };
 }
 
 /* ------------------------------ reviews ------------------------------ */
