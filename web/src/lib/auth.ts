@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
-import { jwt } from "better-auth/plugins";
 import { memoryAdapter } from "better-auth/adapters/memory";
+import { Pool } from "pg";
 
 const IDENTITY_URL = (process.env.IDENTITY_URL ?? "http://localhost:8081").replace(/\/+$/, "");
 
@@ -46,12 +46,15 @@ async function syncIdentityUser(email: string, role = "reader") {
 const googleClientId = process.env.GOOGLE_CLIENT_ID ?? "";
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET ?? "";
 
+// Postgres-backed auth in any env with DATABASE_URL (prod/staging): users and
+// sessions are shared across replicas, survive restarts, and stay revocable.
+// Local dev falls back to memory (single process, reseeded via /api/auth/seed).
+const pool = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL, max: 5 })
+  : undefined;
+
 export const auth = betterAuth({
-  // Stateless JWT sessions: survive web restarts/redeploys (memory adapter
-  // wipes on restart). Trade-off: no server-side revocation until expiry —
-  // banned users keep access until their token expires (max 7 days).
-  plugins: [jwt()],
-  database: memoryAdapter(getMemDB()),
+  database: pool ?? memoryAdapter(getMemDB()),
   secret: process.env.BETTER_AUTH_SECRET ?? "dootoon-better-auth-secret-key-2026-production",
   baseURL: process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL,
   trustedOrigins: [
@@ -79,7 +82,7 @@ export const auth = betterAuth({
   session: {
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 5 * 60, // revalidate against PG every 5 min (ban-safe); no DB hit otherwise
     },
   },
   user: {

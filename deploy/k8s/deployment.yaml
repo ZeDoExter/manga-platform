@@ -921,6 +921,11 @@ spec:
                   name: web-secrets
                   key: STRIPE_WEBHOOK_SECRET
                   optional: true
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-auth
+                  key: DATABASE_URL
           livenessProbe:
             httpGet:
               path: /api/health
