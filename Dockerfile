@@ -24,7 +24,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     ./cmd/${SERVICE}
 
 # Stage 2: Minimal Runtime
-FROM alpine:3.20
+FROM alpine:3.24
 
 # Run as non-root user for security (NFR-Sec-1)
 RUN adduser -D -u 10001 -g appuser appuser && \
