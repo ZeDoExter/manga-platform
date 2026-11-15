@@ -21,12 +21,11 @@ import (
 	"unicode"
 
 	"github.com/gen2brain/webp"
-	"github.com/nwaples/rardecode"
 	"golang.org/x/image/draw"
 )
 
 // processOne validates, resizes, and encodes a single image.
-// Shared by Upload (single file) and UploadBatch (zip/rar entries).
+// Shared by Upload (single file) and UploadBatch (zip entries).
 func processOne(raw []byte) (out []byte, w, h int, animated bool, err error) {
 	ct := http.DetectContentType(raw)
 	switch {
@@ -138,7 +137,7 @@ func isImageName(name string) bool {
 		strings.HasSuffix(lower, ".png")
 }
 
-// UploadBatch extracts a .zip/.rar of page images, processes each in natural
+// UploadBatch extracts a .zip of page images, processes each in natural
 // filename order, and stores them. Flat archives only (subdirs skipped).
 // Guards: 50MB archive, 500MB total unpacked, 100 images, magic-byte checks
 // on both the archive and every entry.
@@ -159,22 +158,16 @@ func (s *Service) UploadBatch(ctx context.Context, r io.Reader, filename, storyI
 	}
 	lower := strings.ToLower(filename)
 	extZip := strings.HasSuffix(lower, ".zip")
-	extRar := strings.HasSuffix(lower, ".rar")
 	magicZip := bytes.HasPrefix(raw, []byte("PK\x03\x04")) || bytes.HasPrefix(raw, []byte("PK\x05\x06")) || bytes.HasPrefix(raw, []byte("PK\x07\x08"))
-	magicRar := bytes.HasPrefix(raw, []byte("Rar!\x1a\x07"))
 
 	var entries []archEntry
 	switch {
 	case magicZip:
 		entries, err = readZipEntries(raw)
-	case magicRar:
-		entries, err = readRarEntries(bytes.NewReader(raw))
 	case extZip:
 		entries, err = readZipEntries(raw)
-	case extRar:
-		entries, err = readRarEntries(bytes.NewReader(raw))
 	default:
-		return nil, fmt.Errorf("%w: need .zip or .rar", ErrNotAZip)
+		return nil, fmt.Errorf("%w: need .zip", ErrNotAZip)
 	}
 	if err != nil {
 		return nil, err
@@ -293,58 +286,6 @@ func readZipEntries(raw []byte) ([]archEntry, error) {
 		}
 		zipFile := f
 		out = append(out, archEntry{name: base, open: zipFile.Open})
-		if len(out) > MaxZipFiles {
-			return nil, ErrZipTooMany
-		}
-	}
-	return out, nil
-}
-
-// readRarEntries mirrors readZipEntries for RAR archives.
-func readRarEntries(r io.Reader) ([]archEntry, error) {
-	rc, err := rardecode.NewReader(r, "")
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrNotAZip, err)
-	}
-	var out []archEntry
-	var total int64
-	for {
-		hdr, err := rc.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrNotAZip, err)
-		}
-		if hdr.IsDir {
-			continue
-		}
-		if hdr.Name != path.Clean(hdr.Name) || len(hdr.Name) == 0 {
-			continue // raw traversal attempt
-		}
-		rel := hdr.Name
-		if strings.Contains(rel, "/") || strings.HasPrefix(rel, ".") {
-			continue // flat only, no hidden junk
-		}
-		if strings.HasPrefix(strings.ToLower(rel), "__macosx") {
-			continue
-		}
-		base := rel
-		if !isImageName(base) {
-			continue
-		}
-		if hdr.UnPackedSize > MaxUploadBytes+1 {
-			return nil, fmt.Errorf("%w: entry %s too large", ErrZipTooLarge, base)
-		}
-		total += hdr.UnPackedSize
-		if total > MaxZipUnpacked {
-			return nil, ErrZipTooLarge
-		}
-		data, err := io.ReadAll(io.LimitReader(rc, MaxUploadBytes+1))
-		if err != nil || len(data) > MaxUploadBytes {
-			return nil, fmt.Errorf("%w: entry %s too large", ErrZipTooLarge, base)
-		}
-		out = append(out, archEntry{name: base, data: data})
 		if len(out) > MaxZipFiles {
 			return nil, ErrZipTooMany
 		}

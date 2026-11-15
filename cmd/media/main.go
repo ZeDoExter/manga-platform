@@ -95,7 +95,7 @@ func main() {
 		}
 	})
 
-	// POST /uploads/batch?story_id=&chapter_id= — multipart "file" (.zip/.rar).
+	// POST /uploads/batch?story_id=&chapter_id= — multipart "file" (.zip).
 	// Same auth. Returns per-page results in natural filename order.
 	mux.HandleFunc("POST /uploads/batch", func(w http.ResponseWriter, r *http.Request) {
 		_, role := userFromHeader(r)

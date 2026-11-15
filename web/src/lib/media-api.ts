@@ -82,7 +82,7 @@ export interface BatchItem {
   error?: string;
 }
 
-// uploadArchive sends one .zip/.rar; server returns pages in natural order.
+// uploadArchive sends one .zip; server returns pages in natural order.
 export async function uploadArchive(
   file: File, userID: string, storyID: string, chapterID: string,
   onProgress?: (pct: number) => void,

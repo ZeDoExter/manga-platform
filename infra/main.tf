@@ -150,6 +150,12 @@ resource "azurerm_key_vault" "main" {
   soft_delete_retention_days = 7
   purge_protection_enabled   = true # irreversible: deleted vaults/secrets recoverable, never lost
   rbac_authorization_enabled = true
+  # No static ops egress IP yet, so default stays Allow; tighten to Deny with
+  # ip_rules once the team has one. bypass keeps Azure platform traffic working.
+  network_acls {
+    bypass         = "AzureServices"
+    default_action = "Allow"
+  }
   tags                       = var.tags
 }
 

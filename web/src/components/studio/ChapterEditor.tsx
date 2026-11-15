@@ -149,7 +149,7 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
     if (!fl?.length) return;
     setBusy(true);
     const files = Array.from(fl);
-    const archive = files.length === 1 && /\.(zip|rar)$/i.test(files[0].name) ? files[0] : null;
+    const archive = files.length === 1 && /\.zip$/i.test(files[0].name) ? files[0] : null;
     if (archive) {
       setProgress({ active: true, pct: 0, label: "Scanning archive…" });
       try {
@@ -229,7 +229,7 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
       return;
     }
     const imgs = files
-      .filter((f) => !/\.(zip|rar)$/i.test(f.name))
+      .filter((f) => !/\.zip$/i.test(f.name))
       .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
 
     let count = 0;
@@ -311,7 +311,7 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
                     <div className="text-xs font-bold text-muted">{pages.length} {pages.length === 1 ? "page" : "pages"} in this chapter</div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <input ref={files} type="file" accept="image/*,.zip,.rar" multiple className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} aria-label="Upload manga pages or a zip/rar archive" />
+                    <input ref={files} type="file" accept="image/*,.zip" multiple className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} aria-label="Upload manga pages or a zip archive" />
                     <button className="btn btn-accent btn-sm" onClick={() => files.current?.click()} disabled={busy}>
                       <Icon name="upload" size={13} /> {busy ? "Uploading…" : "Upload pages / ZIP"}
                     </button>
