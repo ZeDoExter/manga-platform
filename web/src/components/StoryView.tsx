@@ -330,8 +330,15 @@ function Reviews({ story, remote }: { story: Story; remote: RemoteComment[] }) {
   const { me, act, now, toast, account } = useApp();
   const mine = me.reviews.find((r) => r.storyId === story.id);
   const { others, effective, avg, count, ratings } = storyRating(remote, account.id, mine);
-  const [rating, setRating] = useState(mine?.rating ?? effective?.rating ?? 0);
+  const [rating, setRating] = useState(mine?.rating ?? 0);
   const [text, setText] = useState(mine?.text ?? "");
+  const effKey = effective ? `${effective.rating}:${effective.at}` : "";
+  useEffect(() => {
+    if (!mine && effective) {
+      setRating((r) => (r === 0 ? effective.rating : r));
+      setText((t) => (t === "" ? effective.text : t));
+    }
+  }, [mine, effKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const dist = [1, 2, 3, 4, 5].map((n) => (ratings.length ? ratings.filter((r) => r === n).length / ratings.length : 0));
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
