@@ -11,6 +11,12 @@ on:
 permissions:
   contents: read
 
+# One pipeline per branch: newer pushes cancel queued/in-progress runs so
+# rapid pushes (or dependabot flurries) never stack up racing deploys.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   GO_VERSION: "1.26"
   ACR: mangademoacr.azurecr.io
@@ -113,7 +119,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: azure/login@v2
+      - uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Roll out staging + smoke test
@@ -173,7 +179,7 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
-      - uses: azure/login@v2
+      - uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Pin images to build SHA + rollout
