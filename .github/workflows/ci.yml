@@ -170,6 +170,9 @@ jobs:
           curl -fsS -X DELETE "$B/api/catalog?id=$SID" -H "Cookie: $COOKIE" >/dev/null
           curl -fsS "$B/api/catalog" | grep -q "$SID" && { echo "SMOKE FAIL: story present after delete"; exit 1; } || true
           echo "SMOKE OK"
+          # Idle staging at zero between runs (next apply scales back up);
+          # failures intentionally leave pods up for debugging.
+          kubectl -n "$NS" scale deployment --all --replicas=0
 
   deploy:
     name: "Deploy to AKS (dootoon.store)"
