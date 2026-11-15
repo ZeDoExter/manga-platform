@@ -1,8 +1,12 @@
 import json
+import os
+import sys
 import urllib.request
 import base64
 
-AUTH = "root@example.com:Complexpass#123"
+AUTH = os.environ.get("OOLOG_AUTH", "")
+if not AUTH or ":" not in AUTH:
+    sys.exit("Set OOLOG_AUTH='email:password' env var first (same value as the oolog-auth Secret).")
 BASE = "https://obs.dootoon.store/api/default/dashboards"
 BASIC = "Basic " + base64.b64encode(AUTH.encode()).decode()
 HEADERS = {

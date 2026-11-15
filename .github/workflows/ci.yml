@@ -123,6 +123,7 @@ jobs:
           SHORT="${GITHUB_SHA:0:7}"
           az aks get-credentials -g "$RESOURCE_GROUP" -n "$AKS_NAME" --overwrite-existing
           kubectl apply -f deploy/k8s/service.yaml
+          kubectl apply -f deploy/k8s/networkpolicy.yaml
           kubectl apply -f deploy/k8s/gateway-prod.yaml
           for pair in \
             "identity:manga-identity" \

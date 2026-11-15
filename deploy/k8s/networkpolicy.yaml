@@ -1,0 +1,36 @@
+# Ingress firewall for the 8 backend microservices: only in-app pods
+# (web BFF, gateway, and service-to-service like reader->commerce) may call them.
+# Front doors (web, gateway) intentionally have NO policy: Envoy reaches them
+# and all Services are ClusterIP, so no outside traffic bypasses the edge.
+# Ingress-only on purpose: egress to PG/R2/OTel is untouched.
+# Kubelet probes use host networking and bypass NetworkPolicy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-default-deny
+  namespace: default
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: [identity, catalog, commerce, reader, moderation, community, library, media]
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-allow-app
+  namespace: default
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: [identity, catalog, commerce, reader, moderation, community, library, media]
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: manga-platform

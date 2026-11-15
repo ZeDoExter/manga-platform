@@ -1,6 +1,6 @@
 # Observability stack (local/demo): OpenTelemetry Collector + OpenObserve single-node.
 # Services send OTLP/HTTP traces to http://otel-collector:4318.
-# OpenObserve UI: port-forward svc/openobserve 5080:5080 (admin@example.com / Complexpass#123).
+# OpenObserve UI: port-forward svc/openobserve 5080:5080 (creds in oolog-auth Secret).
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -31,7 +31,7 @@ data:
       otlphttp/openobserve:
         endpoint: http://openobserve:5080/api/default
         headers:
-          Authorization: Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM=
+          Authorization: Basic ${env:OO_BASIC_B64}
       debug:
         verbosity: detailed
     service:
@@ -71,6 +71,13 @@ spec:
           ports:
             - containerPort: 4318
               name: otlp-http
+          env:
+            - name: OO_BASIC_B64
+              valueFrom:
+                secretKeyRef:
+                  name: oolog-auth
+                  key: basic-b64
+                  optional: true
           volumeMounts:
             - name: config
               mountPath: /etc/otelcol
@@ -124,7 +131,11 @@ spec:
             - name: ZO_ROOT_USER_EMAIL
               value: root@example.com
             - name: ZO_ROOT_USER_PASSWORD
-              value: Complexpass#123
+              valueFrom:
+                secretKeyRef:
+                  name: oolog-auth
+                  key: password
+                  optional: true
           resources:
             requests: { cpu: "250m", memory: "512Mi" }
             limits: { cpu: "1000m", memory: "2Gi" }

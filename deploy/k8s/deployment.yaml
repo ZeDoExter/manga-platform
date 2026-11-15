@@ -42,7 +42,11 @@ spec:
             - name: OOLOG_URL
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
-              value: "root@example.com:Complexpass#123"
+              valueFrom:
+                secretKeyRef:
+                  name: oolog-auth
+                  key: basic
+                  optional: true
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
@@ -117,7 +121,11 @@ spec:
             - name: OOLOG_URL
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
-              value: "root@example.com:Complexpass#123"
+              valueFrom:
+                secretKeyRef:
+                  name: oolog-auth
+                  key: basic
+                  optional: true
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
@@ -192,7 +200,11 @@ spec:
             - name: OOLOG_URL
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
-              value: "root@example.com:Complexpass#123"
+              valueFrom:
+                secretKeyRef:
+                  name: oolog-auth
+                  key: basic
+                  optional: true
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
@@ -267,7 +279,11 @@ spec:
             - name: OOLOG_URL
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
-              value: "root@example.com:Complexpass#123"
+              valueFrom:
+                secretKeyRef:
+                  name: oolog-auth
+                  key: basic
+                  optional: true
             - name: CATALOG_URL
               value: "http://catalog"
             - name: COMMERCE_URL
@@ -351,7 +367,11 @@ spec:
             - name: OOLOG_URL
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
-              value: "root@example.com:Complexpass#123"
+              valueFrom:
+                secretKeyRef:
+                  name: oolog-auth
+                  key: basic
+                  optional: true
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
@@ -440,7 +460,11 @@ spec:
             - name: OOLOG_URL
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
-              value: "root@example.com:Complexpass#123"
+              valueFrom:
+                secretKeyRef:
+                  name: oolog-auth
+                  key: basic
+                  optional: true
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
@@ -521,7 +545,11 @@ spec:
             - name: OOLOG_URL
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
-              value: "root@example.com:Complexpass#123"
+              valueFrom:
+                secretKeyRef:
+                  name: oolog-auth
+                  key: basic
+                  optional: true
           livenessProbe:
             httpGet:
               path: /healthz
@@ -596,7 +624,11 @@ spec:
             - name: OOLOG_URL
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
-              value: "root@example.com:Complexpass#123"
+              valueFrom:
+                secretKeyRef:
+                  name: oolog-auth
+                  key: basic
+                  optional: true
           livenessProbe:
             httpGet:
               path: /healthz
@@ -689,7 +721,11 @@ spec:
             - name: OOLOG_URL
               value: "http://openobserve.observability.svc.cluster.local:5080/api/default/manga-logs/_json"
             - name: OOLOG_AUTH
-              value: "root@example.com:Complexpass#123"
+              valueFrom:
+                secretKeyRef:
+                  name: oolog-auth
+                  key: basic
+                  optional: true
           livenessProbe:
             httpGet:
               path: /healthz
