@@ -179,6 +179,10 @@ body.spot-on a,body.spot-on button{cursor:none}
     <span style="font-weight:800;font-size:.95rem;color:var(--ink)">นวพล โพธิ์แหบ</span>
     <span style="font-family:var(--font-mono);font-size:.85rem;color:var(--muted)">66050221</span>
   </div>
+  <br><a href="https://github.com/ZeDoExter/manga-platform" style="margin-top:.8rem;display:inline-flex;align-items:center;gap:.6rem;padding:.5rem .9rem;background:var(--ink);color:var(--paper);border:2px solid var(--line);border-radius:8px;box-shadow:3px 3px 0 var(--accent);text-decoration:none;font-weight:800;font-size:.9rem">
+    <span style="font-family:var(--font-mono);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.75">Source code</span>
+    github.com/ZeDoExter/manga-platform
+  </a>
 </div></section>
 <!-- SLIDE 2 · AGENDA / WHAT WE COVER -->
 <section class="slide" id="s22"><div class="wrap">
@@ -209,8 +213,8 @@ body.spot-on a,body.spot-on button{cursor:none}
     <a href="#s16"><span class="tn">18</span>Inside Test (Coverage Gate ≥80%)</a>
     <a href="#s17"><span class="tn">19</span>K8s Load Test (k6 50 VUs &amp; HPA scale)</a>
     <a href="#s18"><span class="tn">20</span>Measured numbers &amp; R2 cost savings</a>
-    <div class="toc-act">Act 5 · Ask &amp; Appendix</div>
-    <a href="#s19"><span class="tn">21</span>Demo runbook (10 min)</a>
+    <div class="toc-act">Act 5 · Product &amp; Appendix</div>
+    <a href="#s19"><span class="tn">21</span>Demo</a>
     <a href="#s20"><span class="tn">22</span>What is next</a>
     <a href="#s21"><span class="tn">23</span>Questions welcome</a>
     <a href="#s23"><span class="tn">A1</span>Code: Stripe</a>
@@ -226,12 +230,12 @@ body.spot-on a,body.spot-on button{cursor:none}
   <div class="grid3">
     <div class="panel"><h3 style="font-family:var(--font-display);color:var(--accent)">1. Readers (คนอ่าน)</h3>
       <p>อ่านฟรีโดยไม่ต้องสมัคร (3 ตอนแรก + ตอนล่าสุด)<br>ตอนอื่นซื้อด้วยเหรียญ เติมผ่าน Stripe / PromptPay</p></div>
-    <div class="panel"><h3 style="font-family:var(--font-display);color:var(--accent)">2. Creators &amp; Illustrators</h3>
-      <p>ทีมนักเขียน นักแปล และ <b>Illustrator (ผู้วาด)</b><br>ตั้งสัดส่วนแบ่งรายได้ล่วงหน้า (เช่น นักเขียน 70% · Illustrator 30%)<br>เงินโอนตรงเข้ากระเป๋าของแต่ละคนอัตโนมัติตอนซื้อ</p></div>
+    <div class="panel"><h3 style="font-family:var(--font-display);color:var(--accent)">2. Creators (ทีมนักเขียน/แปล)</h3>
+      <p>ตั้งราคาและสัดส่วนทีมไว้ล่วงหน้า<br>ทุกการซื้อ: แพลตฟอร์ม 30% · ทีม 70% แบ่งตามสัดส่วน</p></div>
     <div class="panel"><h3 style="font-family:var(--font-display);color:var(--accent)">3. Platform / Admin (ผู้ดูแล)</h3>
       <p>ตอนที่ถูกร้องเรียนลิขสิทธิ์ลบได้จากหน้า admin<br>ระบบซ่อนตอน ลบรูป และคืนเหรียญให้คนซื้อทุกคน</p></div>
   </div>
-  <p class="cap">ทั้ง 3 กลุ่มใช้เว็บเดียวกัน · 1 coin = 1 THB · จ่ายตรงถึง Illustrator ใน 1 ACID transaction</p>
+  <p class="cap">ทั้ง 3 กลุ่มใช้เว็บเดียวกัน · 1 coin = 1 THB · ledger แบบ append-only</p>
 </div></section>
 <!-- SLIDE 1c · GOALS & PROJECT SCOPE -->
 <section class="slide" id="s1c"><div class="wrap">
@@ -313,7 +317,6 @@ body.spot-on a,body.spot-on button{cursor:none}
   <span class="kicker act">Act 2 · Cloud Architecture (Big Picture)</span>
   <h1>Full Cloud Architecture <span class="th">ภาพรวมทั้งระบบ</span></h1>
   <div class="diagram" style="padding:.5rem;text-align:center"><img src="../docs/cloud-architecture.webp" alt="DOOTOON Multi-Cloud Architecture" style="width:100%;max-height:68vh;object-fit:contain;border-radius:6px;background:#fff;display:block;margin:auto"></div>
-  <p class="cap"><b>Cloudflare</b> (DNS/WAF + R2) · <b>Stripe</b> · <b>Azure VNet</b> (AKS + Postgres แบบ private) · <b>CI/CD &amp; Terraform</b></p>
 </div></section>
 
 <section class="slide" id="s6"><div class="wrap">
@@ -395,7 +398,7 @@ body.spot-on a,body.spot-on button{cursor:none}
 
 <section class="slide" id="s9"><div class="wrap">
   <span class="kicker act">Act 3 · Deep Dive 3 · Top-Up &amp; Access Flow</span>
-  <h1>Money in <span class="th">BFF ส่ง checkout Stripe · commerce คุมเงินทั้งหมด</span></h1>
+  <h1>Money in <span class="th">BFF ส่งไป Stripe · commerce คุมเงิน</span></h1>
   <div class="diagram"><svg viewBox="0 0 1100 330" role="img" aria-labelledby="d10t d10d"><title id="d10t">Topup and access flows</title><desc id="d10d">Web BFF creates Stripe session and verifies webhook before calling commerce TopUp; access gate checks reader via gateway.</desc>
     <text x="28" y="34" class="t-li" style="font-family:var(--font-display);font-size:13px">ขาเติมเหรียญ (Top-up) — web:3000 คุยกับ Stripe แล้วส่งต่อให้ commerce:8083 ลงบัญชี</text>
     <g>
@@ -421,10 +424,9 @@ body.spot-on a,body.spot-on button{cursor:none}
       <rect x="28" y="226" width="190" height="68" rx="6" class="nd"/><text x="123" y="254" class="t-nm">1. ReaderPage</text><text x="123" y="276" class="t-sb">POST /api/economy/access</text>
       <rect x="278" y="226" width="180" height="68" rx="6" class="nd"/><text x="368" y="254" class="t-nm">2. catalog :8082</text><text x="368" y="276" class="t-sb">ซิงก์เรื่อง/ตอน/ราคา</text>
       <rect x="518" y="226" width="180" height="68" rx="6" class="nd"/><text x="608" y="254" class="t-nm">3. gateway :8080</text><text x="608" y="276" class="t-sb">ส่งต่อ reader :8084</text>
-      <rect x="758" y="226" width="210" height="68" rx="6" class="nd-accent"/><g class="on-accent"><text x="863" y="254" class="t-nm">4. reader :8084</text><text x="863" y="276" class="t-sb">ถาม catalog / identity / commerce</text></g>
+      <rect x="758" y="226" width="210" height="68" rx="6" class="nd-accent"/><g class="on-accent"><text x="863" y="254" class="t-nm">4. reader :8084</text><text x="863" y="276" class="t-sb">catalog / identity / commerce</text></g>
     </g>
   </svg></div>
-  <p class="cap"><b>web:3000</b> สร้าง checkout และตรวจลายเซ็น webhook · เขียนยอดเหรียญลง ledger เฉพาะ <b>commerce:8083</b></p>
 </div></section>
 
 <section class="slide" id="s10"><div class="wrap">
@@ -444,10 +446,9 @@ body.spot-on a,body.spot-on button{cursor:none}
       <rect x="286" y="70" width="170" height="100" rx="6" class="nd"/><text x="371" y="110" class="t-nm">2. กันซื้อซ้ำ</text><text x="371" y="132" class="t-sb">ตรวจ idempotency key</text><text x="371" y="150" class="t-sb">ซื้อซ้ำไม่หักเงินซ้ำ</text>
       <rect x="504" y="70" width="170" height="100" rx="6" class="nd"/><text x="589" y="110" class="t-nm">3. หักโบนัสก่อน</text><text x="589" y="132" class="t-sb">bonus → purchased</text><text x="589" y="150" class="t-sb">บันทึกแถว Ledger</text>
       <rect x="722" y="70" width="170" height="100" rx="6" class="nd"/><text x="807" y="110" class="t-nm">4. ให้สิทธิ์อ่าน</text><text x="807" y="132" class="t-sb">upsert entitlement</text><text x="807" y="150" class="t-sb">เปิดอ่านได้ถาวร</text>
-      <rect x="926" y="70" width="130" height="100" rx="6" class="nd-accent"/><g class="on-accent"><text x="991" y="104" class="t-nm">5. แบ่งเงิน</text><text x="991" y="125" class="t-sb">Platform 30%</text><text x="991" y="142" class="t-sb">Author 70%</text><text x="991" y="159" class="t-sb">Illustrator 30%</text></g>
+      <rect x="926" y="70" width="130" height="100" rx="6" class="nd-accent"/><g class="on-accent"><text x="991" y="104" class="t-nm">5. แบ่งเงิน</text><text x="991" y="125" class="t-sb">Platform 30%</text><text x="991" y="142" class="t-sb">Author 70%</text><text x="991" y="159" class="t-sb"></text></g>
     </g>
   </svg></div>
-  <p class="cap">ทั้งหมดรันใน <b>commerce:8083</b> ใน 1 ACID transaction · ส่วนแบ่ง 70% จ่ายตรงเข้ากระเป๋า Author &amp; Illustrator แยกอิสระ</p>
 </div></section>
 
 <section class="slide" id="s11"><div class="wrap">
@@ -614,30 +615,14 @@ body.spot-on a,body.spot-on button{cursor:none}
   <p class="cap">ประมาณการจากราคา list ที่สมมติทราฟฟิก 45TB/เดือน · เป็นเหตุผลหลักที่แยกรูปไป R2</p>
 </div></section>
 
-<!-- ACT 5 · ASK -->
-<section class="slide" id="s19"><div class="wrap">
-  <span class="kicker act">Act 5 · Ask</span>
-  <h1>Demo runbook <span class="th">10 minutes</span></h1>
-  <div class="diagram"><svg viewBox="0 0 1100 200" role="img" aria-labelledby="d20t d20d"><title id="d20t">Demo runbook</title><desc id="d20d">Product 2, money 3, platform 3, infra 2, shutdown.</desc>
-    <g>
-      <line x1="238" y1="100" x2="278" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
-      <line x1="488" y1="100" x2="528" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
-      <line x1="738" y1="100" x2="778" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
-      <line x1="948" y1="100" x2="962" y2="100" class="edge-ink" marker-end="url(#arrI)"/>
-    </g>
-    <g>
-      <rect x="28" y="40" width="210" height="120" rx="6" class="nd"/><text x="133" y="90" class="t-nm">Product 2 min</text><text x="133" y="114" class="t-sb">เปิดตอน · scroll · progress</text>
-      <rect x="288" y="40" width="200" height="120" rx="6" class="nd-hl"/><g class="on-hl"><text x="388" y="90" class="t-nm">Money 3 min</text><text x="388" y="114" class="t-sb">top-up > ซื้อ > takedown</text></g>
-      <rect x="538" y="40" width="200" height="120" rx="6" class="nd"/><text x="638" y="90" class="t-nm">Platform 3 min</text><text x="638" y="114" class="t-sb">dashboard · trace · pipe</text>
-      <rect x="788" y="40" width="160" height="120" rx="6" class="nd"/><text x="868" y="90" class="t-nm">Infra 2 min</text><text x="868" y="114" class="t-sb">kill pod โชว์</text>
-      <rect x="968" y="40" width="104" height="120" rx="6" class="nd-ink"/><g class="on-dark"><text x="1020" y="90" class="t-nm" style="font-size:13px">Shutdown ระบบ</text><text x="1020" y="114" class="t-sb">demo-night</text></g>
-    </g>
-  </svg></div>
-  <p class="cap">ไล่ซ้ายไปขวาตามเวลา · เหลือง = ช่วงเงิน · ดำ = ปิดเครื่องหลังจบ</p>
+<!-- ACT 5 · PRODUCT -->
+<section class="slide" id="s19"><div class="wrap" style="text-align:center">
+  <span class="kicker act">Act 5 · Product</span>
+  <div class="cover-badge">Demo</div>
 </div></section>
 
 <section class="slide" id="s20"><div class="wrap">
-  <span class="kicker act">Act 5 · Ask</span>
+  <span class="kicker act">Act 5 · Product</span>
   <h1>What is next <span class="th">after demo</span></h1>
   <div class="grid3">
     <div class="panel"><h3 style="font-family:var(--font-display)">Money P0</h3>

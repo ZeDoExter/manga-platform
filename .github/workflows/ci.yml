@@ -20,7 +20,7 @@ env:
 
 jobs:
   lint:
-    displayName: "Lint (go vet)"
+    name: "Lint (go vet)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
       - run: go vet ./...
 
   test:
-    displayName: "Test (+ coverage gate)"
+    name: "Test (+ coverage gate)"
     needs: lint
     runs-on: ubuntu-latest
     services:
@@ -70,7 +70,7 @@ jobs:
           retention-days: 7
 
   build:
-    displayName: "Build + push images to ACR"
+    name: "Build + push images to ACR"
     needs: test
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
@@ -107,7 +107,7 @@ jobs:
           docker push "$ACR/manga-web:latest"
 
   deploy:
-    displayName: "Deploy to AKS (dootoon.store)"
+    name: "Deploy to AKS (dootoon.store)"
     needs: build
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
