@@ -8,6 +8,7 @@ import { ACCOUNT_MAP } from "@/data/accounts";
 import { TYPE_LABEL, isVisual, type Account, type Story } from "@/lib/types";
 import { relatedStories } from "@/lib/content";
 import { storyRating, type RemoteComment } from "@/lib/ratings";
+import { useStoryReads } from "@/lib/reads";
 import { chapterPrice } from "@/lib/economy";
 import { useEconomy } from "@/lib/economy-store";
 import { cx, fmtAgo, fmtAgoHours, fmtNum } from "@/lib/util";
@@ -61,6 +62,7 @@ function StoryInner({ story }: { story: Story }) {
     };
   }, [story.id, mineReview?.at]);
   const { avg: ratingAvg, count: ratingCount } = storyRating(remoteComments, account.id, mineReview);
+  const readsWeek = useStoryReads("week");
   const [p0, p1, p2] = story.palette;
   void following;
   void p2;
@@ -203,7 +205,7 @@ function StoryInner({ story }: { story: Story }) {
       <div className="wrap py-8">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat label="Followers" value={fmtNum(story.followers + (saved ? 1 : 0))} sub={saved ? "including you" : "readers following"} />
-          <Stat label="Weekly readers" value={story.weekly >= 10 ? fmtNum(story.weekly * 1000) : fmtNum(story.weekly * 1000)} sub="last 7 days" />
+          <Stat label="Weekly readers" value={fmtNum(readsWeek[story.id] ?? 0)} sub="last 7 days" />
           <Stat label="Chapters" value={story.chapters} sub={`Latest: ${story.latest}`} />
           <Stat label="Updated" value={fmtAgoHours(story.updatedHours)} sub={`${story.year} · ${isVisual(story.type) ? "illustrated" : "prose"}`} />
         </div>
