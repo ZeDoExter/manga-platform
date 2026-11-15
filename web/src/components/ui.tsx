@@ -84,7 +84,7 @@ export function TypeBadge({ type, className }: { type: StoryType; className?: st
   );
 }
 
-export function Stars({ value, size = 14, onChange, className }: { value: number; size?: number; onChange?: (n: number) => void; className?: string }) {
+export function Stars({ value, size = 14, onChange, className, light }: { value: number; size?: number; onChange?: (n: number) => void; className?: string; light?: boolean }) {
   return (
     <span className={cx("inline-flex items-center gap-0.5", className)} role={onChange ? "radiogroup" : "img"} aria-label={`${value.toFixed(1)} out of 5 stars`}>
       {[1, 2, 3, 4, 5].map((n) => {
@@ -92,7 +92,7 @@ export function Stars({ value, size = 14, onChange, className }: { value: number
         const half = !on && value >= n - 0.75;
         const star = (
           <span className="relative inline-block" style={{ width: size, height: size }}>
-            <Icon name="star" size={size} stroke={1.6} className="absolute inset-0 text-line/40" />
+            <Icon name="star" size={size} stroke={1.6} className={cx("absolute inset-0", light ? "text-white/40" : "text-line/40")} />
             {(on || half) && (
               <span className="absolute inset-0 overflow-hidden text-hl" style={{ width: half ? "50%" : "100%" }}>
                 <Icon name="star" size={size} stroke={1.6} fill className="text-hl [filter:drop-shadow(0_0_0.5px_var(--line))]" />

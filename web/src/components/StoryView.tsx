@@ -34,7 +34,7 @@ export function StoryView({ id }: { id: string }) {
 }
 
 function StoryInner({ story }: { story: Story }) {
-  const { me, act, state, toast, catalog } = useApp();
+  const { me, act, state, toast, catalog, account } = useApp();
   const [tab, setTab] = useState<Tab>("chapters");
   const [colMenu, setColMenu] = useState(false);
   const [newColName, setNewColName] = useState("");
@@ -45,6 +45,21 @@ function StoryInner({ story }: { story: Story }) {
   const following = me.following.includes(story.creator);
   const detail = DETAILS[story.id];
   const studio = state.studio.find((s) => s.id === story.id && !s.mirror);
+  const [remoteComments, setRemoteComments] = useState<RemoteComment[]>([]);
+  const mineReview = me.reviews.find((r) => r.storyId === story.id);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/community?storyId=${encodeURIComponent(story.id)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (alive && d?.comments) setRemoteComments(d.comments);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [story.id, mineReview?.at]);
+  const { avg: ratingAvg, count: ratingCount } = storyRating(remoteComments, account.id, mineReview);
   const [p0, p1, p2] = story.palette;
   void following;
   void p2;
@@ -79,7 +94,7 @@ function StoryInner({ story }: { story: Story }) {
             <h1 className="h-display mt-4 text-[clamp(2.2rem,6vw,5rem)] uppercase [text-shadow:4px_4px_0_rgba(0,0,0,.35)]">{story.title}</h1>
             <p className="mt-1 font-display text-base tracking-[0.2em] text-white/60">{story.alt}</p>
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-              <span className="flex items-center gap-2"><Stars value={story.rating} size={16} /><b className="text-lg">{story.votes > 0 ? story.rating.toFixed(1) : "—"}</b><span className="text-white/60">{story.votes > 0 ? `${fmtNum(story.votes)} ratings` : "No ratings yet"}</span></span>
+              <span className="flex items-center gap-2"><Stars value={ratingAvg} size={16} light /><b className="text-lg">{ratingCount > 0 ? ratingAvg.toFixed(1) : "—"}</b><span className="text-white/60">{ratingCount > 0 ? `${ratingCount} rating${ratingCount === 1 ? "" : "s"}` : "No ratings yet"}</span></span>
               {creator && <Link href={`/u/${creator.id}`} className="flex items-center gap-2 font-bold hover:underline"><Avatar account={creator} size={26} /> {creator.name}</Link>}
             </div>
             <div className="mt-4 flex flex-wrap gap-1.5">
@@ -206,7 +221,7 @@ function StoryInner({ story }: { story: Story }) {
         <div className="mt-5">
           {tab === "chapters" && <Chapters story={story} />}
           {tab === "codex" && (detail ? <CharacterWeb detail={detail} maxCh={story.chapters} initial={prog?.chapter ?? 1} /> : <Empty icon="lock" title="Codex coming soon" text={`${creator?.name ?? "The creator"} hasn’t published a character codex for this story yet.`} />)}
-          {tab === "reviews" && <Reviews story={story} />}
+          {tab === "reviews" && <Reviews story={story} remote={remoteComments} />}
           {tab === "creator" && <CreatorCard story={story} />}
         </div>
 
@@ -298,35 +313,31 @@ function Chapters({ story }: { story: Story }) {
   );
 }
 
+type RemoteComment = { id: string; user: string; userId: string; rating: number; text: string; at: number };
+
+/** Merge local + server reviews. Your server-side review counts even when this browser never saved it (login switch, another device). Never double-counts. */
+function storyRating(remote: RemoteComment[], accountId: string, mine?: { rating: number; text: string; at: number }) {
+  const others = remote.filter((c) => c.userId !== accountId);
+  const self = remote.find((c) => c.userId === accountId);
+  const effective = mine ?? (self ? { rating: self.rating, text: self.text, at: self.at } : undefined);
+  const ratings = [...(effective ? [effective.rating] : []), ...others.map((c) => c.rating)];
+  const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+  return { others, effective, avg, count: ratings.length, ratings };
+}
+
 /* ------------------------------ reviews ------------------------------ */
-function Reviews({ story }: { story: Story }) {
+function Reviews({ story, remote }: { story: Story; remote: RemoteComment[] }) {
   const { me, act, now, toast, account } = useApp();
   const mine = me.reviews.find((r) => r.storyId === story.id);
-  const [rating, setRating] = useState(me.ratings[story.id] ?? 0);
+  const { others, effective, avg, count, ratings } = storyRating(remote, account.id, mine);
+  const [rating, setRating] = useState(mine?.rating ?? effective?.rating ?? 0);
   const [text, setText] = useState(mine?.text ?? "");
-  const [remoteComments, setRemoteComments] = useState<{ id: string; user: string; userId: string; rating: number; text: string; at: number }[]>([]);
-  const others = remoteComments.filter((c) => c.userId !== account.id);
-  const allRatings = [...(mine ? [mine.rating] : []), ...others.map((c) => c.rating)];
-  const avg = allRatings.length ? allRatings.reduce((a, b) => a + b, 0) / allRatings.length : 0;
-  const dist = [1, 2, 3, 4, 5].map((n) => (allRatings.length ? allRatings.filter((r) => r === n).length / allRatings.length : 0));
-
-  useEffect(() => {
-    let alive = true;
-    fetch(`/api/community?storyId=${encodeURIComponent(story.id)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (alive && d?.comments) setRemoteComments(d.comments);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [story.id, mine?.at]);
+  const dist = [1, 2, 3, 4, 5].map((n) => (ratings.length ? ratings.filter((r) => r === n).length / ratings.length : 0));
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
       <div className="space-y-5">
         <div className="panel p-5">
-          <div className="flex items-end gap-3"><span className="h-display text-6xl">{avg ? avg.toFixed(1) : "—"}</span><div className="pb-2"><Stars value={avg} size={16} /><div className="font-mono text-[0.68rem] text-muted">{allRatings.length ? `${allRatings.length} rating${allRatings.length === 1 ? "" : "s"}` : "No ratings yet"}</div></div></div>
+          <div className="flex items-end gap-3"><span className="h-display text-6xl">{avg ? avg.toFixed(1) : "—"}</span><div className="pb-2"><Stars value={avg} size={16} /><div className="font-mono text-[0.68rem] text-muted">{count ? `${count} rating${count === 1 ? "" : "s"}` : "No ratings yet"}</div></div></div>
           <div className="mt-4 space-y-1.5">
             {[5, 4, 3, 2, 1].map((n) => (
               <div key={n} className="flex items-center gap-2 font-mono text-[0.68rem]">
@@ -338,18 +349,18 @@ function Reviews({ story }: { story: Story }) {
           </div>
         </div>
         <form className="panel p-5" onSubmit={(e) => { e.preventDefault(); if (!rating) return toast("Pick a star rating first", "warn"); if (text.trim().length < 10) return toast("Write at least a sentence (10+ characters)", "warn"); act.addReview(story.id, rating, text.trim()); }}>
-          <h3 className="h-display text-lg">{mine ? "Edit your review" : "Write a review"}</h3>
+          <h3 className="h-display text-lg">{effective ? "Edit your review" : "Write a review"}</h3>
           <div className="mt-2"><Stars value={rating} size={26} onChange={setRating} /></div>
           <textarea className="field mt-3 min-h-28 text-sm" placeholder="What stayed with you? (No spoilers, please.)" value={text} onChange={(e) => setText(e.target.value)} maxLength={600} />
           <div className="mt-1 text-right font-mono text-[0.65rem] text-muted">{text.length}/600</div>
-          <button className="btn mt-2 w-full" type="submit">{mine ? "Update review" : "Post review"}</button>
+          <button className="btn mt-2 w-full" type="submit">{effective ? "Update review" : "Post review"}</button>
         </form>
       </div>
       <ul className="space-y-4">
-        {mine && (
+        {effective && (
           <li className="panel anim-fade-up p-4">
-            <div className="flex items-center gap-2"><span className="chip chip-on">Your review</span><Stars value={mine.rating} size={13} /><span className="ml-auto font-mono text-[0.68rem] text-muted">{fmtAgo(mine.at, now)}</span></div>
-            <p className="mt-2 text-sm leading-relaxed">{mine.text}</p>
+            <div className="flex items-center gap-2"><span className="chip chip-on">Your review</span><Stars value={effective.rating} size={13} /><span className="ml-auto font-mono text-[0.68rem] text-muted">{fmtAgo(effective.at, now)}</span></div>
+            <p className="mt-2 text-sm leading-relaxed">{effective.text}</p>
           </li>
         )}
         {others.map((r) => (
@@ -363,7 +374,7 @@ function Reviews({ story }: { story: Story }) {
             <p className="mt-2 text-sm leading-relaxed text-ink2">{r.text}</p>
           </li>
         ))}
-        {!mine && !others.length && <Empty icon="star" title="No reviews yet" text="Read this story and share what stayed with you." />}
+        {!effective && !others.length && <Empty icon="star" title="No reviews yet" text="Read this story and share what stayed with you." />}
       </ul>
     </div>
   );
