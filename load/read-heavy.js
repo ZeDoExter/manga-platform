@@ -3,8 +3,11 @@ import { check, sleep } from 'k6';
 
 // Read-heavy scenario per docs/03-testing.md: read chapter via public gateway.
 // Seed story_k6demo/chap_k6demo1 must exist (seeded once via catalog ClusterIP).
-// Run: k6 run --env API_URL=https://api.dootoon.store load/read-heavy.js
+// Run: k6 run --env API_URL=https://api.dootoon.store --env VUS=200 --env HOLD=5m load/read-heavy.js
 // Targets: API p95 < 300ms, error rate < 1%.
+
+const VUS = parseInt(__ENV.VUS || '50', 10);
+const HOLD = __ENV.HOLD || '3m';
 
 export const options = {
   scenarios: {
@@ -12,8 +15,8 @@ export const options = {
       executor: 'ramping-vus',
       startVUs: 0,
       stages: [
-        { duration: '1m', target: 50 },
-        { duration: '3m', target: 50 },
+        { duration: '1m', target: VUS },
+        { duration: HOLD, target: VUS },
         { duration: '1m', target: 0 },
       ],
     },
@@ -28,6 +31,8 @@ const API = __ENV.API_URL || 'https://api.dootoon.store';
 const CHAPTER_ID = __ENV.CHAPTER_ID || 'chap_k6demo1';
 
 export default function () {
+  // Identity headers are stripped at the edge (anonymous load path); per-VU ids
+  // below are ignored upstream but keep virtual users distinguishable in logs.
   const res = http.get(`${API}/api/chapters/${CHAPTER_ID}/read`, {
     headers: { 'X-User-ID': `k6-user-${__VU}`, 'X-User-Role': 'reader' },
   });

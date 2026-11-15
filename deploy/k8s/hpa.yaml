@@ -1,0 +1,132 @@
+# Autoscaling for all 10 workloads (CPU 70%, tiered by traffic).
+# Mirrors the proven reader HPA (manga-reader-hpa, adopted by same name).
+# metrics-server ships with AKS; no extra components needed.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-hpa
+  namespace: default
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: web }
+  minReplicas: 2 # front door stays redundant during rollouts/drains
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: manga-reader-hpa
+  namespace: default
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: reader }
+  minReplicas: 1
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gateway-hpa
+  namespace: default
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: gateway }
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: media-hpa
+  namespace: default
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: media }
+  minReplicas: 1
+  maxReplicas: 3 # memory-heavy (1.5Gi limit): watch node headroom before raising
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: catalog-hpa
+  namespace: default
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: catalog }
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: commerce-hpa
+  namespace: default
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: commerce }
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: identity-hpa
+  namespace: default
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: identity }
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: moderation-hpa
+  namespace: default
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: moderation }
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: community-hpa
+  namespace: default
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: community }
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: library-hpa
+  namespace: default
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: library }
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }

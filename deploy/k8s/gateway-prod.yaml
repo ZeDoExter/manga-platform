@@ -52,6 +52,12 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      # Auth boundary: public API callers are anonymous; identity headers are
+      # stamped only by the BFF. Strip anything the client smuggled in.
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            remove: [x-user-id, x-user-role]
       backendRefs:
         - name: gateway
           port: 80

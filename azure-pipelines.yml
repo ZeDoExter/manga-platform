@@ -147,6 +147,8 @@ stages:
                       az aks get-credentials -g "$(resourceGroup)" -n "$(aksName)" --overwrite-existing
                       kubectl apply -f deploy/k8s/service.yaml
                       kubectl apply -f deploy/k8s/networkpolicy.yaml
+                      kubectl apply -f deploy/k8s/hpa.yaml
+                      kubectl apply -f deploy/k8s/pdb.yaml
                       kubectl apply -f deploy/k8s/gateway-prod.yaml
                       for pair in \
                         "identity:manga-identity" \

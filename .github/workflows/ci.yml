@@ -106,9 +106,68 @@ jobs:
           docker push "$ACR/manga-web:$SHORT"
           docker push "$ACR/manga-web:latest"
 
+  staging:
+    name: "Deploy staging + smoke test"
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Roll out staging + smoke test
+        run: |
+          set -euo pipefail
+          SHORT="${GITHUB_SHA:0:7}"
+          NS=staging
+          az aks get-credentials -g "$RESOURCE_GROUP" -n "$AKS_NAME" --overwrite-existing
+          kubectl create ns "$NS" --dry-run=client -o yaml | kubectl apply -f -
+          # Mirror secrets; point postgres at the staging database.
+          PROD_URL=$(kubectl -n default get secret postgres-auth -o jsonpath='{.data.DATABASE_URL}' | base64 -d)
+          STG_URL=$(printf '%s' "$PROD_URL" | python3 -c "import sys,urllib.parse as u;p=u.urlsplit(sys.stdin.read().strip());print(u.urlunsplit((p.scheme,p.netloc,'/manga_staging',p.query,p.fragment)))")
+          kubectl -n "$NS" create secret generic postgres-auth --from-literal=DATABASE_URL="$STG_URL" --dry-run=client -o yaml | kubectl apply -f -
+          for s in web-secrets r2-credentials oolog-auth; do
+            kubectl -n default get secret "$s" -o yaml | grep -vE '^\s*(creationTimestamp|resourceVersion|uid|selfLink):' | sed "s/namespace: default/namespace: $NS/" | kubectl apply -n "$NS" -f -
+          done
+          kubectl apply -f deploy/k8s/service.yaml -n "$NS"
+          kubectl apply -f deploy/k8s/deployment.yaml -n "$NS"
+          for dep in identity catalog commerce reader moderation community library media gateway web; do
+            img="manga-$dep"; [ "$dep" = "gateway" ] && img="manga-gateway"
+            kubectl -n "$NS" set image "deployment/$dep" "$dep=$ACR/$img:$SHORT"
+          done
+          kubectl -n "$NS" rollout status deployment/web --timeout=180s
+          kubectl -n "$NS" rollout status deployment/catalog --timeout=120s
+          # Smoke: health, seed, login, auth gate, full story lifecycle.
+          kubectl -n "$NS" port-forward svc/web 18080:3000 >/tmp/pf.log 2>&1 &
+          PF=$!
+          trap 'kill $PF 2>/dev/null' EXIT
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:18080/api/health >/dev/null && break
+            sleep 5
+          done
+          B=http://127.0.0.1:18080
+          curl -fsS "$B/api/health"
+          curl -fsS -X POST "$B/api/auth/seed"
+          HDRS=$(mktemp)
+          curl -fsS -D "$HDRS" -o /dev/null -X POST "$B/api/auth/sign-in/email" \
+            -H 'content-type: application/json' \
+            -d '{"email":"creator@dootoon.store","password":"dootoon123"}'
+          COOKIE=$(grep -i '^set-cookie:' "$HDRS" | sed 's/^[^:]*: *//;s/;.*//' | paste -sd';' -)
+          [ -n "$COOKIE" ] || { echo "SMOKE FAIL: no session cookie"; exit 1; }
+          SID="smoke-$SHORT"
+          STORY="{\"story\":{\"id\":\"$SID\",\"title\":\"smoke\",\"type\":\"manga\",\"synopsis\":\"s\",\"tagline\":\"t\",\"genres\":[],\"tags\":[],\"chapters\":[]}}"
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$B/api/catalog" -H 'content-type: application/json' -d "$STORY")
+          [ "$CODE" = "401" ] || { echo "SMOKE FAIL: anonymous write -> $CODE, want 401"; exit 1; }
+          curl -fsS -X POST "$B/api/catalog" -H "Cookie: $COOKIE" -H 'content-type: application/json' -d "$STORY" >/dev/null
+          curl -fsS "$B/api/catalog" | grep -q "$SID" || { echo "SMOKE FAIL: story not listed"; exit 1; }
+          curl -fsS -X DELETE "$B/api/catalog?id=$SID" -H "Cookie: $COOKIE" >/dev/null
+          curl -fsS "$B/api/catalog" | grep -q "$SID" && { echo "SMOKE FAIL: story present after delete"; exit 1; } || true
+          echo "SMOKE OK"
+
   deploy:
     name: "Deploy to AKS (dootoon.store)"
-    needs: build
+    needs: [build, staging]
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment: production
@@ -124,6 +183,8 @@ jobs:
           az aks get-credentials -g "$RESOURCE_GROUP" -n "$AKS_NAME" --overwrite-existing
           kubectl apply -f deploy/k8s/service.yaml
           kubectl apply -f deploy/k8s/networkpolicy.yaml
+          kubectl apply -f deploy/k8s/hpa.yaml
+          kubectl apply -f deploy/k8s/pdb.yaml
           kubectl apply -f deploy/k8s/gateway-prod.yaml
           for pair in \
             "identity:manga-identity" \
