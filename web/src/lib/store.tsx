@@ -405,9 +405,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         toast(has ? `Unfollowed ${ACCOUNT_MAP[accountId]?.name ?? ""}` : `Following ${ACCOUNT_MAP[accountId]?.name ?? "creator"} ✓`, has ? "info" : "ok");
       },
       addReview(storyId, rating, text) {
-        upMe((d) => ({ ...d, reviews: [{ id: uid("rv"), storyId, rating, text, at: Date.now() }, ...d.reviews.filter((r) => r.storyId !== storyId)], ratings: { ...d.ratings, [storyId]: rating } }));
-        toast("Review posted — thank you! ★");
         const accId = ref.current.accountId;
+        const prev = ref.current.data[accId]?.reviews.find((r) => r.storyId === storyId);
+        const now = Date.now();
+        upMe((d) => ({ ...d, reviews: [{ id: uid("rv"), storyId, rating, text, at: prev?.at ?? now, ...(prev ? { editedAt: now } : {}) }, ...d.reviews.filter((r) => r.storyId !== storyId)], ratings: { ...d.ratings, [storyId]: rating } }));
+        toast(prev ? "Review updated ✓" : "Review posted — thank you! ★");
         const authorName = ref.current.data[accId]?.profile?.name || ACCOUNT_MAP[accId]?.name || accId;
         void fetch("/api/community", {
           method: "POST",

@@ -92,7 +92,7 @@ export function Top10() {
                   </div>
                   <h3 className="h-display mt-3 text-3xl uppercase leading-[0.98] xl:text-[2.6rem]">{s.title}</h3>
                   <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-                    <span className="flex items-center gap-1.5"><Stars value={s.rating} size={14} /> <b>{s.rating.toFixed(1)}</b></span>
+                    <span className="flex items-center gap-1.5"><Stars value={s.rating} size={14} light /> <b>{s.rating.toFixed(1)}</b></span>
                     <span className="flex items-center gap-1.5 font-semibold"><Icon name="eye" size={14} /> {fmtNum(s.weekly * 1000)} weekly</span>
                     <Heat value={s.weekly / 3120} />
                   </div>

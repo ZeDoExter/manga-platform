@@ -96,7 +96,7 @@ export function Hero() {
             <p className="mt-2 hidden font-display text-lg tracking-[0.25em] text-white/60 sm:block">{s.alt.length < 16 ? s.alt : ""}</p>
             <p className="mt-3 max-w-xl font-serif text-lg italic text-white/90 md:mt-4 md:text-2xl">“{s.tagline}”</p>
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-              <span className="flex items-center gap-1.5"><Stars value={s.rating} size={15} /> <b>{s.rating.toFixed(1)}</b> <span className="text-white/60">({fmtNum(s.votes)})</span></span>
+              <span className="flex items-center gap-1.5"><Stars value={s.rating} size={15} light /> <b>{s.rating.toFixed(1)}</b> <span className="text-white/60">({fmtNum(s.votes)})</span></span>
               <span className="text-white/70">by <Link href={`/u/${s.creator}`} className="font-bold text-white underline decoration-accent decoration-2 underline-offset-4">{CREATOR_MAP[s.creator]?.name ?? s.creator}</Link></span>
               <span className="hidden text-white/70 sm:inline">{s.genres.join(" · ")}</span>
             </div>

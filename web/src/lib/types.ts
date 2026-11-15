@@ -96,6 +96,7 @@ export interface Review {
   rating: number;
   text: string;
   at: number;
+  editedAt?: number;
 }
 export interface Prefs {
   fontSize: number;

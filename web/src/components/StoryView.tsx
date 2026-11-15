@@ -313,13 +313,13 @@ function Chapters({ story }: { story: Story }) {
   );
 }
 
-type RemoteComment = { id: string; user: string; userId: string; rating: number; text: string; at: number };
+type RemoteComment = { id: string; user: string; userId: string; rating: number; text: string; at: number; edited?: boolean };
 
 /** Merge local + server reviews. Your server-side review counts even when this browser never saved it (login switch, another device). Never double-counts. */
-function storyRating(remote: RemoteComment[], accountId: string, mine?: { rating: number; text: string; at: number }) {
+function storyRating(remote: RemoteComment[], accountId: string, mine?: { rating: number; text: string; at: number; editedAt?: number }) {
   const others = remote.filter((c) => c.userId !== accountId);
   const self = remote.find((c) => c.userId === accountId);
-  const effective = mine ?? (self ? { rating: self.rating, text: self.text, at: self.at } : undefined);
+  const effective = mine ? { ...mine, edited: mine.editedAt != null } : self ? { rating: self.rating, text: self.text, at: self.at, edited: !!self.edited } : undefined;
   const ratings = [...(effective ? [effective.rating] : []), ...others.map((c) => c.rating)];
   const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
   return { others, effective, avg, count: ratings.length, ratings };
@@ -366,7 +366,7 @@ function Reviews({ story, remote }: { story: Story; remote: RemoteComment[] }) {
       <ul className="space-y-4">
         {effective && (
           <li className="panel anim-fade-up p-4">
-            <div className="flex items-center gap-2"><span className="chip chip-on">Your review</span><Stars value={effective.rating} size={13} /><span className="ml-auto font-mono text-[0.68rem] text-muted">{fmtAgo(effective.at, now)}</span></div>
+            <div className="flex items-center gap-2"><span className="chip chip-on">Your review</span><Stars value={effective.rating} size={13} />{effective.edited && <span className="font-mono text-[0.65rem] text-muted">· edited</span>}<span className="ml-auto font-mono text-[0.68rem] text-muted">{fmtAgo(effective.at, now)}</span></div>
             <p className="mt-2 text-sm leading-relaxed">{effective.text}</p>
           </li>
         )}
@@ -375,7 +375,7 @@ function Reviews({ story, remote }: { story: Story; remote: RemoteComment[] }) {
             <div className="flex items-center gap-2">
               <span className="grid size-8 place-items-center rounded-full border-2 border-line bg-paper2 text-xs font-extrabold">{(r.user[0] ?? "R").toUpperCase()}</span>
               <b className="text-sm">{r.user}</b>
-              <Stars value={r.rating} size={13} />
+              <Stars value={r.rating} size={13} />{r.edited && <span className="font-mono text-[0.65rem] text-muted">· edited</span>}
               <span className="ml-auto font-mono text-[0.68rem] text-muted">{fmtAgo(r.at, now)}</span>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-ink2">{r.text}</p>

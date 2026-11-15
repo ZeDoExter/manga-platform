@@ -13,6 +13,7 @@ interface BackendComment {
   author_name: string;
   body: string;
   created_at: string;
+  edited_at?: string;
 }
 
 export async function GET(req: NextRequest) {
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
           rating: m ? parseInt(m[1], 10) : 5,
           text: m ? m[2] : c.body,
           at: new Date(c.created_at).getTime() || Date.now(),
+          edited: !!c.edited_at,
         };
       });
     return NextResponse.json({ comments });

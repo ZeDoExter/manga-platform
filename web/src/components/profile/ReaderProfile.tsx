@@ -238,7 +238,7 @@ export function ReaderProfile({ account, isMe }: { account: Account; isMe: boole
           {tab === "reviews" && (d.reviews.length ? (
             <ul className="grid gap-4 md:grid-cols-2">
               {d.reviews.map((r) => { const s = getStory(r.storyId); if (!s) return null; return (
-                <li key={r.id} className="panel p-4"><div className="flex items-center gap-3"><Cover story={s} compact className="w-10 rounded border-2 border-line" /><div><Link href={`/story/${s.id}`} className="text-sm font-extrabold hover:underline">{s.title}</Link><div><Stars value={r.rating} size={13} /></div></div><span className="ml-auto font-mono text-[0.65rem] text-muted">{fmtAgo(r.at, now)}</span></div><p className="mt-3 text-sm leading-relaxed text-ink2">{r.text}</p></li>
+                <li key={r.id} className="panel p-4"><div className="flex items-center gap-3"><Cover story={s} compact className="w-10 rounded border-2 border-line" /><div><Link href={`/story/${s.id}`} className="text-sm font-extrabold hover:underline">{s.title}</Link><div className="flex items-center gap-1.5"><Stars value={r.rating} size={13} />{r.editedAt != null && <span className="font-mono text-[0.65rem] text-muted">· edited</span>}</div></div><span className="ml-auto font-mono text-[0.65rem] text-muted">{fmtAgo(r.at, now)}</span></div><p className="mt-3 text-sm leading-relaxed text-ink2">{r.text}</p></li>
               ); })}
             </ul>
           ) : <Empty icon="star" title="No reviews yet" text="Reviews written on story pages appear here." />)}
