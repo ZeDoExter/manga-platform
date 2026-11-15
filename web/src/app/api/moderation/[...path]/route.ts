@@ -1,15 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerIdentity, stampGoHeaders } from "@/lib/identity-server";
 
 const MODERATION_URL = (process.env.MODERATION_URL ?? "http://localhost:8085").replace(/\/+$/, "");
 
 async function proxy(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  // Moderation Go has no auth of its own: the BFF is the gate (admin only).
+  const id = await getServerIdentity(req);
+  if (!id) return NextResponse.json({ error: "Login required" }, { status: 401 });
+  if (id.role !== "admin") return NextResponse.json({ error: "Admin only" }, { status: 403 });
   const { path } = await params;
   const target = `${MODERATION_URL}/${path.join("/")}${req.nextUrl.search}`;
-  const body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.text();
+  let body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.text();
+  // Force admin attribution server-side; ignore client-supplied admin_id.
+  if (body) {
+    try {
+      const parsed = JSON.parse(body) as Record<string, unknown>;
+      body = JSON.stringify({ ...parsed, admin_id: id.accountId });
+    } catch {
+      // Non-JSON passthrough.
+    }
+  }
   try {
+    const headers = new Headers({ "content-type": "application/json" });
+    stampGoHeaders(headers, id);
     const res = await fetch(target, {
       method: req.method,
-      headers: { "content-type": "application/json" },
+      headers,
       body,
       cache: "no-store",
     });

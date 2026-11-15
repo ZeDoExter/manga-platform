@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerIdentity, stampGoHeaders } from "@/lib/identity-server";
 
 const LIBRARY_URL = (process.env.LIBRARY_URL ?? "http://localhost:8087").replace(/\/+$/, "");
 
@@ -6,10 +7,10 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
   const { path } = await params;
   const target = `${LIBRARY_URL}/${path.join("/")}${req.nextUrl.search}`;
   const headers = new Headers();
-  const userId = req.headers.get("x-user-id");
-  if (userId) headers.set("X-User-ID", userId);
   const ct = req.headers.get("content-type");
   if (ct) headers.set("Content-Type", ct);
+  // Session id, else shared "guest" (preserves guest-merge behavior).
+  stampGoHeaders(headers, await getServerIdentity(req), "guest");
 
   const body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.text();
   try {

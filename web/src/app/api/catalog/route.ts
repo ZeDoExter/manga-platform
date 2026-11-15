@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chapterKey } from "@/lib/economy";
 import type { StudioChapter, StudioStory } from "@/lib/types";
+import { getServerIdentity } from "@/lib/identity-server";
 
 const CATALOG_URL = (process.env.CATALOG_URL ?? "http://localhost:8082").replace(/\/+$/, "");
 
@@ -95,6 +96,11 @@ export async function POST(req: NextRequest) {
     if (!story?.id || !story?.title) {
       return NextResponse.json({ error: "invalid story payload" }, { status: 400 });
     }
+    const me = await getServerIdentity(req);
+    if (!me) return NextResponse.json({ error: "Login required" }, { status: 401 });
+    if (me.role !== "creator" && me.role !== "admin") {
+      return NextResponse.json({ error: "Uploader account required" }, { status: 403 });
+    }
 
     const storyType =
       story.type === "light-novel" || story.type === "web-novel" || story.type === "original" ? "novel" : "manga";
@@ -107,12 +113,12 @@ export async function POST(req: NextRequest) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         id: story.id,
-        owner_id: story.ownerId || "creator",
+        owner_id: me.accountId,
         type: storyType,
         title: story.title,
         synopsis,
         tags,
-        splits: [{ creator_id: story.ownerId || "creator", percentage: 100 }],
+        splits: [{ creator_id: me.accountId, percentage: 100 }],
       }),
       cache: "no-store",
     });
@@ -193,10 +199,22 @@ export async function POST(req: NextRequest) {
 }
 export async function DELETE(req: NextRequest) {
   try {
+    const me = await getServerIdentity(req);
+    if (!me) return NextResponse.json({ error: "Login required" }, { status: 401 });
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "missing id" }, { status: 400 });
-
+    // Only the owner or an admin may delete.
+    if (me.role !== "admin") {
+      const owner = (await fetch(`${CATALOG_URL}/stories/${encodeURIComponent(id)}`, {
+        cache: "no-store",
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null)) as { owner_id?: string } | null;
+      if (!owner || owner.owner_id !== me.accountId) {
+        return NextResponse.json({ error: "Only the owner can delete this story" }, { status: 403 });
+      }
+    }
     const res = await fetch(`${CATALOG_URL}/stories/${encodeURIComponent(id)}`, {
       method: "DELETE",
       cache: "no-store",

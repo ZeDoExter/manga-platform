@@ -1,5 +1,5 @@
 // Client for the media service (image upload/resize/WebP).
-// Role travels via X-User-Role (gateway injects it in prod).
+// Identity comes from the session cookie; the BFF stamps X-User-* itself.
 
 const BASE = process.env.NEXT_PUBLIC_MEDIA_URL ?? '/api/media';
 
@@ -25,8 +25,7 @@ async function uploadImage(
   const { promise, resolve, reject } = Promise.withResolvers<UploadResult>();
   const xhr = new XMLHttpRequest();
   xhr.open('POST', `${BASE}/uploads${qs}`);
-  xhr.setRequestHeader('X-User-ID', userID);
-  xhr.setRequestHeader('X-User-Role', 'uploader');
+  // Identity comes from the session cookie; the BFF stamps X-User-* itself.
   xhr.upload.onprogress = (e) => {
     if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
   };
@@ -94,8 +93,7 @@ export async function uploadArchive(
   const xhr = new XMLHttpRequest();
   xhr.timeout = 300000; // 5 minutes for large manga chapters
   xhr.open('POST', `${BASE}/uploads/batch?story_id=${encodeURIComponent(storyID)}&chapter_id=${encodeURIComponent(chapterID)}`);
-  xhr.setRequestHeader('X-User-ID', userID);
-  xhr.setRequestHeader('X-User-Role', 'uploader');
+  // Identity comes from the session cookie; the BFF stamps X-User-* itself.
   xhr.upload.onprogress = (e) => {
     if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
   };

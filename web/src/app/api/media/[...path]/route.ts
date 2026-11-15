@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerIdentity, stampGoHeaders } from "@/lib/identity-server";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -8,10 +9,10 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
   const { path } = await params;
   const target = `${MEDIA_URL}/${path.join("/")}${req.nextUrl.search}`;
   const headers = new Headers();
-  for (const h of ["content-type", "x-user-id", "x-user-role"]) {
-    const v = req.headers.get(h);
-    if (v) headers.set(h, v);
-  }
+  const ct = req.headers.get("content-type");
+  if (ct) headers.set("content-type", ct);
+  // Identity is stamped from the session cookie; client X-User-* is dropped.
+  stampGoHeaders(headers, await getServerIdentity(req));
   const body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer();
   try {
     const res = await fetch(target, {

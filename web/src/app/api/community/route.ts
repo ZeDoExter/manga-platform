@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chapterKey } from "@/lib/economy";
+import { getServerIdentity } from "@/lib/identity-server";
 
 const COMMUNITY_URL = (process.env.COMMUNITY_URL ?? "http://localhost:8086").replace(/\/+$/, "");
 const CATALOG_URL = (process.env.CATALOG_URL ?? "http://localhost:8082").replace(/\/+$/, "");
@@ -46,10 +47,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { storyId, userId, authorName, rating, text } = (await req.json()) as {
+    const id = await getServerIdentity(req);
+    if (!id) return NextResponse.json({ error: "Login required to comment" }, { status: 401 });
+    const { storyId, rating, text } = (await req.json()) as {
       storyId: string;
-      userId: string;
-      authorName: string;
       rating?: number;
       text: string;
     };
@@ -84,8 +85,8 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         story_id: storyId,
         chapter_id: cid,
-        user_id: userId || "reader",
-        author_name: authorName || userId || "Reader",
+        user_id: id.accountId,
+        author_name: id.name,
         body: bodyText,
       }),
       cache: "no-store",

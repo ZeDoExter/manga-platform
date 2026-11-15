@@ -1,6 +1,5 @@
 // Client for the library service (progress, follows, bookmarks).
-// User identity travels via X-User-ID (gateway injects it in prod;
-// local dev uses the demo user below).
+// Identity comes from the session cookie; the BFF stamps X-User-ID itself.
 
 const BASE = process.env.NEXT_PUBLIC_LIBRARY_URL ?? '/api/library';
 
@@ -25,7 +24,7 @@ export interface GuestItem {
 async function req(path: string, userID: string, init?: RequestInit): Promise<Response> {
   const res = await fetch(`${BASE}${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', 'X-User-ID': userID, ...(init?.headers ?? {}) },
+    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
   });
   if (!res.ok && res.status !== 404) {
     throw new Error(`library ${path} -> ${res.status}`);

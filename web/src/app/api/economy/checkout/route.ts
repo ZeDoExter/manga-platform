@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { PACKAGE_MAP } from "@/lib/coin-packages";
 import { stripe } from "@/lib/stripe-server";
 import { routeError } from "@/lib/economy-route";
+import { getServerIdentity } from "@/lib/identity-server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +15,12 @@ function baseUrl(request: Request): string {
 /** Creates a Stripe Checkout session for a static coin package. */
 export async function POST(request: Request) {
   try {
-    const body = (await request.json().catch(() => null)) as {
-      accountId?: unknown;
-      packageId?: unknown;
-    } | null;
-    const accountId = typeof body?.accountId === "string" ? body.accountId.trim() : "";
+    const id = await getServerIdentity(request);
+    if (!id) return NextResponse.json({ error: "Login required for checkout" }, { status: 401 });
+    const body = (await request.json().catch(() => null)) as { packageId?: unknown } | null;
+    const accountId = id.accountId;
     const pkg = typeof body?.packageId === "string" ? PACKAGE_MAP[body.packageId] : undefined;
-    if (!accountId || !pkg) {
+    if (!pkg) {
       return NextResponse.json({ error: "Invalid checkout request" }, { status: 400 });
     }
     const origin = baseUrl(request);
