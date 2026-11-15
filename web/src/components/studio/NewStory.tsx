@@ -11,7 +11,7 @@ import { useApp } from "@/lib/store";
 import { uploadCover } from "@/lib/media-api";
 import { Cover } from "../Cover";
 import { Icon } from "../ui";
-import { CreatorGate, Field, MOTIF_PICKS, PALETTES, SimBanner, fileToDataUrl } from "./common";
+import { CreatorGate, Field, MOTIF_PICKS, PALETTES, fileToDataUrl } from "./common";
 
 const STEPS = ["Basics", "Genres & tags", "Cover art", "Review"];
 
@@ -71,8 +71,6 @@ function Wizard() {
     <div className="wrap py-8 md:py-12">
       <div className="label">// creator studio</div>
       <h1 className="h-display mt-1 text-4xl md:text-5xl">Create a new story</h1>
-      <div className="mt-4"><SimBanner /></div>
-
       <ol className="mt-6 flex flex-wrap gap-2" aria-label="Steps">
         {STEPS.map((s, i) => (
           <li key={s}>

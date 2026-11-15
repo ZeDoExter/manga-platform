@@ -1,10 +1,7 @@
 import { StoryView } from "@/components/StoryView";
-import { STORY_MAP } from "@/data/stories";
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const s = STORY_MAP[id];
-  return { title: s ? `${s.title} — DOOTOON` : "Story — DOOTOON", description: s?.tagline };
+export async function generateMetadata() {
+  return { title: "Story — DOOTOON" };
 }
 
 export default async function StoryPage({ params }: { params: Promise<{ id: string }> }) {

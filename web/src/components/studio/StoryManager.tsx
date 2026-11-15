@@ -12,7 +12,7 @@ import { uploadCover } from "@/lib/media-api";
 import { Cover } from "../Cover";
 import { Empty, Icon, ProgressBar, Stat, Tabs } from "../ui";
 import { AnalyticsLab } from "./AnalyticsLab";
-import { CreatorGate, Field, MOTIF_PICKS, PALETTES, PreviewOverlay, SimBanner, StatusChip, coverStory, fileToDataUrl, newChapter } from "./common";
+import { CreatorGate, Field, MOTIF_PICKS, PALETTES, PreviewOverlay, StatusChip, coverStory, fileToDataUrl, newChapter } from "./common";
 
 type Tab = "overview" | "chapters" | "analytics" | "settings";
 
@@ -53,7 +53,7 @@ function Inner({ id }: { id: string }) {
   const togglePublish = () => {
     if (story.status === "published") {
       act.updateStory(story.id, { status: "unpublished" });
-      toast("Story unpublished (simulated) — hidden from new readers", "info");
+      toast("Story unpublished — hidden from new readers", "info");
       return;
     }
     if (!pub.length) {
@@ -96,8 +96,6 @@ function Inner({ id }: { id: string }) {
           </div>
         </div>
       </div>
-      <div className="mt-5"><SimBanner /></div>
-
       <Tabs className="mt-8" value={tab} onChange={setTab} tabs={[
         { id: "overview", label: "Overview", icon: "grid" },
         { id: "chapters", label: "Chapters", icon: "list", count: chapters.length },
@@ -113,7 +111,7 @@ function Inner({ id }: { id: string }) {
                 <Stat label="Published" value={pub.length} sub="chapters" />
                 <Stat label="Drafts" value={chapters.filter((c) => c.status === "draft").length} />
                 <Stat label="Scheduled" value={chapters.filter((c) => c.status === "scheduled").length} />
-                <Stat label="Total reads" value={fmtNum(chapters.reduce((a, c) => a + (c.reads ?? 0), 0))} sub="simulated" />
+                <Stat label="Chapters" value={chapters.length} sub="total" />
               </div>
               <div className="panel p-4">
                 <h3 className="h-display text-lg">Latest chapters</h3>

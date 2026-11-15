@@ -8,7 +8,7 @@ const CATALOG_URL = (process.env.CATALOG_URL ?? "http://localhost:8082").replace
 
 type EchoKind = "fire" | "tears" | "gasp" | "heart" | "mind" | "laugh" | "cry" | "think";
 
-type MockEchoRow = {
+type EchoRow = {
   id: string | number;
   storyId: string;
   chapter: number;
@@ -18,10 +18,10 @@ type MockEchoRow = {
   createdAt: string;
 };
 
-const SEED_ECHOES: MockEchoRow[] = [];
+const SEED_ECHOES: EchoRow[] = [];
 
 declare global {
-  var __mockEchoesStore: MockEchoRow[] | undefined;
+  var __echoStore: EchoRow[] | undefined;
   var __echoBudget: Record<string, { date: string; count: number }> | undefined;
 }
 
@@ -30,11 +30,11 @@ function getBudget(): Record<string, { date: string; count: number }> {
   return globalThis.__echoBudget;
 }
 
-function getStore(): MockEchoRow[] {
-  if (!globalThis.__mockEchoesStore) {
-    globalThis.__mockEchoesStore = [...SEED_ECHOES];
+function getStore(): EchoRow[] {
+  if (!globalThis.__echoStore) {
+    globalThis.__echoStore = [...SEED_ECHOES];
   }
-  return globalThis.__mockEchoesStore;
+  return globalThis.__echoStore;
 }
 
 interface CommunityComment {
@@ -64,7 +64,7 @@ export async function GET(request: Request) {
       });
       if (res.ok) {
         const page = (await res.json()) as { comments?: CommunityComment[] };
-        const remoteRows: MockEchoRow[] = (page.comments ?? []).map((c) => {
+        const remoteRows: EchoRow[] = (page.comments ?? []).map((c) => {
           const m = /^\[echo:([a-z]+):([0-9.]+)\]/.exec(c.body);
           return {
             id: c.id,
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
     budget[author] = entry && entry.date === today ? { date: today, count: entry.count + 1 } : { date: today, count: 1 };
 
     const store = getStore();
-    const created: MockEchoRow = {
+    const created: EchoRow = {
       id: `local-${Date.now()}`,
       storyId,
       chapter,

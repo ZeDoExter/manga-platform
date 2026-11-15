@@ -8,7 +8,6 @@ import { useEconomy } from "@/lib/economy-store";
 import { useSession, signOut } from "@/lib/auth-client";
 import { suggest } from "@/lib/search";
 import { cx } from "@/lib/util";
-import { TOP10 } from "@/data/stories";
 import { Avatar, Icon } from "./ui";
 import { Cover } from "./Cover";
 import type { Story } from "@/lib/types";
@@ -88,7 +87,7 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
           <span className="grid size-12 -rotate-3 place-items-center border-2 border-line bg-accent font-display text-3xl text-white shadow-[3px_3px_0_var(--shadow)] transition-transform group-hover:rotate-0" style={{ fontFamily: "var(--font-thai)" }}>ด</span>
           <span className="hidden leading-none sm:block">
             <span className="h-display block text-[1.35rem]">DOOTOON</span>
-            <span className="label block !text-[0.55rem] !tracking-[0.3em]" style={{ fontFamily: "var(--font-thai)" }}>ดูตูนนนนนนน</span>
+            <span className="label block !text-[0.55rem] !tracking-[0.3em]" style={{ fontFamily: "var(--font-thai)" }}>ดูตูน</span>
           </span>
         </Link>
 
@@ -304,7 +303,7 @@ function Palette({ open, onClose }: { open: boolean; onClose: () => void }) {
     const actions: PItem[] = [
       { id: "a-theme", label: state.theme === "night" ? "Switch to Paper edition" : "Switch to Night edition", sub: "Toggle theme", icon: state.theme === "night" ? "sun" : "moon", run: () => act.setTheme(state.theme === "night" ? "paper" : "night") },
     ];
-    const tops = TOP10.slice(0, 3).map<PItem>((s) => ({ id: "t-" + s.id, label: s.title, sub: `Top 10 · #${s.rank}`, icon: "flame", run: go(`/story/${s.id}`), story: s }));
+    const tops = catalog.slice(0, 3).map<PItem>((s, i) => ({ id: "t-" + s.id, label: s.title, sub: `Top stories · #${i + 1}`, icon: "flame", run: go(`/story/${s.id}`), story: s }));
     return [...pages, ...actions, ...tops];
   }, [q, catalog, router, state.theme, act, account]);
 

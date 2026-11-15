@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { chapterTitle, staticContent, studioContent } from "@/lib/content";
+import { studioContent } from "@/lib/content";
 import { chapterPrice, storySyncFromStory, type AccessResult, walletTotal } from "@/lib/economy";
 import { useEconomy } from "@/lib/economy-store";
 import { useApp } from "@/lib/store";
@@ -40,12 +40,7 @@ export function ReaderPage({ id, ch }: { id: string; ch: string }) {
         nav: { count: pub.length, numbers: pub.map((c) => c.number), titleOf: (x: number) => pub.find((c) => c.number === x)?.title ?? `Chapter ${x}` },
       };
     }
-    if (n < 1 || n > story.chapters) return null;
-    return {
-      content: staticContent(story, n),
-      price: chapterPrice(story.type, n, story.chapters),
-      nav: { count: story.chapters, numbers: undefined, titleOf: (x: number) => chapterTitle(story, x) },
-    };
+    return null;
   }, [story, studio, n]);
 
   const chapterId = !!story && Number.isFinite(n) ? `${story.id}:${n}` : "";

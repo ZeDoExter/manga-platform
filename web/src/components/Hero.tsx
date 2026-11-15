@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { STORY_MAP, CREATOR_MAP } from "@/data/stories";
+import { CREATOR_MAP } from "@/data/stories";
 import { TYPE_LABEL } from "@/lib/types";
 import { cx, fmtNum } from "@/lib/util";
 import { resolveImageUrl } from "@/lib/content";
@@ -97,7 +97,7 @@ export function Hero() {
             <p className="mt-3 max-w-xl font-serif text-lg italic text-white/90 md:mt-4 md:text-2xl">“{s.tagline}”</p>
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
               <span className="flex items-center gap-1.5"><Stars value={s.rating} size={15} /> <b>{s.rating.toFixed(1)}</b> <span className="text-white/60">({fmtNum(s.votes)})</span></span>
-              <span className="text-white/70">by <Link href={`/u/${s.creator}`} className="font-bold text-white underline decoration-accent decoration-2 underline-offset-4">{CREATOR_MAP[s.creator]?.name}</Link></span>
+              <span className="text-white/70">by <Link href={`/u/${s.creator}`} className="font-bold text-white underline decoration-accent decoration-2 underline-offset-4">{CREATOR_MAP[s.creator]?.name ?? s.creator}</Link></span>
               <span className="hidden text-white/70 sm:inline">{s.genres.join(" · ")}</span>
             </div>
             <p className="mt-4 hidden max-w-xl text-[0.95rem] leading-relaxed text-white/80 md:line-clamp-3">{s.synopsis}</p>

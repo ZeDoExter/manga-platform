@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { STORIES, CREATORS, STORY_MAP, ALL_GENRES } from "@/data/stories";
-import { TYPE_LABEL, isVisual, type Story } from "@/lib/types";
-import { chapterTitle } from "@/lib/content";
+import { CREATORS, ALL_GENRES } from "@/data/stories";
+import { TYPE_LABEL, isVisual, type Story, type StudioStory } from "@/lib/types";
 import { cx, fmtAgoHours, fmtNum } from "@/lib/util";
 import { useApp } from "@/lib/store";
 import { Cover } from "./Cover";
@@ -33,7 +32,7 @@ export function Ticker() {
 }
 
 export function ContinueReading() {
-  const { me, getStory, now } = useApp();
+  const { me, getStory, now, state } = useApp();
   const items = useMemo(() => {
     const seen = new Set<string>();
     return me.history.filter((h) => (seen.has(h.storyId) ? false : seen.add(h.storyId))).slice(0, 5);
@@ -52,7 +51,7 @@ export function ContinueReading() {
             <Cover story={s} compact className="w-20 shrink-0 rounded border-2 border-line md:w-full" />
             <div className="min-w-0 flex-1 md:flex-none">
               <div className="truncate text-sm font-extrabold">{s.title}</div>
-              <div className="mt-0.5 truncate text-xs text-muted">Ch. {h.chapter} · {chapterTitle(s, h.chapter)}</div>
+              <div className="mt-0.5 truncate text-xs text-muted">Ch. {h.chapter} · {chTitle(state.studio, s.id, h.chapter)}</div>
               <ProgressBar value={pct} className="mt-2" />
               <div className="mt-1.5 flex items-center justify-between font-mono text-[0.65rem] text-muted">
                 <span>{Math.round(pct * 100)}% of series</span>
@@ -124,7 +123,7 @@ export function Trending({ variant = "rail" }: { variant?: "rail" | "list" }) {
 }
 
 export function NewUpdates() {
-  const { catalog } = useApp();
+  const { catalog, state } = useApp();
   const [page, setPage] = useState(0);
   const topRef = useRef<HTMLDivElement>(null);
   const list = useMemo(() => [...catalog].sort((a, b) => a.updatedHours - b.updatedHours), [catalog]);
@@ -156,7 +155,7 @@ export function NewUpdates() {
                     return (
                       <Link key={n} href={`/read/${s.id}/${n}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-1.5 font-mono text-[0.68rem] hover:text-accent">
                         <span className="font-bold">Ch. {n}</span>
-                        <span className="truncate text-muted">{k === 0 ? s.latest : chapterTitle(s, n)}</span>
+                        <span className="truncate text-muted">{k === 0 ? s.latest : chTitle(state.studio, s.id, n)}</span>
                         {k === 0 ? <span className="text-muted">{fmtAgoHours(s.updatedHours)}</span> : <span />}
                       </Link>
                     );
@@ -222,7 +221,7 @@ export function StudioBanner() {
         <div>
           <div className="font-mono text-xs font-bold uppercase tracking-[0.2em]">For creators</div>
           <h3 className="h-display mt-2 text-3xl md:text-5xl">Your story deserves a “ตอนต่อไป.”</h3>
-          <p className="mt-3 max-w-xl font-semibold text-[#15120f]/80">Draft chapters, drop in manga pages, schedule releases, and watch simulated reader analytics respond to every choice. Everything saves in your browser.</p>
+          <p className="mt-3 max-w-xl font-semibold text-[#15120f]/80">Draft chapters, drop in manga pages, schedule releases, and track real coin earnings from every sale. Everything syncs to your account.</p>
         </div>
         <div className="flex flex-wrap gap-3">
           {creator ? (
@@ -248,15 +247,21 @@ export function GenreStrip() {
 }
 
 export function TopSummary() {
+  const { catalog } = useApp();
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
-    STORIES.filter((s) => s.rank).forEach((s) => (m[TYPE_LABEL[s.type]] = (m[TYPE_LABEL[s.type]] ?? 0) + 1));
+    catalog.forEach((s) => (m[TYPE_LABEL[s.type]] = (m[TYPE_LABEL[s.type]] ?? 0) + 1));
     return Object.entries(m);
-  }, []);
-  void STORY_MAP;
+  }, [catalog]);
+  if (!counts.length) return null;
   return (
     <div className="flex flex-wrap gap-1.5">
       {counts.map(([k, v]) => <span key={k} className="chip">{v} × {k}</span>)}
     </div>
   );
+}
+
+function chTitle(studio: StudioStory[], storyId: string, n: number): string {
+  const st = studio.find((x) => x.id === storyId && !x.mirror);
+  return st?.chapters.find((c) => c.number === n)?.title || `Chapter ${n}`;
 }

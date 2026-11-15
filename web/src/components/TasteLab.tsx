@@ -80,7 +80,6 @@ function Ring({ v }: { v: number }) {
 export function TasteLab({ compact }: { compact?: boolean }) {
   const { me, act, catalog, account } = useApp();
   const t = me.taste;
-  const seen = useMemo(() => Array.from(new Set([...me.library, ...Object.keys(me.progress)])), [me.library, me.progress]);
   const recs = useMemo(
     () =>
       catalog
@@ -88,8 +87,8 @@ export function TasteLab({ compact }: { compact?: boolean }) {
         .map((s) => ({ s, score: matchScore(s, t, me.profile.genres) }))
         .sort((a, b) => b.score - a.score)
         .slice(0, compact ? 3 : 4)
-        .map((x) => ({ ...x, why: explainMatch(x.s, t, me.profile.genres, seen) })),
-    [catalog, me.library, me.progress, me.profile.genres, t, seen, compact],
+        .map((x) => ({ ...x, why: explainMatch(x.s, t, me.profile.genres) })),
+    [catalog, me.library, me.progress, me.profile.genres, t, compact],
   );
   const baseline = useMemo(() => makeInitialState(SSR_NOW).data[account.id]?.taste, [account.id]);
 

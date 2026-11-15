@@ -4,29 +4,17 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Account } from "@/lib/types";
 import { TYPE_LABEL } from "@/lib/types";
-import { series } from "@/lib/analytics";
-import { cx, fmtAgo, fmtAgoHours, fmtNum, hash } from "@/lib/util";
+import { cx, fmtAgo, fmtAgoHours, fmtNum } from "@/lib/util";
 import { useApp } from "@/lib/store";
-import { Avatar, Empty, Icon, Sparkline, Stars, Stat, Tabs, TypeBadge } from "../ui";
+import { Avatar, Empty, Icon, Stars, Stat, Tabs, TypeBadge } from "../ui";
 import { Cover } from "../Cover";
 
 type Tab = "portfolio" | "releases" | "news" | "community" | "stats";
-const COMMENTERS = ["Juno Park", "Sakura V.", "Dmitri K.", "Amara O.", "Leo Fontaine", "Yuki S."];
-const COMMENTS = [
-  "Chapter after chapter you keep outdoing yourself. That last panel — I had to put my phone down.",
-  "Is the recurring symbol in the background intentional? Please say yes.",
-  "Reading this on the train and almost missed my stop. Thank you for the update!",
-  "The pacing in the latest arc is *chef’s kiss*. Quick question: will there be a volume release?",
-  "I started yesterday and I'm already caught up. Send help (and more chapters).",
-  "Your colour choices in the rain scene were unreal. Any chance of a making-of post?",
-];
 
 export function CreatorProfile({ account, isMe }: { account: Account; isMe: boolean }) {
   const { state, act, me, now, toast, catalog } = useApp();
   const [tab, setTab] = useState<Tab>("portfolio");
   const [text, setText] = useState("");
-  const [replies, setReplies] = useState<Record<number, string>>({});
-  const [draftReply, setDraftReply] = useState<Record<number, string>>({});
   const following = me.following.includes(account.id);
   const works = useMemo(() => catalog.filter((s) => s.creator === account.id), [catalog, account.id]);
   const owned = isMe ? state.studio.filter((s) => s.ownerId === account.id) : [];
@@ -38,7 +26,6 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
   const upcoming = owned.flatMap((s) => s.chapters.filter((c) => c.status === "scheduled").map((c) => ({ s, c }))).sort((a, b) => (a.c.scheduledFor ?? "").localeCompare(b.c.scheduledFor ?? ""));
   const pending = owned.flatMap((s) => s.chapters.filter((c) => c.status !== "published").map((c) => ({ s, c })));
   const [c1, c2] = account.colors;
-  const growth = useMemo(() => series(account.id + "fol", 30, Math.max(40, account.followers / 3000), 0.014), [account.id, account.followers]);
 
   return (
     <div>
@@ -87,7 +74,6 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
               <Stat label="Avg rating" value={avg ? avg.toFixed(2) : "—"} />
               <Stat label="Works" value={works.length + draftOnly.length} />
             </div>
-            <div className="mt-4"><div className="label mb-1">Follower growth · 30d</div><Sparkline data={growth} height={52} className="w-full" /></div>
           </div>
           <div className="panel p-4">
             <div className="label">{isMe ? "Next scheduled release" : "Release rhythm"}</div>
@@ -161,7 +147,7 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
                   <form className="panel p-4" onSubmit={(e) => { e.preventDefault(); if (text.trim().length < 3) return toast("Write something first", "warn"); act.postAnnouncement(text.trim()); setText(""); }}>
                     <label className="label" htmlFor="ann">Announce to {fmtNum(account.followers)} followers</label>
                     <textarea id="ann" className="field mt-2 min-h-24" placeholder="Release dates, hiatus notices, behind-the-scenes sketches…" value={text} onChange={(e) => setText(e.target.value)} maxLength={400} />
-                    <div className="mt-2 flex items-center justify-between"><span className="font-mono text-[0.65rem] text-muted">{text.length}/400 · simulated broadcast</span><button className="btn btn-sm" type="submit"><Icon name="bell" size={13} /> Post</button></div>
+                    <div className="mt-2 flex items-center justify-between"><span className="font-mono text-[0.65rem] text-muted">{text.length}/400</span><button className="btn btn-sm" type="submit"><Icon name="bell" size={13} /> Post</button></div>
                   </form>
                 )}
                 {anns.length === 0 && <Empty icon="bell" title="No announcements" />}
@@ -179,42 +165,20 @@ export function CreatorProfile({ account, isMe }: { account: Account; isMe: bool
             )}
 
             {tab === "community" && (
-              <ul className="space-y-4">
-                {COMMENTS.map((t, i) => {
-                  const w = works[i % Math.max(1, works.length)];
-                  return (
-                    <li key={i} className="panel-flat p-4">
-                      <div className="flex items-center gap-2"><span className="grid size-8 place-items-center rounded-full border-2 border-line bg-paper2 text-xs font-extrabold">{COMMENTERS[i][0]}</span><b className="text-sm">{COMMENTERS[i]}</b>{w && <span className="font-mono text-[0.65rem] text-muted">on {w.title}</span>}<span className="ml-auto font-mono text-[0.65rem] text-muted">{fmtAgoHours(2 + i * 9 + (hash(account.id) % 5))}</span></div>
-                      <p className="mt-2 text-sm text-ink2">{t.replace(/\*/g, "")}</p>
-                      {replies[i] ? (
-                        <div className="mt-3 rounded-md border-2 border-dashed border-line/50 bg-paper2 p-3 text-sm"><b>{account.name.split(" ")[0]} replied:</b> {replies[i]}</div>
-                      ) : isMe ? (
-                        <form className="mt-3 flex min-w-0 gap-2" onSubmit={(e) => { e.preventDefault(); if (draftReply[i]?.trim()) { setReplies((r) => ({ ...r, [i]: draftReply[i].trim() })); toast("Reply sent ✓"); } }}>
-                          <input className="field !py-1.5 text-sm" placeholder="Reply as creator…" value={draftReply[i] ?? ""} onChange={(e) => setDraftReply((r) => ({ ...r, [i]: e.target.value }))} aria-label="Reply" />
-                          <button className="btn btn-sm" type="submit">Reply</button>
-                        </form>
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </ul>
+              <Empty icon="heart" title="No community posts yet" text="Comments readers leave on chapters will appear here." />
             )}
 
             {tab === "stats" && (
               <div className="panel-flat divide-y-2 divide-line/15">
-                {works.map((w) => {
-                  const s = series(w.id + "ps", 30, w.weekly * 110);
-                  const delta = Math.round(((s[29] - s[0]) / s[0]) * 100);
-                  return (
-                    <div key={w.id} className="flex items-center gap-4 p-3">
-                      <Cover story={w} compact className="w-10 shrink-0 rounded border-2 border-line" />
-                      <div className="min-w-0 flex-1"><div className="truncate text-sm font-extrabold">{w.title}</div><div className="font-mono text-[0.65rem] text-muted">{TYPE_LABEL[w.type]} · {w.chapters} ch</div></div>
-                      <div className="hidden sm:block"><Sparkline data={s} width={140} height={34} color="var(--accent2)" /></div>
-                      <div className="w-20 text-right"><div className="font-mono text-sm font-bold">{fmtNum(s[29] * 30)}</div><div className={cx("font-mono text-[0.65rem] font-bold", delta >= 0 ? "text-mint" : "text-accent")}>{delta >= 0 ? "▲" : "▼"} {Math.abs(delta)}%</div></div>
-                    </div>
-                  );
-                })}
-                <div className="p-3 text-center font-mono text-[0.68rem] text-muted">Simulated 30-day readers · {isMe ? "open the Studio for the full Analytics Lab" : "public summary"}</div>
+                {works.map((w) => (
+                  <div key={w.id} className="flex items-center gap-4 p-3">
+                    <Cover story={w} compact className="w-10 shrink-0 rounded border-2 border-line" />
+                    <div className="min-w-0 flex-1"><div className="truncate text-sm font-extrabold">{w.title}</div><div className="font-mono text-[0.65rem] text-muted">{TYPE_LABEL[w.type]} · {w.chapters} ch</div></div>
+                    <div className="flex items-center gap-1 font-mono text-xs font-bold"><Stars value={w.rating} size={12} /> {w.rating ? w.rating.toFixed(1) : "—"}</div>
+                    <div className="w-20 text-right font-mono text-[0.65rem] text-muted">updated {fmtAgoHours(w.updatedHours)}</div>
+                  </div>
+                ))}
+                {!works.length && <Empty icon="chart" title="No published work yet" />}
               </div>
             )}
           </div>

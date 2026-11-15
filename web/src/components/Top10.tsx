@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { TOP10 } from "@/data/stories";
 import type { Story } from "@/lib/types";
 import { TYPE_LABEL } from "@/lib/types";
 import { cx, fmtNum } from "@/lib/util";
@@ -57,7 +56,7 @@ export function Top10() {
         {list.map((s, i) => {
           const on = i === active;
           const rank = s.rank ?? i + 1;
-          const poly = i === 0 ? `polygon(0 0,100% 0,calc(100% - ${SK}px) 100%,0 100%)` : i === TOP10.length - 1 ? `polygon(${SK}px 0,100% 0,100% 100%,0 100%)` : `polygon(${SK}px 0,100% 0,calc(100% - ${SK}px) 100%,0 100%)`;
+          const poly = i === 0 ? `polygon(0 0,100% 0,calc(100% - ${SK}px) 100%,0 100%)` : i === list.length - 1 ? `polygon(${SK}px 0,100% 0,100% 100%,0 100%)` : `polygon(${SK}px 0,100% 0,calc(100% - ${SK}px) 100%,0 100%)`;
           const saved = me.library.includes(s.id);
           return (
             <li

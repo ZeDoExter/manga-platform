@@ -6,7 +6,7 @@ import { DETAILS } from "@/data/details";
 import { CREATOR_MAP } from "@/data/stories";
 import { ACCOUNT_MAP } from "@/data/accounts";
 import { TYPE_LABEL, isVisual, type Account, type Story } from "@/lib/types";
-import { chapterTitle, ratingDist, relatedStories, seedReviews } from "@/lib/content";
+import { relatedStories } from "@/lib/content";
 import { chapterPrice } from "@/lib/economy";
 import { useEconomy } from "@/lib/economy-store";
 import { cx, fmtAgo, fmtAgoHours, fmtNum } from "@/lib/util";
@@ -34,7 +34,7 @@ export function StoryView({ id }: { id: string }) {
 }
 
 function StoryInner({ story }: { story: Story }) {
-  const { me, act, state, toast } = useApp();
+  const { me, act, state, toast, catalog } = useApp();
   const [tab, setTab] = useState<Tab>("chapters");
   const [colMenu, setColMenu] = useState(false);
   const [newColName, setNewColName] = useState("");
@@ -207,13 +207,13 @@ function StoryInner({ story }: { story: Story }) {
           {tab === "chapters" && <Chapters story={story} />}
           {tab === "codex" && (detail ? <CharacterWeb detail={detail} maxCh={story.chapters} initial={prog?.chapter ?? 1} /> : <Empty icon="lock" title="Codex coming soon" text={`${creator?.name ?? "The creator"} hasn’t published a character codex for this story yet.`} />)}
           {tab === "reviews" && <Reviews story={story} />}
-          {tab === "creator" && creator && <CreatorCard story={story} />}
+          {tab === "creator" && <CreatorCard story={story} />}
         </div>
 
         <section className="mt-20">
           <SectionHead kicker="// if you like this" title="Similar stories" jp="似た作品" />
           <Rail>
-            {relatedStories(story, 8).map((s) => <div key={s.id} className="w-[150px] sm:w-[178px]"><StoryCard story={s} /></div>)}
+            {relatedStories(story, catalog, 8).map((s) => <div key={s.id} className="w-[150px] sm:w-[178px]"><StoryCard story={s} /></div>)}
           </Rail>
         </section>
       </div>
@@ -240,13 +240,7 @@ function Chapters({ story }: { story: Story }) {
         price: chapterPrice(studio.type, c.number, Math.max(published.length, c.number), c.priceCoins),
       }));
     }
-    const step = story.type === "web-novel" ? 24 : 168;
-    return Array.from({ length: story.chapters }, (_, i) => ({
-      n: i + 1,
-      title: chapterTitle(story, i + 1),
-      hours: story.updatedHours + (story.chapters - 1 - i) * step,
-      price: chapterPrice(story.type, i + 1, story.chapters),
-    }));
+    return [];
   }, [story, studio, now]);
   const sorted = useMemo(() => (desc ? [...rows].sort((a, b) => b.n - a.n) : [...rows].sort((a, b) => a.n - b.n)), [rows, desc]);
   const size = 30;
@@ -307,14 +301,14 @@ function Chapters({ story }: { story: Story }) {
 /* ------------------------------ reviews ------------------------------ */
 function Reviews({ story }: { story: Story }) {
   const { me, act, now, toast, account } = useApp();
-  const creator = CREATOR_MAP[story.creator];
-  const seeded = useMemo(() => seedReviews(story, creator?.name ?? "the author"), [story, creator]);
-  const dist = ratingDist(story);
   const mine = me.reviews.find((r) => r.storyId === story.id);
   const [rating, setRating] = useState(me.ratings[story.id] ?? 0);
   const [text, setText] = useState(mine?.text ?? "");
-  const [helpful, setHelpful] = useState<Set<string>>(new Set());
   const [remoteComments, setRemoteComments] = useState<{ id: string; user: string; userId: string; rating: number; text: string; at: number }[]>([]);
+  const others = remoteComments.filter((c) => c.userId !== account.id);
+  const allRatings = [...(mine ? [mine.rating] : []), ...others.map((c) => c.rating)];
+  const avg = allRatings.length ? allRatings.reduce((a, b) => a + b, 0) / allRatings.length : 0;
+  const dist = [1, 2, 3, 4, 5].map((n) => (allRatings.length ? allRatings.filter((r) => r === n).length / allRatings.length : 0));
 
   useEffect(() => {
     let alive = true;
@@ -332,7 +326,7 @@ function Reviews({ story }: { story: Story }) {
     <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
       <div className="space-y-5">
         <div className="panel p-5">
-          <div className="flex items-end gap-3"><span className="h-display text-6xl">{story.rating.toFixed(1)}</span><div className="pb-2"><Stars value={story.rating} size={16} /><div className="font-mono text-[0.68rem] text-muted">{fmtNum(story.votes)} ratings</div></div></div>
+          <div className="flex items-end gap-3"><span className="h-display text-6xl">{avg ? avg.toFixed(1) : "—"}</span><div className="pb-2"><Stars value={avg} size={16} /><div className="font-mono text-[0.68rem] text-muted">{allRatings.length ? `${allRatings.length} rating${allRatings.length === 1 ? "" : "s"}` : "No ratings yet"}</div></div></div>
           <div className="mt-4 space-y-1.5">
             {[5, 4, 3, 2, 1].map((n) => (
               <div key={n} className="flex items-center gap-2 font-mono text-[0.68rem]">
@@ -358,7 +352,7 @@ function Reviews({ story }: { story: Story }) {
             <p className="mt-2 text-sm leading-relaxed">{mine.text}</p>
           </li>
         )}
-        {remoteComments.filter((c) => c.userId !== account.id).map((r) => (
+        {others.map((r) => (
           <li key={r.id} className="panel-flat p-4">
             <div className="flex items-center gap-2">
               <span className="grid size-8 place-items-center rounded-full border-2 border-line bg-paper2 text-xs font-extrabold">{(r.user[0] ?? "R").toUpperCase()}</span>
@@ -369,20 +363,7 @@ function Reviews({ story }: { story: Story }) {
             <p className="mt-2 text-sm leading-relaxed text-ink2">{r.text}</p>
           </li>
         ))}
-        {seeded.map((r) => (
-          <li key={r.id} className="panel-flat p-4">
-            <div className="flex items-center gap-2">
-              <span className="grid size-8 place-items-center rounded-full border-2 border-line bg-paper2 text-xs font-extrabold">{r.user[0]}</span>
-              <b className="text-sm">{r.user}</b>
-              <Stars value={r.rating} size={13} />
-              <span className="ml-auto font-mono text-[0.68rem] text-muted">{fmtAgoHours(r.hours)}</span>
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-ink2">{r.text}</p>
-            <button className={cx("chip mt-3", helpful.has(r.id) && "chip-on")} aria-pressed={helpful.has(r.id)} onClick={() => setHelpful((s) => { const n = new Set(s); if (n.has(r.id)) n.delete(r.id); else n.add(r.id); return n; })}>
-              <Icon name="heart" size={11} fill={helpful.has(r.id)} /> Helpful · {r.helpful + (helpful.has(r.id) ? 1 : 0)}
-            </button>
-          </li>
-        ))}
+        {!mine && !others.length && <Empty icon="star" title="No reviews yet" text="Read this story and share what stayed with you." />}
       </ul>
     </div>
   );

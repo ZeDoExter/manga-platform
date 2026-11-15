@@ -119,11 +119,3 @@ export function Field({ label, hint, required, children }: { label: string; hint
   );
 }
 
-export function SimBanner({ children }: { children?: ReactNode }) {
-  return (
-    <div className="flex items-start gap-2.5 rounded-md border-2 border-dashed border-line/60 bg-hl/25 px-3 py-2 text-xs font-semibold">
-      <Icon name="zap" size={14} className="mt-0.5 shrink-0" />
-      <span>{children ?? "Simulation: publishing and analytics are mock features. Everything you create is saved in this browser only."}</span>
-    </div>
-  );
-}

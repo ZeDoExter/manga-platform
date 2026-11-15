@@ -109,28 +109,6 @@ function assemble(r: () => number, polys: [number, number][][], mood: Mood, scen
   });
 }
 
-function pageCount(storyId: string, ch: number): number { return 10 + (hash(`${storyId}#${ch}`) % 7); }
-
-const ROW_SETS = [[1, 2, 1], [2, 1, 2], [1, 2, 2], [2, 2, 1], [1, 3, 1], [2, 1, 1, 2], [1, 2, 1, 1]];
-
-function buildPage(story: { id: string; mood: Mood }, ch: number, n: number, total: number, title: string): PageSpec { const key = `${story.id}:${ch}:${n}`;
-const r = rng(key);
-const base = { key, n, seed: hash(key), chapter: ch, title };
-const full: [number, number][] = [[0, 0], [PAGE_W, 0], [PAGE_W, PAGE_H], [0, PAGE_H]];
-if (n === 1) return { ...base, kind: "title", panels: [{ id: 0, poly: full, bbox: bboxOf(full), scene: "skyline", seed: base.seed }] };
-if (n === total) return { ...base, kind: "end", panels: [{ id: 0, poly: full, bbox: bboxOf(full), scene: "dark", seed: base.seed }] };
-if (r() < 0.12) {
-  const panels = assemble(r, layoutRows(r, [1], 50), story.mood, [pick(r, ["figure", "speed", "skyline"] as Scene[])], 0.3);
-  return { ...base, kind: "splash", panels };
-}
-const rows = pick(r, ROW_SETS);
-return { ...base, kind: "story", panels: assemble(r, layoutRows(r, rows), story.mood) }; }
-
-export function buildChapterPages(story: { id: string; mood: Mood }, ch: number, title: string): PageSpec[] {
-  const total = pageCount(story.id, ch);
-  return Array.from({ length: total }, (_, i) => buildPage(story, ch, i + 1, total, title));
-}
-
 const PRESETS: Record<PagePreset, { rows: number[]; scenes: Scene[]; talk: number }> = {
   action: { rows: [1, 2, 1], scenes: ["speed", "burst", "figure", "eyes"], talk: 0.3 },
   dialogue: { rows: [2, 2, 1], scenes: ["tone", "figure", "figure", "tone", "tone"], talk: 1 },

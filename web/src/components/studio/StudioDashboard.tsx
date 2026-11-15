@@ -1,18 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { STORY_MAP } from "@/data/stories";
 import { TYPE_LABEL } from "@/lib/types";
-import { series } from "@/lib/analytics";
 import { chapterNumberFromKey } from "@/lib/economy";
 import { useEconomy } from "@/lib/economy-store";
 import { fmtAgo, fmtNum } from "@/lib/util";
 import { useApp } from "@/lib/store";
 import { Cover } from "../Cover";
-import { Empty, Icon, Sparkline, Stat } from "../ui";
-import { CreatorGate, PreviewOverlay, SimBanner, StatusChip, coverStory, newChapter } from "./common";
+import { Empty, Icon, Stat } from "../ui";
+import { CreatorGate, PreviewOverlay, StatusChip, coverStory, newChapter } from "./common";
 import type { StudioChapter, StudioStory } from "@/lib/types";
 
 export function StudioDashboard() {
@@ -33,7 +31,6 @@ function Inner() {
   const pub = chapters.filter((x) => x.c.status === "published").length;
   const drafts = chapters.filter((x) => x.c.status === "draft").length;
   const sched = chapters.filter((x) => x.c.status === "scheduled");
-  const weekly = useMemo(() => mine.reduce((a, s) => a + (STORY_MAP[s.id] ? STORY_MAP[s.id].weekly * 1000 : s.chapters.filter((c) => c.status === "published").length * 40), 0), [mine]);
 
   useEffect(() => {
     void refreshCreatorEarnings();
@@ -68,10 +65,9 @@ function Inner() {
         </div>
         <div className="flex gap-2"><Link href="/studio/new" className="btn btn-accent !px-5 !py-3"><Icon name="plus" size={16} /> New story</Link><Link href={`/u/${account.id}`} className="btn btn-ghost">Public profile</Link></div>
       </div>
-      <SimBanner />
 
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Weekly readers" value={fmtNum(weekly)} sub="simulated" />
+        <Stat label="Stories" value={mine.length} sub="in your studio" />
         <Stat label="Published chapters" value={pub} sub={`across ${mine.length} stories`} />
         <Stat label="Drafts" value={drafts} sub="waiting for you" />
         <Stat label="Scheduled" value={sched.length} sub="going live soon" />
@@ -86,7 +82,6 @@ function Inner() {
             <ul className="space-y-4">
               {mine.map((s) => {
                 const p = s.chapters.filter((c) => c.status === "published").length;
-                const trend = series(s.id + "dash", 20, STORY_MAP[s.id] ? STORY_MAP[s.id].weekly * 110 : 40 + p * 30);
                 return (
                   <li key={s.id} className="panel flex gap-4 p-3 sm:p-4">
                     <Link href={`/studio/${s.id}`} className="block w-24 shrink-0 sm:w-32"><Cover story={coverStory(s)} compact className="rounded border-2 border-line" /></Link>
@@ -94,7 +89,6 @@ function Inner() {
                       <div className="flex flex-wrap items-center gap-2"><StatusChip status={s.status} /><span className="chip">{TYPE_LABEL[s.type]}</span>{s.mirror && <span className="chip">live catalogue</span>}</div>
                       <Link href={`/studio/${s.id}`} className="h-display mt-1.5 block truncate text-xl hover:underline sm:text-2xl">{s.title}</Link>
                       <div className="mt-1 font-mono text-xs text-muted">{s.chapters.length} chapters · {p} published · {s.chapters.filter((c) => c.status === "draft").length} drafts · edited {fmtAgo(Math.max(...s.chapters.map((c) => c.updatedAt), s.createdAt), now)}</div>
-                      <div className="mt-2 hidden sm:block"><Sparkline data={trend} width={220} height={30} /></div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Link href={`/studio/${s.id}`} className="btn btn-sm">Manage</Link>
                         <button className="btn btn-sm btn-ghost" onClick={() => write(s)}><Icon name="edit" size={12} /> New chapter</button>
@@ -122,7 +116,7 @@ function Inner() {
             <ul className="mt-3 space-y-2">
               {(creatorEarnings?.entries ?? []).slice(0, 5).map((e) => {
                 const n = chapterNumberFromKey(e.story_id, e.chapter_id);
-                const title = STORY_MAP[e.story_id]?.title ?? state.studio.find((s) => s.id === e.story_id)?.title ?? e.story_id;
+                const title = state.studio.find((s) => s.id === e.story_id)?.title ?? e.story_id;
                 return (
                   <li key={e.id} className="flex items-center gap-2 rounded-md border-2 border-line/20 p-2">
                     <span className="grid size-7 shrink-0 place-items-center rounded-full border-2 border-line bg-hl text-[#15120f]"><Icon name="coin" size={12} /></span>
@@ -155,7 +149,7 @@ function Inner() {
           <div className="panel p-4">
             <h3 className="h-display text-lg">Publishing workflow</h3>
             <ol className="mt-3 space-y-3">
-              {[["Create", "Metadata, genres, tags & cover"], ["Write / upload", "Novel text or manga pages"], ["Preview", "See it exactly as readers will"], ["Publish or schedule", "Go live now or pick a slot"], ["Learn", "Analytics Lab + Release Oracle"]].map(([t, d], i) => (
+              {[["Create", "Metadata, genres, tags & cover"], ["Write / upload", "Novel text or manga pages"], ["Preview", "See it exactly as readers will"], ["Publish or schedule", "Go live now or pick a slot"], ["Earn", "Coin sales land in your Wallet"]].map(([t, d], i) => (
                 <li key={t} className="flex gap-3"><span className="grid size-7 shrink-0 place-items-center rounded-full border-2 border-line bg-ink font-mono text-xs font-bold text-paper">{i + 1}</span><div><div className="text-sm font-extrabold">{t}</div><div className="text-xs text-muted">{d}</div></div></li>
               ))}
             </ol>
