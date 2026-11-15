@@ -32,6 +32,13 @@ spec:
     spec:
       containers:
         - name: postgres
+          # No runAs/readOnly: official image entrypoint needs root, PGDATA + socket need writes.
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: postgres:16-alpine
           ports:
             - containerPort: 5432
@@ -88,10 +95,3 @@ spec:
       targetPort: 5432
   selector:
     app: postgres
-          # No runAs/readOnly: official image entrypoint needs root, PGDATA + socket need writes.
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: [ALL]
-            seccompProfile:
-              type: RuntimeDefault

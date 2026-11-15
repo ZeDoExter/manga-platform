@@ -66,6 +66,14 @@ spec:
     spec:
       containers:
         - name: collector
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: otel/opentelemetry-collector-contrib:0.128.0
           args: ["--config=/etc/otelcol/config.yaml"]
           ports:
@@ -121,6 +129,13 @@ spec:
     spec:
       containers:
         - name: openobserve
+          # No runAs/readOnly here: OpenObserve writes /data on the container fs.
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: public.ecr.aws/zinclabs/openobserve:v0.15.3
           ports:
             - containerPort: 5080

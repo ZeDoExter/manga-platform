@@ -1,6 +1,4 @@
 package main
-		// #nosec G120 -- total body already capped by MaxBytesReader above.
-		// #nosec G120 -- total body already capped by MaxBytesReader above.
 
 import (
 	"context"
@@ -68,6 +66,7 @@ func main() {
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, media.MaxUploadBytes+1024)
+		// #nosec G120 -- total body already capped by MaxBytesReader above.
 		if err := r.ParseMultipartForm(media.MaxUploadBytes + 1024); err != nil {
 			httpapi.Fail(w, http.StatusRequestEntityTooLarge, "file too large")
 			return
@@ -105,6 +104,7 @@ func main() {
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, media.MaxZipBytes+1024)
+		// #nosec G120 -- total body already capped by MaxBytesReader above.
 		if err := r.ParseMultipartForm(media.MaxZipBytes + 1024); err != nil {
 			httpapi.Fail(w, http.StatusRequestEntityTooLarge, "archive too large")
 			return

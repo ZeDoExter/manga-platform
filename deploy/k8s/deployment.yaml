@@ -28,6 +28,14 @@ spec:
         fsGroup: 10001
       containers:
         - name: identity
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: manga-identity:latest
           imagePullPolicy: Always
           ports:
@@ -107,6 +115,14 @@ spec:
         fsGroup: 10001
       containers:
         - name: catalog
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: manga-catalog:latest
           imagePullPolicy: Always
           ports:
@@ -186,6 +202,14 @@ spec:
         fsGroup: 10001
       containers:
         - name: commerce
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: manga-commerce:latest
           imagePullPolicy: Always
           ports:
@@ -265,6 +289,14 @@ spec:
         fsGroup: 10001
       containers:
         - name: reader
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: manga-reader:latest
           imagePullPolicy: Always
           ports:
@@ -353,6 +385,14 @@ spec:
         fsGroup: 10001
       containers:
         - name: moderation
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: manga-moderation:latest
           imagePullPolicy: Always
           ports:
@@ -446,6 +486,14 @@ spec:
         fsGroup: 10001
       containers:
         - name: community
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: manga-community:latest
           imagePullPolicy: Always
           ports:
@@ -529,6 +577,14 @@ spec:
         fsGroup: 10001
       containers:
         - name: gateway
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: manga-gateway:latest
           imagePullPolicy: Always
           ports:
@@ -605,6 +661,14 @@ spec:
         fsGroup: 10001
       containers:
         - name: library
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: manga-library:latest
           imagePullPolicy: Always
           ports:
@@ -684,6 +748,14 @@ spec:
         fsGroup: 10001
       containers:
         - name: media
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: manga-media:latest
           imagePullPolicy: Always
           ports:
@@ -780,6 +852,14 @@ spec:
         runAsGroup: 1001
       containers:
         - name: web
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           image: manga-web:latest
           imagePullPolicy: Always
           ports:
