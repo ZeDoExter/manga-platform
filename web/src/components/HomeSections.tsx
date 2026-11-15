@@ -7,6 +7,7 @@ import { TYPE_LABEL, isVisual, type Story, type StudioStory } from "@/lib/types"
 import { cx, fmtAgoHours, fmtNum } from "@/lib/util";
 import { useApp } from "@/lib/store";
 import { liveRating, useStoryRatings } from "@/lib/ratings";
+import { useStoryReads } from "@/lib/reads";
 import { Cover } from "./Cover";
 import { Rail, StoryCard } from "./StoryCard";
 import { Avatar, Empty, Icon, ProgressBar, Tabs, TypeBadge } from "./ui";
@@ -70,13 +71,18 @@ type Range = "today" | "week" | "all";
 export function Trending({ variant = "rail" }: { variant?: "rail" | "list" }) {
   const { catalog } = useApp();
   const ratings = useStoryRatings(catalog.map((s) => s.id));
+  const readsToday = useStoryReads("today");
+  const readsWeek = useStoryReads("week");
+  const readsAll = useStoryReads("all");
   const [range, setRange] = useState<Range>("week");
   const [fmt, setFmt] = useState<"all" | "visual" | "text">("all");
   const list = useMemo(() => {
     const f = catalog.filter((s) => (fmt === "all" ? true : fmt === "visual" ? isVisual(s.type) : !isVisual(s.type)));
-    const score = (s: Story) => { const r = liveRating(ratings, s); return r.count * 10 + r.avg; };
-    return [...f].sort((a, b) => score(b) - score(a) || a.updatedHours - b.updatedHours).slice(0, variant === "list" ? 10 : 12);
-  }, [catalog, range, fmt, variant, ratings]);
+    const reads = range === "today" ? readsToday : range === "week" ? readsWeek : readsAll;
+    const score = (s: Story) => reads[s.id] ?? 0;
+    const rcount = (s: Story) => liveRating(ratings, s).count;
+    return [...f].sort((a, b) => score(b) - score(a) || rcount(b) - rcount(a) || a.updatedHours - b.updatedHours).slice(0, variant === "list" ? 10 : 12);
+  }, [catalog, range, fmt, variant, ratings, readsToday, readsWeek, readsAll]);
   if (variant === "list") {
     return (
       <div>
@@ -93,7 +99,7 @@ export function Trending({ variant = "rail" }: { variant?: "rail" | "list" }) {
                   <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[0.65rem] text-muted">
                     <TypeBadge type={s.type} />
                     <span className="flex items-center gap-0.5 font-bold text-ink"><Icon name="star" size={10} fill className="text-hl" />{liveRating(ratings, s).avg ? liveRating(ratings, s).avg.toFixed(1) : "—"}</span>
-                    <span className="flex items-center gap-0.5"><Icon name="flame" size={10} className="text-accent" />{fmtNum(liveRating(ratings, s).count)}</span>
+                    <span className="flex items-center gap-0.5"><Icon name="flame" size={10} className="text-accent" />{fmtNum((range === "today" ? readsToday : range === "week" ? readsWeek : readsAll)[s.id] ?? 0)}</span>
                   </span>
                 </span>
               </Link>

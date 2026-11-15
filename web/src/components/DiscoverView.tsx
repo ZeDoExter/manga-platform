@@ -9,6 +9,7 @@ import { suggest } from "@/lib/search";
 import { cx } from "@/lib/util";
 import { useApp } from "@/lib/store";
 import { liveRating, useStoryRatings } from "@/lib/ratings";
+import { useStoryReads } from "@/lib/reads";
 import { StoryCard } from "./StoryCard";
 import { Cover } from "./Cover";
 import { Empty, Icon } from "./ui";
@@ -29,6 +30,7 @@ export function DiscoverView({ initial }: { initial: { q?: string; genre?: strin
   const router = useRouter();
   const { catalog, me } = useApp();
   const ratings = useStoryRatings(catalog.map((s) => s.id));
+  const readsWeek = useStoryReads("week");
   const [q, setQ] = useState(sp.get("q") ?? "");
   const [types, setTypes] = useState<StoryType[]>(sp.get("type") ? [sp.get("type") as StoryType] : []);
   const [genres, setGenres] = useState<string[]>(sp.get("genre") ? [sp.get("genre") as string] : []);
@@ -70,14 +72,14 @@ export function DiscoverView({ initial }: { initial: { q?: string; genre?: strin
       .map((s) => ({ s, m: matchScore(s, me.taste, me.profile.genres) }));
     const by: Record<Sort, (a: { s: (typeof list)[0]["s"]; m: number }, b: { s: (typeof list)[0]["s"]; m: number }) => number> = {
       match: (a, b) => b.m - a.m,
-      trending: (a, b) => liveRating(ratings, b.s).count - liveRating(ratings, a.s).count,
+      trending: (a, b) => (readsWeek[b.s.id] ?? 0) - (readsWeek[a.s.id] ?? 0),
       rating: (a, b) => liveRating(ratings, b.s).avg - liveRating(ratings, a.s).avg || liveRating(ratings, b.s).count - liveRating(ratings, a.s).count,
       updated: (a, b) => a.s.updatedHours - b.s.updatedHours,
       popular: (a, b) => b.s.followers - a.s.followers,
       chapters: (a, b) => b.s.chapters - a.s.chapters,
     };
     return list.sort(by[sort]);
-  }, [catalog, q, types, genres, status, minRating, sort, me.taste, me.profile.genres, ratings]);
+  }, [catalog, q, types, genres, status, minRating, sort, me.taste, me.profile.genres, ratings, readsWeek]);
 
   const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   const activeCount = types.length + genres.length + (status !== "any" ? 1 : 0) + (minRating > 0 ? 1 : 0) + (q ? 1 : 0);

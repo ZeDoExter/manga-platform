@@ -10,6 +10,17 @@ var (
 	ErrInvalidPosition = errors.New("position cannot be negative")
 	ErrInvalidType     = errors.New("content type must be manga or novel")
 	ErrPayloadTooLarge = errors.New("merge payload too large")
+	ErrInvalidChapter  = errors.New("chapter must be a positive number")
+	ErrInvalidRange    = errors.New("range must be today, week or all")
+	ErrInvalidAnonID   = errors.New("anon id must be 8-64 chars of letters, digits, - or _")
+)
+
+// Range selects the trending window.
+type Range string
+const (
+	RangeToday Range = "today"
+	RangeWeek  Range = "week"
+	RangeAll   Range = "all"
 )
 
 const MaxMergeItems = 200
@@ -44,4 +55,19 @@ type Bookmark struct {
 	ChapterID string    `json:"chapter_id"`
 	StoryID   string    `json:"story_id"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+// ReadEvent is one counted chapter-open per (reader, story, chapter, day).
+type ReadEvent struct {
+	ReaderID  string    `json:"reader_id"`
+	StoryID   string    `json:"story_id"`
+	Chapter   int       `json:"chapter"`
+	Day       string    `json:"day"` // YYYY-MM-DD (UTC)
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// StoryReads is an aggregate read count for trending.
+type StoryReads struct {
+	StoryID string `json:"story_id"`
+	Reads   int    `json:"reads"`
 }

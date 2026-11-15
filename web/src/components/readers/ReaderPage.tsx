@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { studioContent } from "@/lib/content";
+import { recordRead } from "@/lib/reads";
 import { chapterPrice, storySyncFromStory, type AccessResult, walletTotal } from "@/lib/economy";
 import { useEconomy } from "@/lib/economy-store";
 import { useApp } from "@/lib/store";
@@ -69,6 +70,14 @@ export function ReaderPage({ id, ch }: { id: string; ch: string }) {
       alive = false;
     };
   }, [story, data, n, account.id, account.role, chapterId, checkAccess, retryKey]);
+  const firedRef = useRef("");
+  useEffect(() => {
+    if (status !== "allowed" || !story || !Number.isFinite(n)) return;
+    const key = `${story.id}:${n}`;
+    if (firedRef.current === key) return;
+    firedRef.current = key;
+    recordRead(story.id, n);
+  }, [status, story, n]);
 
   if (!story) {
     return (

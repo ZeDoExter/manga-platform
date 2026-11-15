@@ -21,16 +21,23 @@ type FollowRepository interface {
 	ListFollows(ctx context.Context, userID string) ([]*Follow, error)
 }
 
-// BookmarkRepository persists chapter bookmarks (idempotent put/delete).
+// ReadsRepository records chapter-open events and aggregates trending.
+// Insert is idempotent per (reader, story, chapter, day).
+type ReadsRepository interface {
+	InsertRead(ctx context.Context, e *ReadEvent) error
+	TrendingReads(ctx context.Context, rng Range, limit int) ([]*StoryReads, error)
+}
+
 type BookmarkRepository interface {
 	PutBookmark(ctx context.Context, userID, chapterID, storyID string, at time.Time) error
 	DeleteBookmark(ctx context.Context, userID, chapterID string) error
 	ListBookmarks(ctx context.Context, userID string) ([]*Bookmark, error)
 }
 
-// Store bundles the three repositories. MemoryStore and PGStore implement it.
+// Store bundles the repositories. MemoryStore and PGStore implement it.
 type Store interface {
 	ProgressRepository
 	FollowRepository
 	BookmarkRepository
+	ReadsRepository
 }

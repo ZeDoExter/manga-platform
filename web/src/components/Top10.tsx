@@ -7,6 +7,7 @@ import { TYPE_LABEL } from "@/lib/types";
 import { cx, fmtNum } from "@/lib/util";
 import { useApp } from "@/lib/store";
 import { liveRating, useStoryRatings } from "@/lib/ratings";
+import { useStoryReads } from "@/lib/reads";
 import { Cover } from "./Cover";
 import { Icon, Stars, TypeBadge } from "./ui";
 
@@ -34,7 +35,8 @@ export function Top10() {
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { catalog, me, act } = useApp();
   const ratings = useStoryRatings(catalog.map((s) => s.id));
-  const list = useMemo(() => [...catalog].sort((a, b) => (liveRating(ratings, b).count - liveRating(ratings, a).count) || (liveRating(ratings, b).avg - liveRating(ratings, a).avg)).slice(0, 10), [catalog, ratings]);
+  const readsWeek = useStoryReads("week");
+  const list = useMemo(() => [...catalog].sort((a, b) => ((readsWeek[b.id] ?? 0) - (readsWeek[a.id] ?? 0)) || (liveRating(ratings, b).count - liveRating(ratings, a).count) || (liveRating(ratings, b).avg - liveRating(ratings, a).avg)).slice(0, 10), [catalog, ratings, readsWeek]);
 
   useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
 
@@ -95,8 +97,8 @@ export function Top10() {
                   <h3 className="h-display mt-3 text-3xl uppercase leading-[0.98] xl:text-[2.6rem]">{s.title}</h3>
                   <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
                     <span className="flex items-center gap-1.5"><Stars value={liveRating(ratings, s).avg} size={14} light /> <b>{liveRating(ratings, s).avg.toFixed(1)}</b></span>
-                    <span className="flex items-center gap-1.5 font-semibold"><Icon name="flame" size={14} className="text-accent" /> {fmtNum(liveRating(ratings, s).count)} ratings</span>
-                    <Heat value={Math.min(1, liveRating(ratings, s).count / 10)} />
+                    <span className="flex items-center gap-1.5 font-semibold"><Icon name="flame" size={14} className="text-accent" /> {fmtNum(readsWeek[s.id] ?? 0)} reads</span>
+                    <Heat value={Math.min(1, (readsWeek[s.id] ?? 0) / 10)} />
                   </div>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {s.genres.map((g) => <span key={g} className="chip !border-white/60 !bg-white/10 !text-white">{g}</span>)}
@@ -132,7 +134,7 @@ export function Top10() {
               <div className="mt-2 line-clamp-1 text-sm font-extrabold">{s.title}</div>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 <span className="flex items-center gap-1 font-mono text-xs font-bold"><Icon name="star" size={12} fill className="text-hl" /> {liveRating(ratings, s).avg.toFixed(1)}</span>
-                <span className="flex items-center gap-1 font-mono text-xs text-muted"><Icon name="flame" size={12} className="text-accent" /> {fmtNum(liveRating(ratings, s).count)}</span>
+                <span className="flex items-center gap-1 font-mono text-xs text-muted"><Icon name="flame" size={12} className="text-accent" /> {fmtNum(readsWeek[s.id] ?? 0)}</span>
               </div>
               <p className="mt-1 line-clamp-1 font-mono text-[0.68rem] text-muted">Ch. {s.chapters} · {s.latest}</p>
             </Link>

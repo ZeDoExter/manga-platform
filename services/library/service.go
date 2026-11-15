@@ -134,3 +134,56 @@ func (s *Service) MergeGuestProgress(ctx context.Context, userID string, items [
 	}
 	return s.store.MergeProgress(ctx, userID, items)
 }
+
+// validAnonID accepts client-generated guest ids (uuid-style).
+func validAnonID(s string) bool {
+	if len(s) < 8 || len(s) > 64 {
+		return false
+	}
+	for _, r := range s {
+		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+// RecordRead counts one chapter-open per (reader, story, chapter, day).
+// Logged-in callers are keyed by account; guests by validated anon id.
+func (s *Service) RecordRead(ctx context.Context, userID, anonID, storyID string, chapter int) error {
+	if storyID == "" {
+		return ErrInvalidID
+	}
+	if chapter <= 0 {
+		return ErrInvalidChapter
+	}
+	readerID := userID
+	if userID == "" || userID == "guest" {
+		if !validAnonID(anonID) {
+			return ErrInvalidAnonID
+		}
+		readerID = "anon:" + anonID
+	}
+	now := time.Now()
+	return s.store.InsertRead(ctx, &ReadEvent{
+		ReaderID:  readerID,
+		StoryID:   storyID,
+		Chapter:   chapter,
+		Day:       now.UTC().Format("2006-01-02"),
+		CreatedAt: now,
+	})
+}
+
+// TrendingReads returns per-story read counts for a window (FR-L5).
+func (s *Service) TrendingReads(ctx context.Context, rng Range, limit int) ([]*StoryReads, error) {
+	switch rng {
+	case RangeToday, RangeWeek, RangeAll:
+	default:
+		return nil, ErrInvalidRange
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+	return s.store.TrendingReads(ctx, rng, limit)
+}

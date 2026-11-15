@@ -3,6 +3,7 @@ package library
 import (
 	"context"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -13,6 +14,7 @@ type MemoryStore struct {
 	progress  map[string]*Progress // user_id + "\x00" + story_id
 	follows   map[string]*Follow
 	bookmarks map[string]*Bookmark
+	reads     map[string]*ReadEvent // reader + "\x00" + story + "\x00" + chapter + "\x00" + day
 }
 
 // NewMemoryStore creates an empty in-memory store.
@@ -21,12 +23,16 @@ func NewMemoryStore() *MemoryStore {
 		progress:  make(map[string]*Progress),
 		follows:   make(map[string]*Follow),
 		bookmarks: make(map[string]*Bookmark),
+		reads:     make(map[string]*ReadEvent),
 	}
 }
 
 func progKey(userID, storyID string) string  { return userID + "\x00" + storyID }
 func follKey(userID, storyID string) string  { return userID + "\x00" + storyID }
 func bookKey(userID, chapID string) string    { return userID + "\x00" + chapID }
+func readKey(reader, story string, chapter int, day string) string {
+	return reader + "\x00" + story + "\x00" + strconv.Itoa(chapter) + "\x00" + day
+}
 
 func (m *MemoryStore) UpsertProgress(_ context.Context, p *Progress) error {
 	m.mu.Lock()
@@ -132,5 +138,55 @@ func (m *MemoryStore) ListBookmarks(_ context.Context, userID string) ([]*Bookma
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].CreatedAt.After(out[j].CreatedAt) })
+	return out, nil
+}
+
+func (m *MemoryStore) InsertRead(_ context.Context, e *ReadEvent) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	k := readKey(e.ReaderID, e.StoryID, e.Chapter, e.Day)
+	if _, ok := m.reads[k]; ok {
+		return nil // same reader/story/chapter/day counts once
+	}
+	c := *e
+	m.reads[k] = &c
+	return nil
+}
+
+func (m *MemoryStore) TrendingReads(_ context.Context, rng Range, limit int) ([]*StoryReads, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	today := time.Now().UTC().Format("2006-01-02")
+	weekStart := time.Now().UTC().AddDate(0, 0, -6).Format("2006-01-02")
+	counts := make(map[string]int)
+	for _, e := range m.reads {
+		switch rng {
+		case RangeToday:
+			if e.Day != today {
+				continue
+			}
+		case RangeWeek:
+			if e.Day < weekStart {
+				continue
+			}
+		case RangeAll:
+		default:
+			return nil, ErrInvalidRange
+		}
+		counts[e.StoryID]++
+	}
+	out := make([]*StoryReads, 0, len(counts))
+	for id, n := range counts {
+		out = append(out, &StoryReads{StoryID: id, Reads: n})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Reads != out[j].Reads {
+			return out[i].Reads > out[j].Reads
+		}
+		return out[i].StoryID < out[j].StoryID
+	})
+	if len(out) > limit {
+		out = out[:limit]
+	}
 	return out, nil
 }

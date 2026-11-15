@@ -160,5 +160,40 @@ func main() {
 		}
 	}))
 
+	// POST /reads — record a chapter-open (FR-L5). Logged-in callers key by
+	// account; guests by validated anon id from the body.
+	mux.HandleFunc("POST /reads", withUser(func(w http.ResponseWriter, r *http.Request, userID string) {
+		var req struct {
+			StoryID string `json:"story_id"`
+			Chapter int    `json:"chapter"`
+			AnonID  string `json:"anon_id"`
+		}
+		if err := httpapi.Decode(r, &req); err != nil {
+			httpapi.Fail(w, http.StatusBadRequest, "invalid request body")
+			return
+		}
+		switch err := svc.RecordRead(r.Context(), userID, req.AnonID, req.StoryID, req.Chapter); {
+		case err == nil:
+			w.WriteHeader(http.StatusNoContent)
+		case errors.Is(err, library.ErrInvalidID), errors.Is(err, library.ErrInvalidChapter), errors.Is(err, library.ErrInvalidAnonID):
+			httpapi.Fail(w, http.StatusBadRequest, err.Error())
+		default:
+			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
+		}
+	}))
+
+	// GET /reads/trending?range=today|week|all — per-story read counts.
+	mux.HandleFunc("GET /reads/trending", withUser(func(w http.ResponseWriter, r *http.Request, _ string) {
+		out, err := svc.TrendingReads(r.Context(), library.Range(r.URL.Query().Get("range")), 50)
+		switch {
+		case err == nil:
+			httpapi.JSON(w, http.StatusOK, out)
+		case errors.Is(err, library.ErrInvalidRange):
+			httpapi.Fail(w, http.StatusBadRequest, err.Error())
+		default:
+			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
+		}
+	}))
+
 	httpapi.Run("library", mux)
 }

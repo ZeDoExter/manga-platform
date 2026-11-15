@@ -167,3 +167,94 @@ func TestFR_L4_MergeGuestLastWriteWins(t *testing.T) {
 		t.Fatalf("expected ErrPayloadTooLarge, got %v", err)
 	}
 }
+
+func TestFR_L5_RecordReadDedupesSameDay(t *testing.T) {
+	ctx := context.Background()
+	svc := library.NewService()
+	for range 3 {
+		if err := svc.RecordRead(ctx, "u1", "", "story-1", 2); err != nil {
+			t.Fatalf("RecordRead: %v", err)
+		}
+	}
+	out, err := svc.TrendingReads(ctx, library.RangeAll, 50)
+	if err != nil {
+		t.Fatalf("TrendingReads: %v", err)
+	}
+	if len(out) != 1 || out[0].Reads != 1 {
+		t.Fatalf("expected 1 counted read, got %+v", out)
+	}
+	// Different chapter counts separately
+	if err := svc.RecordRead(ctx, "u1", "", "story-1", 3); err != nil {
+		t.Fatalf("RecordRead ch3: %v", err)
+	}
+	out, _ = svc.TrendingReads(ctx, library.RangeAll, 50)
+	if len(out) != 1 || out[0].Reads != 2 {
+		t.Fatalf("expected 2 counted reads, got %+v", out)
+	}
+}
+
+func TestFR_L5_RecordReadValidation(t *testing.T) {
+	ctx := context.Background()
+	svc := library.NewService()
+	if err := svc.RecordRead(ctx, "u1", "", "", 1); err != library.ErrInvalidID {
+		t.Fatalf("expected ErrInvalidID, got %v", err)
+	}
+	if err := svc.RecordRead(ctx, "u1", "", "s", 0); err != library.ErrInvalidChapter {
+		t.Fatalf("expected ErrInvalidChapter, got %v", err)
+	}
+	if err := svc.RecordRead(ctx, "guest", "bad!", "s", 1); err != library.ErrInvalidAnonID {
+		t.Fatalf("expected ErrInvalidAnonID, got %v", err)
+	}
+	if err := svc.RecordRead(ctx, "guest", "short", "s", 1); err != library.ErrInvalidAnonID {
+		t.Fatalf("expected ErrInvalidAnonID for short id, got %v", err)
+	}
+	if _, err := svc.TrendingReads(ctx, library.Range("year"), 10); err != library.ErrInvalidRange {
+		t.Fatalf("expected ErrInvalidRange, got %v", err)
+	}
+}
+
+func TestFR_L5_GuestAndUserCountedSeparately(t *testing.T) {
+	ctx := context.Background()
+	svc := library.NewService()
+	if err := svc.RecordRead(ctx, "guest", "anon-device-1", "story-1", 1); err != nil {
+		t.Fatalf("guest RecordRead: %v", err)
+	}
+	if err := svc.RecordRead(ctx, "u1", "", "story-1", 1); err != nil {
+		t.Fatalf("user RecordRead: %v", err)
+	}
+	for _, rng := range []library.Range{library.RangeToday, library.RangeWeek, library.RangeAll} {
+		out, err := svc.TrendingReads(ctx, rng, 50)
+		if err != nil {
+			t.Fatalf("TrendingReads(%s): %v", rng, err)
+		}
+		if len(out) != 1 || out[0].Reads != 2 {
+			t.Fatalf("range %s: expected 2 reads, got %+v", rng, out)
+		}
+	}
+}
+
+func TestFR_L5_TrendingOrderAndLimit(t *testing.T) {
+	ctx := context.Background()
+	svc := library.NewService()
+	must := func(user, story string) {
+		t.Helper()
+		if err := svc.RecordRead(ctx, user, "", story, 1); err != nil {
+			t.Fatalf("RecordRead %s/%s: %v", user, story, err)
+		}
+	}
+	must("u1", "story-b")
+	must("u2", "story-b")
+	must("u3", "story-b")
+	must("u1", "story-a")
+	out, err := svc.TrendingReads(ctx, library.RangeAll, 50)
+	if err != nil {
+		t.Fatalf("TrendingReads: %v", err)
+	}
+	if len(out) != 2 || out[0].StoryID != "story-b" || out[0].Reads != 3 || out[1].Reads != 1 {
+		t.Fatalf("wrong order: %+v", out)
+	}
+	out, _ = svc.TrendingReads(ctx, library.RangeAll, 1)
+	if len(out) != 1 || out[0].StoryID != "story-b" {
+		t.Fatalf("limit ignored: %+v", out)
+	}
+}

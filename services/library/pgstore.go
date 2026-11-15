@@ -151,3 +151,45 @@ func (p *PGStore) ListBookmarks(ctx context.Context, userID string) ([]*Bookmark
 	}
 	return out, rows.Err()
 }
+
+func (p *PGStore) InsertRead(ctx context.Context, e *ReadEvent) error {
+	_, err := p.pool.Exec(ctx, `
+		INSERT INTO library.read_events (reader_id, story_id, chapter, day, created_at)
+		VALUES ($1,$2,$3,$4,$5)
+		ON CONFLICT (reader_id, story_id, chapter, day) DO NOTHING`,
+		e.ReaderID, e.StoryID, e.Chapter, e.Day, e.CreatedAt)
+	return err
+}
+
+func (p *PGStore) TrendingReads(ctx context.Context, rng Range, limit int) ([]*StoryReads, error) {
+	var where string
+	switch rng {
+	case RangeToday:
+		where = "WHERE day = CURRENT_DATE"
+	case RangeWeek:
+		where = "WHERE day >= CURRENT_DATE - 6"
+	case RangeAll:
+		where = ""
+	default:
+		return nil, ErrInvalidRange
+	}
+	rows, err := p.pool.Query(ctx, `
+		SELECT story_id, COUNT(*)
+		FROM library.read_events `+where+`
+		GROUP BY story_id
+		ORDER BY COUNT(*) DESC, story_id ASC
+		LIMIT $1`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*StoryReads
+	for rows.Next() {
+		var s StoryReads
+		if err := rows.Scan(&s.StoryID, &s.Reads); err != nil {
+			return nil, err
+		}
+		out = append(out, &s)
+	}
+	return out, rows.Err()
+}
