@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { jwt } from "better-auth/plugins";
 import { memoryAdapter } from "better-auth/adapters/memory";
 
 const IDENTITY_URL = (process.env.IDENTITY_URL ?? "http://localhost:8081").replace(/\/+$/, "");
@@ -46,6 +47,10 @@ const googleClientId = process.env.GOOGLE_CLIENT_ID ?? "";
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET ?? "";
 
 export const auth = betterAuth({
+  // Stateless JWT sessions: survive web restarts/redeploys (memory adapter
+  // wipes on restart). Trade-off: no server-side revocation until expiry —
+  // banned users keep access until their token expires (max 7 days).
+  plugins: [jwt()],
   database: memoryAdapter(getMemDB()),
   secret: process.env.BETTER_AUTH_SECRET ?? "dootoon-better-auth-secret-key-2026-production",
   baseURL: process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL,

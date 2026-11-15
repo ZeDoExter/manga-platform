@@ -21,6 +21,20 @@ import { deleteRemoteStory, fetchRemoteCatalog, syncCatalogStory } from "./catal
 import { useSession } from "./auth-client";
 const KEY = "dootoon.v3";
 
+function errMsg(err: unknown): string {
+  return err instanceof Error ? err.message : "network error";
+}
+
+// Throttled sync-failure toast for high-frequency updates (metadata keystrokes):
+// the first failure shows immediately, repeats at most every 15s.
+let lastSyncWarn = 0;
+function syncFailedToast(toast: (msg: string, kind: "ok" | "info" | "warn") => void, err: unknown): void {
+  const now = Date.now();
+  if (now - lastSyncWarn < 15000) return;
+  lastSyncWarn = now;
+  toast(`Server sync failed (${errMsg(err)}). Changes are local-only until it succeeds.`, "warn");
+}
+
 interface ToastItem {
   id: number;
   msg: string;
@@ -179,19 +193,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     })();
     // Pull remote catalog stories (catalog service) and merge into studio list.
-    // Stories that vanished remotely (deleted test data) get pruned from local studio.
-    void (async () => {
+    // Remote is the source of truth: stories confirmed deleted remotely are
+    // dropped locally too (except never-synced drafts). Refetch on focus +
+    // every 60s so long-open tabs don't go stale.
+    const pullCatalog = async () => {
       try {
         const remote = await fetchRemoteCatalog();
+        if (!remote) return; // offline: local stories stand alone, prune nothing.
         const remoteIds = new Set(remote.map((r) => r.id));
         setState((s) => {
-          const byId = new Map(s.studio.map((x) => [x.id, x]));
+          const byId = new Map(s.studio.map((x) => [x.id, x] as [string, StudioStory]));
           for (const r of remote) {
             if (!byId.has(r.id)) {
               byId.set(r.id, r);
             } else {
               const cur = byId.get(r.id)!;
-              const chMap = new Map(cur.chapters.map((c) => [c.number, c]));
+              const chMap = new Map(cur.chapters.map((c) => [c.number, c] as [number, StudioChapter]));
               for (const rc of r.chapters) {
                 const existing = chMap.get(rc.number);
                 if (!existing) {
@@ -207,20 +224,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
               });
             }
           }
-          // Prune: drop synced stories (owner "x" test stubs or missing remotely)
-          // that the user did not create locally. Local creations have ownerId
-          // matching a known account or a createdAt older than this session.
-          const pruned = Array.from(byId.values()).filter((x) => {
-            if (STORY_MAP[x.id]) return true;
-            if (x.ownerId !== "x" && ACCOUNT_MAP[x.ownerId]) return true;
-            return remoteIds.has(x.id);
-          });
-          return { ...s, studio: pruned };
+          // Legacy copies predate the syncedAt marker: anything older than 7 days
+          // was surely pushed at least once (every save syncs), so treat it as
+          // synced; fresher ones keep the benefit of the doubt (offline drafts).
+          const now = Date.now();
+          const GRACE_MS = 7 * 86400000;
+          const studio = Array.from(byId.values())
+            .map((x) =>
+              x.syncedAt || STORY_MAP[x.id] || now - x.createdAt <= GRACE_MS ? x : { ...x, syncedAt: now },
+            )
+            .filter((x) => {
+              if (STORY_MAP[x.id]) return true;
+              if (x.syncedAt && !remoteIds.has(x.id)) return false; // deleted remotely
+              return true;
+            });
+          return { ...s, studio };
         });
       } catch {
         // Catalog offline: local stories stand alone.
       }
-    })();
+    };
+    void pullCatalog();
+    const timer = setInterval(() => void pullCatalog(), 60000);
+    const onFocus = () => void pullCatalog();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void pullCatalog();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   /* sync remote library state (continue reading, follows, bookmarks) per active account */
@@ -405,26 +441,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
       createStory(st) {
         setState((s) => ({ ...s, studio: [st, ...s.studio] }));
-        void syncCatalogStory(st).catch(() => {});
+        void syncCatalogStory(st).then(
+          () => upStory(st.id, (x) => ({ ...x, syncedAt: Date.now() })),
+          (err) => toast(`Saved locally, but server sync failed (${errMsg(err)}). Others can't see it yet — try logging in again?`, "warn"),
+        );
       },
       updateStory(id, patch) {
         upStory(id, (x) => {
           const next = { ...x, ...patch };
-          void syncCatalogStory(next).catch(() => {});
+          void syncCatalogStory(next).then(
+            () => upStory(id, (x) => ({ ...x, syncedAt: Date.now() })),
+            (err) => syncFailedToast(toast, err),
+          );
           return next;
         });
       },
       deleteStory(id) {
+        const snapshot = ref.current.studio.find((x) => x.id === id);
         setState((s) => ({ ...s, studio: s.studio.filter((x) => x.id !== id) }));
-        void deleteRemoteStory(id).catch(() => {});
-        toast("Story deleted", "info");
+        void deleteRemoteStory(id).then(
+          () => toast("Story deleted", "info"),
+          (err) => {
+            // Remote failed: restore locally so we never diverge silently.
+            if (snapshot) {
+              setState((s) => (s.studio.some((x) => x.id === id) ? s : { ...s, studio: [snapshot, ...s.studio] }));
+            }
+            toast(`Delete failed on server (${errMsg(err)}) — story restored. Try logging in again?`, "warn");
+          },
+        );
       },
       upsertChapter(storyId, ch) {
         upStory(storyId, (x) => {
           const exists = x.chapters.some((c) => c.id === ch.id);
           const chapters = exists ? x.chapters.map((c) => (c.id === ch.id ? ch : c)) : [...x.chapters, ch];
           const next = { ...x, chapters: chapters.sort((a, b) => b.number - a.number) };
-          void syncCatalogStory(next, ch).catch(() => {});
+          void syncCatalogStory(next, ch).then(
+            () => upStory(storyId, (x) => ({ ...x, syncedAt: Date.now() })),
+            (err) => toast(`Chapter saved locally, but server sync failed (${errMsg(err)}).`, "warn"),
+          );
           return next;
         });
       },

@@ -166,6 +166,8 @@ export interface StudioStory {
   status: "draft" | "published" | "unpublished";
   chapters: StudioChapter[];
   createdAt: number;
+  /** Last successful server sync (ms). Absent = never confirmed (local draft). */
+  syncedAt?: number;
   mirror?: boolean;
 }
 export interface Announcement {
