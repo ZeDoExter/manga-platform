@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod" # single root module (monorepo shares one go.mod)
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker" # base images in Dockerfiles (alpine/node/bun)
+    directory: "/"
+    schedule:
+      interval: "weekly"
