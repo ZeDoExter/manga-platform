@@ -130,6 +130,9 @@ jobs:
           az aks get-credentials -g "$RESOURCE_GROUP" -n "$AKS_NAME" --overwrite-existing
           kubectl create ns "$NS" --dry-run=client -o yaml | kubectl apply -f -
           # Mirror secrets; point postgres at the staging database.
+          # Delete-first: kubelet can serve stale secret bytes to new pods
+          # after in-place updates, so always recreate the objects.
+          kubectl -n "$NS" delete secret postgres-auth web-secrets r2-credentials oolog-auth --ignore-not-found
           PROD_URL=$(kubectl -n default get secret postgres-auth -o jsonpath='{.data.DATABASE_URL}' | base64 -d)
           STG_URL=$(printf '%s' "$PROD_URL" | python3 -c "import sys,urllib.parse as u;p=u.urlsplit(sys.stdin.read().strip());print(u.urlunsplit((p.scheme,p.netloc,'/manga_staging',p.query,p.fragment)))")
           kubectl -n "$NS" create secret generic postgres-auth --from-literal=DATABASE_URL="$STG_URL" --dry-run=client -o yaml | kubectl apply -f -
