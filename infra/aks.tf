@@ -15,8 +15,12 @@ resource "azurerm_kubernetes_cluster" "main" {
     vm_size              = var.node_vm_size
     vnet_subnet_id       = azurerm_subnet.aks.id
     zones                = slice(["3", "2"], 0, var.zone_count)
-    auto_scaling_enabled = false
+    auto_scaling_enabled = true
+    min_count            = 2
+    max_count            = 3
   }
+
+  role_based_access_control_enabled = true
 
   identity {
     type = "SystemAssigned"

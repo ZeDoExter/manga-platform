@@ -24,7 +24,7 @@ RUN curl -fsSL -o /usr/local/bin/kubectl https://dl.k8s.io/release/v1.31.0/bin/l
 
 # 3. Install Node.js (for npx wrangler in Deploy stage)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
 
 # 4. Install Go 1.23

@@ -76,6 +76,7 @@ func (s *LocalStore) Get(ctx context.Context, key string) (io.ReadCloser, error)
 		return nil, err
 	}
 
+	// #nosec G304 -- target validated by resolvePath (CleanKey + ".." containment).
 	f, err := os.Open(target)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
