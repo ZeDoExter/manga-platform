@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // #nosec G108 -- DefaultServeMux serves 127.0.0.1 only (PPROF_PORT opt-in); public servers use private muxes.
 	"os"
 	"os/signal"
 	"strconv"
@@ -207,7 +207,8 @@ func Run(service string, handler http.Handler) {
 		go func() {
 			addr := net.JoinHostPort("127.0.0.1", pprofPort)
 			log.Printf("%s pprof on %s", service, addr)
-			_ = http.ListenAndServe(addr, nil)
+			srv := &http.Server{Addr: addr, ReadHeaderTimeout: 5 * time.Second}
+			_ = srv.ListenAndServe()
 		}()
 	}
 

@@ -23,7 +23,7 @@ func NewLocalStore(baseDir, baseURL string, secret []byte) (*LocalStore, error) 
 	if err != nil {
 		return nil, fmt.Errorf("invalid base dir: %w", err)
 	}
-	if err := os.MkdirAll(absBase, 0755); err != nil {
+	if err := os.MkdirAll(absBase, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create base directory: %w", err)
 	}
 	return &LocalStore{
@@ -53,10 +53,11 @@ func (s *LocalStore) Put(ctx context.Context, key string, r io.Reader, size int6
 	}
 
 	dir := filepath.Dir(target)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create target directory: %w", err)
 	}
 
+	// #nosec G304 -- target validated by resolvePath (CleanKey + ".." containment).
 	f, err := os.Create(target)
 	if err != nil {
 		return fmt.Errorf("failed to create target file: %w", err)
