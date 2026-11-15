@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Account } from "@/lib/types";
 import { TYPE_LABEL } from "@/lib/types";
-import { STORIES } from "@/data/stories";
 import { series } from "@/lib/analytics";
 import { cx, fmtAgo, fmtAgoHours, fmtNum, hash } from "@/lib/util";
 import { useApp } from "@/lib/store";
@@ -23,13 +22,13 @@ const COMMENTS = [
 ];
 
 export function CreatorProfile({ account, isMe }: { account: Account; isMe: boolean }) {
-  const { state, act, me, now, toast } = useApp();
+  const { state, act, me, now, toast, catalog } = useApp();
   const [tab, setTab] = useState<Tab>("portfolio");
   const [text, setText] = useState("");
   const [replies, setReplies] = useState<Record<number, string>>({});
   const [draftReply, setDraftReply] = useState<Record<number, string>>({});
   const following = me.following.includes(account.id);
-  const works = useMemo(() => STORIES.filter((s) => s.creator === account.id), [account.id]);
+  const works = useMemo(() => catalog.filter((s) => s.creator === account.id), [catalog, account.id]);
   const owned = isMe ? state.studio.filter((s) => s.ownerId === account.id) : [];
   const ownedIds = new Set(owned.map((o) => o.id));
   const draftOnly = owned.filter((o) => !works.some((w) => w.id === o.id));

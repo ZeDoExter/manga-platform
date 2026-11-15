@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DETAILS } from "@/data/details";
-import { CREATOR_MAP, STORIES } from "@/data/stories";
+import { CREATOR_MAP } from "@/data/stories";
 import { ACCOUNT_MAP } from "@/data/accounts";
-import { TYPE_LABEL, isVisual, type Story } from "@/lib/types";
+import { TYPE_LABEL, isVisual, type Account, type Story } from "@/lib/types";
 import { chapterTitle, ratingDist, relatedStories, seedReviews } from "@/lib/content";
 import { chapterPrice } from "@/lib/economy";
 import { useEconomy } from "@/lib/economy-store";
@@ -390,9 +390,21 @@ function Reviews({ story }: { story: Story }) {
 
 /* ------------------------------ creator ------------------------------ */
 function CreatorCard({ story }: { story: Story }) {
-  const { me, act } = useApp();
-  const c = CREATOR_MAP[story.creator] ?? ACCOUNT_MAP[story.creator];
-  const works = STORIES.filter((s) => s.creator === c.id);
+  const { me, act, catalog } = useApp();
+  const c: Account = CREATOR_MAP[story.creator] ?? ACCOUNT_MAP[story.creator] ?? {
+    id: story.creator,
+    name: story.creator,
+    role: "creator",
+    bio: "",
+    location: "DOOTOON",
+    joined: "2026",
+    tagline: "",
+    colors: ["#3340ff", "#12b58b"],
+    glyph: (story.creator[0] ?? "?").toUpperCase(),
+    followers: 0,
+    following: 0,
+  };
+  const works = catalog.filter((s) => s.creator === c.id);
   const f = me.following.includes(c.id);
   return (
     <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
