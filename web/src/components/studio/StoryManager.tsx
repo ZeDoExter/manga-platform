@@ -8,6 +8,7 @@ import { TYPE_LABEL } from "@/lib/types";
 import { ALL_GENRES, MOODS } from "@/data/stories";
 import { cx, fmtAgo, fmtNum } from "@/lib/util";
 import { useApp } from "@/lib/store";
+import { uploadCover } from "@/lib/media-api";
 import { Cover } from "../Cover";
 import { Empty, Icon, ProgressBar, Stat, Tabs } from "../ui";
 import { AnalyticsLab } from "./AnalyticsLab";
@@ -179,7 +180,7 @@ function Inner({ id }: { id: string }) {
                 <div className="flex items-start gap-4">
                   <div className="w-32 shrink-0 rounded-md border-2 border-line"><Cover story={coverStory(story)} className="rounded-[4px]" /></div>
                   <div className="space-y-3">
-                    <input ref={file} type="file" accept="image/*" className="hidden" aria-label="Upload cover" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { act.updateStory(story.id, { coverImage: await fileToDataUrl(f, 640) }); toast("Cover updated ✓"); } catch { toast("Couldn’t read that image", "warn"); } }} />
+                    <input ref={file} type="file" accept="image/*" className="hidden" aria-label="Upload cover" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { act.updateStory(story.id, { coverImage: await uploadCover(f, state.accountId, story.id) }); toast("Cover uploaded ✓"); } catch { try { act.updateStory(story.id, { coverImage: await fileToDataUrl(f, 640) }); toast("Cover saved on this device only (upload failed)", "warn"); } catch { toast("Couldn’t read that image", "warn"); } } }} />
                     <button className="btn btn-sm" onClick={() => file.current?.click()}><Icon name="upload" size={13} /> Upload artwork</button>
                     {story.coverImage && <button className="btn btn-sm btn-ghost" onClick={() => act.updateStory(story.id, { coverImage: undefined })}>Use generated cover</button>}
                     <div className="flex flex-wrap gap-1.5">{PALETTES.map((p, i) => <button key={i} aria-label={`Palette ${i + 1}`} onClick={() => act.updateStory(story.id, { palette: p })} className={cx("flex h-7 w-11 overflow-hidden rounded border-2 border-line", story.palette === p && "ring-2 ring-accent")}>{p.map((c) => <span key={c} className="flex-1" style={{ background: c }} />)}</button>)}</div>

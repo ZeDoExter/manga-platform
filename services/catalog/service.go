@@ -87,6 +87,14 @@ func (s *Service) DeleteStory(ctx context.Context, storyID string) error {
 	return s.store.DeleteStory(ctx, storyID)
 }
 
+// UpdateStory refreshes the editable story metadata and cover used by the web sync.
+func (s *Service) UpdateStory(ctx context.Context, storyID, title, synopsis string, tags []string, coverKey *string) (*Story, error) {
+	if title == "" {
+		return nil, ErrInvalidTitle
+	}
+	return s.store.UpdateStory(ctx, storyID, title, synopsis, tags, coverKey)
+}
+
 // ListChaptersByStory returns all chapters of a story ordered by order_index.
 func (s *Service) ListChaptersByStory(ctx context.Context, storyID string) ([]*Chapter, error) {
 	return s.store.ListChaptersByStory(ctx, storyID)

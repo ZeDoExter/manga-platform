@@ -99,6 +99,46 @@ func (p *PGStore) GetStory(ctx context.Context, storyID string) (*Story, error) 
 	return s, rows.Err()
 }
 
+func (p *PGStore) UpdateStory(ctx context.Context, storyID, title, synopsis string, tags []string, coverKey *string) (*Story, error) {
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	var cover any
+	if coverKey != nil {
+		cover = *coverKey
+	}
+	tag, err := tx.Exec(ctx, `
+		UPDATE catalog.stories
+		SET title = $2,
+		    synopsis = $3,
+		    cover_key = CASE WHEN $4::text IS NULL THEN cover_key ELSE $4 END
+		WHERE id = $1`,
+		storyID, title, synopsis, cover)
+	if err != nil {
+		return nil, err
+	}
+	if tag.RowsAffected() == 0 {
+		return nil, ErrStoryNotFound
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM catalog.story_tags WHERE story_id = $1`, storyID); err != nil {
+		return nil, err
+	}
+	for _, t := range tags {
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO catalog.story_tags (story_id, tag) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+			storyID, t); err != nil {
+			return nil, err
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return p.GetStory(ctx, storyID)
+}
+
 func (p *PGStore) InsertChapter(ctx context.Context, c *Chapter) error {
 	_, err := p.pool.Exec(ctx, `
 		INSERT INTO catalog.chapters (id, story_id, order_index, title, price_coins, page_keys, novel_text, status, auto_unlock_at, created_at)

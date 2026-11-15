@@ -50,6 +50,15 @@ func TestPGStore_Contract(t *testing.T) {
 		t.Fatalf("story round-trip wrong: %+v", got)
 	}
 
+	cover := "stories/pg/cover/abc.webp"
+	if _, err := svc.UpdateStory(ctx, story.ID, "PG Story v2", "syn2", []string{"Drama"}, &cover); err != nil {
+		t.Fatalf("UpdateStory: %v", err)
+	}
+	got2, _ := svc.GetStory(ctx, story.ID)
+	if got2.Title != "PG Story v2" || got2.CoverKey != cover || len(got2.Tags) != 1 {
+		t.Fatalf("story update not persisted: %+v", got2)
+	}
+
 	// Duplicate story ID rejected
 	dupStory := *story
 	if err := catalog.NewPGStore(pool).InsertStory(ctx, &dupStory); err != catalog.ErrStoryExists {

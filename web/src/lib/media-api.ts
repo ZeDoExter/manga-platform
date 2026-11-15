@@ -66,6 +66,15 @@ export async function uploadAll(
   await Promise.all(workers);
   return out;
 }
+// uploadCover sends one cover image; it lands under stories/<storyID>/cover/
+// so it persists (unlike tmp/ staging keys) and every reader can fetch it.
+export async function uploadCover(file: File, userID: string, storyID: string): Promise<string> {
+  const [res] = await uploadAll([file], userID, storyID, 'cover', 1);
+  if (!res || res instanceof Error || !res.key) {
+    throw res instanceof Error ? res : new Error('cover upload failed');
+  }
+  return res.key;
+}
 
 export interface BatchItem {
   index: number;

@@ -164,3 +164,51 @@ func TestUpdateChapter_RejectsBadInput(t *testing.T) {
 		t.Error("expected negative price to fail")
 	}
 }
+
+func TestUpdateStory_PersistsMetadataAndCover(t *testing.T) {
+	ctx := context.Background()
+	svc := catalog.NewService()
+	story, err := svc.CreateStoryWithID(ctx, "story_cov", "author-1", catalog.StoryTypeManga,
+		"Old title", "old syn", []string{"Action"}, nil)
+	if err != nil {
+		t.Fatalf("CreateStoryWithID: %v", err)
+	}
+
+	cover := "stories/story_cov/cover/abc.webp"
+	updated, err := svc.UpdateStory(ctx, story.ID, "New title", "new syn", []string{"Drama"}, &cover)
+	if err != nil {
+		t.Fatalf("UpdateStory: %v", err)
+	}
+	if updated.Title != "New title" || updated.Synopsis != "new syn" || updated.CoverKey != cover {
+		t.Fatalf("metadata not updated: %+v", updated)
+	}
+	if len(updated.Tags) != 1 || updated.Tags[0] != "Drama" {
+		t.Fatalf("tags not rewritten: %+v", updated.Tags)
+	}
+
+	// nil cover leaves the stored key untouched (local-only data-URL cover).
+	kept, err := svc.UpdateStory(ctx, story.ID, "New title", "new syn", []string{"Drama"}, nil)
+	if err != nil {
+		t.Fatalf("UpdateStory nil cover: %v", err)
+	}
+	if kept.CoverKey != cover {
+		t.Fatalf("nil cover must keep %q, got %q", cover, kept.CoverKey)
+	}
+
+	// Empty cover clears it ("use generated cover").
+	empty := ""
+	cleared, err := svc.UpdateStory(ctx, story.ID, "New title", "new syn", nil, &empty)
+	if err != nil {
+		t.Fatalf("UpdateStory clear cover: %v", err)
+	}
+	if cleared.CoverKey != "" {
+		t.Fatalf("expected cleared cover, got %q", cleared.CoverKey)
+	}
+
+	if _, err := svc.UpdateStory(ctx, story.ID, "", "s", nil, nil); err != catalog.ErrInvalidTitle {
+		t.Fatalf("expected ErrInvalidTitle, got %v", err)
+	}
+	if _, err := svc.UpdateStory(ctx, "story_missing", "T", "s", nil, nil); err != catalog.ErrStoryNotFound {
+		t.Fatalf("expected ErrStoryNotFound, got %v", err)
+	}
+}

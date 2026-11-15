@@ -6,8 +6,9 @@ import type { Mood, Motif, StoryType, StudioStory } from "@/lib/types";
 import { TYPE_LABEL, isVisual } from "@/lib/types";
 import { ALL_GENRES, MOODS, TYPES } from "@/data/stories";
 import { defaultPages } from "@/lib/content";
-import { cx, slugify, uid } from "@/lib/util";
+import { cx, uid } from "@/lib/util";
 import { useApp } from "@/lib/store";
+import { uploadCover } from "@/lib/media-api";
 import { Cover } from "../Cover";
 import { Icon } from "../ui";
 import { CreatorGate, Field, MOTIF_PICKS, PALETTES, SimBanner, fileToDataUrl } from "./common";
@@ -37,6 +38,7 @@ function Wizard() {
   const [palette, setPalette] = useState(PALETTES[0]);
   const [motif, setMotif] = useState<Motif>("moon");
   const [image, setImage] = useState<string | undefined>();
+  const [draftId] = useState(() => uid("story"));
   const [busy, setBusy] = useState(false);
   const file = useRef<HTMLInputElement>(null);
 
@@ -46,7 +48,7 @@ function Wizard() {
   const tog = <T,>(a: T[], v: T, max = 99) => (a.includes(v) ? a.filter((x) => x !== v) : a.length < max ? [...a, v] : a);
 
   const create = (publish: boolean) => {
-    const id = `${slugify(title)}-${Math.random().toString(36).slice(2, 6)}`;
+    const id = draftId;
     const visual = isVisual(type);
     const ch = {
       id: uid("ch"),
@@ -112,7 +114,7 @@ function Wizard() {
           {step === 2 && (
             <>
               <div className="flex flex-wrap items-center gap-3">
-                <input ref={file} type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; setBusy(true); try { setImage(await fileToDataUrl(f, 640)); toast("Cover uploaded ✓"); } catch { toast("Couldn’t read that image", "warn"); } setBusy(false); }} aria-label="Upload cover artwork" />
+                <input ref={file} type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; setBusy(true); try { setImage(await uploadCover(f, account.id, draftId)); toast("Cover uploaded ✓"); } catch { try { setImage(await fileToDataUrl(f, 640)); toast("Cover saved on this device only (upload failed)", "warn"); } catch { toast("Couldn’t read that image", "warn"); } } setBusy(false); }} aria-label="Upload cover artwork" />
                 <button className="btn" onClick={() => file.current?.click()} disabled={busy}><Icon name="upload" size={14} /> {busy ? "Processing…" : "Upload artwork"}</button>
                 {image && <button className="btn btn-ghost" onClick={() => setImage(undefined)}>Remove & use generated</button>}
                 <span className="text-xs text-muted">or design a generated cover below</span>

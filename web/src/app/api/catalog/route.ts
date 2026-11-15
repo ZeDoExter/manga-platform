@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chapterKey } from "@/lib/economy";
-import { resolveImageUrl } from "@/lib/content";
 import type { StudioChapter, StudioStory } from "@/lib/types";
 
 const CATALOG_URL = (process.env.CATALOG_URL ?? "http://localhost:8082").replace(/\/+$/, "");
@@ -29,6 +28,15 @@ interface BackendChapter {
   created_at: string;
 }
 
+
+// Extract the raw media key to store as cover_key. data:/blob: URLs are
+// local-only previews — return undefined so the PATCH leaves the stored key
+// untouched instead of clobbering it.
+function toCoverKey(coverImage?: string): string | undefined {
+  if (!coverImage) return "";
+  if (coverImage.startsWith("data:") || coverImage.startsWith("blob:")) return undefined;
+  return coverImage.replace(/^\/api\/media\/image\//, "");
+}
 export async function GET() {
   try {
     const res = await fetch(`${CATALOG_URL}/stories`, { cache: "no-store" });
@@ -67,7 +75,7 @@ export async function GET() {
           motif: "moon",
           mood: "calm",
           status: s.status === "published" ? "published" : "draft",
-          coverImage: s.cover_key ? resolveImageUrl(s.cover_key) : undefined,
+          coverImage: s.cover_key || undefined,
           chapters,
           createdAt: new Date(s.created_at).getTime() || Date.now(),
         };
@@ -90,6 +98,8 @@ export async function POST(req: NextRequest) {
 
     const storyType =
       story.type === "light-novel" || story.type === "web-novel" || story.type === "original" ? "novel" : "manga";
+    const tags = story.tags?.length ? story.tags : story.genres ?? [];
+    const synopsis = story.synopsis || story.tagline || "";
 
     // 1. Upsert story in catalog service
     const createRes = await fetch(`${CATALOG_URL}/stories`, {
@@ -100,8 +110,8 @@ export async function POST(req: NextRequest) {
         owner_id: story.ownerId || "creator",
         type: storyType,
         title: story.title,
-        synopsis: story.synopsis || story.tagline || "",
-        tags: story.tags?.length ? story.tags : story.genres ?? [],
+        synopsis,
+        tags,
         splits: [{ creator_id: story.ownerId || "creator", percentage: 100 }],
       }),
       cache: "no-store",
@@ -111,6 +121,21 @@ export async function POST(req: NextRequest) {
       const errText = await createRes.text().catch(() => "catalog error");
       return NextResponse.json({ error: errText }, { status: createRes.status });
     }
+
+    // 1b. Push story metadata + cover. POST is insert-only (409 when the story
+    // already exists), so every sync also PATCHes the editable fields.
+    const coverKey = toCoverKey(story.coverImage);
+    await fetch(`${CATALOG_URL}/stories/${encodeURIComponent(story.id)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        title: story.title,
+        synopsis,
+        tags,
+        ...(coverKey === undefined ? {} : { cover_key: coverKey }),
+      }),
+      cache: "no-store",
+    }).catch(() => null);
 
     // 2. Upsert chapter(s)
     const chaptersToSync = chapter ? [chapter] : story.chapters ?? [];

@@ -41,6 +41,15 @@ type CreateStoryRequest struct {
 	Splits   []catalog.CreatorSplit `json:"splits"`
 }
 
+type UpdateStoryRequest struct {
+	Title    string   `json:"title"`
+	Synopsis string   `json:"synopsis"`
+	Tags     []string `json:"tags"`
+	// CoverKey is a pointer so the web sync can distinguish "leave unchanged"
+	// (nil, e.g. local-only data-URL cover) from "clear cover" ("").
+	CoverKey *string `json:"cover_key,omitempty"`
+}
+
 type CreateChapterRequest struct {
 	ID           string     `json:"id,omitempty"`
 	OrderIndex   int        `json:"order_index"`
