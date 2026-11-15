@@ -136,6 +136,8 @@ jobs:
           for s in web-secrets r2-credentials oolog-auth; do
             kubectl -n default get secret "$s" -o yaml | grep -vE '^\s*(creationTimestamp|resourceVersion|uid|selfLink):' | sed "s/namespace: default/namespace: $NS/" | kubectl apply -n "$NS" -f -
           done
+          # Start from zero so rollouts never need surge headroom on small nodes.
+          kubectl -n "$NS" scale deployment --all --replicas=0 2>/dev/null || true
           kubectl apply -f deploy/k8s/service.yaml -n "$NS"
           kubectl apply -f deploy/k8s/deployment.yaml -n "$NS"
           for dep in identity catalog commerce reader moderation community library media gateway web; do
