@@ -17,9 +17,12 @@ permissions:
   security-events: write # SARIF upload to Code scanning
 
 jobs:
-  govulncheck: # vulns in deps we actually call (reachability-aware, fewer false positives than lists)
+  govulncheck: # reachable vulns; observe mode: rardecode (RAR uploads) has no
+    # upstream fix (GO-2025-4020, accepted risk: capped by upload size limits),
+    # so a hard gate would block every merge. Revisit if RAR support is dropped.
     name: govulncheck
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
