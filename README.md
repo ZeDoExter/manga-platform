@@ -2,7 +2,7 @@
 
 แพลตฟอร์มอ่านมังงะและนิยายภาษาไทย: เกสต์อ่านตอนฟรี → สมัคร → เติมเหรียญ → ซื้อตอนล็อก → รายได้เข้าครีเอเตอร์ → แอดมิน takedown + คืนเงินผู้ซื้อ
 
-**Live:** https://dootoon.store · **CI/CD:** Azure DevOps (`azure-pipelines.yml`: Lint → Test → Build → Deploy)
+**Live:** https://dootoon.store · **CI/CD:** GitHub Actions (`ci.yml`: Lint → Test → Build → Deploy, public repo = free unlimited minutes)
 
 ## โครงrepo
 
@@ -12,8 +12,8 @@
 | `services/` + `cmd/` | Go microservices: identity, catalog, commerce, reader, library, moderation, community, media, gateway |
 | `deploy/k8s/` | K8s manifests + `gateway-prod.yaml` (TLS) |
 | `infra/` | Terraform: AKS + ACR + PostgreSQL + Key Vault (`demo-day`/`demo-night` scripts) |
-| `docs/` | Spec: goals, requirements (FR-*/NFR-*), architecture, testing, backlog, demo script |
-| `azure-pipelines.yml` | CI/CD เต็มวงจร (MS-hosted, ~17 นาที/รอบ) |
+| `docs/` | Spec: goals, requirements, architecture, testing, backlog (local-only, untracked) |
+| `.github/workflows/ci.yml` | CI/CD หลัก (GitHub-hosted, ฟรี) · `azure-pipelines.yml` เก็บไว้เป็นทางสำรอง |
 
 ## เริ่ม (local dev)
 

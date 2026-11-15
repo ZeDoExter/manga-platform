@@ -1,0 +1,156 @@
+# DOOTOON CI/CD — mirrors azure-pipelines.yml (Lint -> Test -> Build -> Deploy).
+# Free unlimited minutes: this repo is public, standard runners cost nothing.
+name: CI/CD
+
+on:
+  push:
+    branches: [master, feat/*]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.26"
+  ACR: mangademoacr.azurecr.io
+  RESOURCE_GROUP: manga-demo-rg
+  AKS_NAME: manga-demo-aks
+  MIN_COVERAGE: "80"
+
+jobs:
+  lint:
+    displayName: "Lint (go vet)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - run: go vet ./...
+
+  test:
+    displayName: "Test (+ coverage gate)"
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: manga
+          POSTGRES_PASSWORD: manga-demo-pw
+          POSTGRES_DB: manga
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://manga:manga-demo-pw@localhost:5432/manga?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: go test + coverage gate
+        run: |
+          set -euo pipefail
+          go test -coverprofile=coverage.out ./...
+          go test -tags integration -coverprofile=coverage-pg.out ./services/catalog/ ./services/commerce/
+          COVERAGE=$(go tool cover -func=coverage-pg.out | grep total | grep -o "[0-9.]*%")
+          echo "Commerce service test coverage (unit+integration) $COVERAGE"
+          awk -v c="$COVERAGE" -v min="$MIN_COVERAGE" 'BEGIN { gsub(/%/, "", c); if (c + 0 < min + 0) { print "FAILED_COVERAGE_BELOW_THRESHOLD"; exit 1 } print "PASSED_COVERAGE_OK" }'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage.out
+          retention-days: 7
+
+  build:
+    displayName: "Build + push images to ACR"
+    needs: test
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Build + push 10 images
+        run: |
+          set -euo pipefail
+          SHORT="${GITHUB_SHA:0:7}"
+          for spec in \
+            "identity:identity:manga-identity" \
+            "catalog:catalog:manga-catalog" \
+            "commerce:commerce:manga-commerce" \
+            "reader:reader:manga-reader" \
+            "moderation:moderation:manga-moderation" \
+            "community:community:manga-community" \
+            "library:library:manga-library" \
+            "media:media:manga-media" \
+            "server:gateway:manga-gateway"; do
+            svc="${spec%%:*}"; rest="${spec#*:}"; dep="${rest%%:*}"; img="${rest##*:}"
+            echo "=== building $img (SERVICE=$svc) ==="
+            docker build --build-arg SERVICE="$svc" -t "$ACR/$img:$SHORT" -t "$ACR/$img:latest" -f Dockerfile .
+            docker push "$ACR/$img:$SHORT"
+            docker push "$ACR/$img:latest"
+          done
+          echo "=== building manga-web ==="
+          docker build -t "$ACR/manga-web:$SHORT" -t "$ACR/manga-web:latest" -f web/Dockerfile ./web
+          docker push "$ACR/manga-web:$SHORT"
+          docker push "$ACR/manga-web:latest"
+
+  deploy:
+    displayName: "Deploy to AKS (dootoon.store)"
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Pin images to build SHA + rollout
+        run: |
+          set -euo pipefail
+          SHORT="${GITHUB_SHA:0:7}"
+          az aks get-credentials -g "$RESOURCE_GROUP" -n "$AKS_NAME" --overwrite-existing
+          kubectl apply -f deploy/k8s/service.yaml
+          kubectl apply -f deploy/k8s/gateway-prod.yaml
+          for pair in \
+            "identity:manga-identity" \
+            "catalog:manga-catalog" \
+            "commerce:manga-commerce" \
+            "reader:manga-reader" \
+            "moderation:manga-moderation" \
+            "community:manga-community" \
+            "library:manga-library" \
+            "media:manga-media" \
+            "gateway:manga-gateway" \
+            "web:manga-web"; do
+            dep="${pair%%:*}"; img="${pair##*:}"
+            kubectl -n default set image "deployment/$dep" "$dep=$ACR/$img:$SHORT"
+          done
+          kubectl -n default rollout status deployment/web --timeout=180s
+          kubectl -n default get pods -l 'app.kubernetes.io/part-of=manga-platform'
+      - name: Deploy Cloudflare Workers (Edge)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -n "${CLOUDFLARE_API_TOKEN:-}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo "=== Deploying Cloudflare Workers via Wrangler ==="
+            npx --yes wrangler deploy infra/cloudflare/r2-gate-worker.js --name dootoon-r2-gate --compatibility-date 2024-01-01
+            npx --yes wrangler deploy infra/cloudflare/maintenance-worker.js --name dootoon-maintenance --compatibility-date 2024-01-01
+            echo "Cloudflare Workers deployed successfully."
+          else
+            echo "Notice: CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set. Skipping Cloudflare Workers deployment."
+          fi
