@@ -102,7 +102,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setToasts((t) => [...t.slice(-3), { id, msg, kind }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
   }, []);
-  const { data: session } = useSession();
+  const { data: session, isPending: sessionPending, error: sessionError } = useSession();
 
   const sessionAccount = useMemo<Account | null>(() => {
     if (!session?.user) return null;
@@ -145,6 +145,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return { ...s, accountId: id, data };
     });
   }, [state.hydrated, sessionAccount]);
+  /* reconcile dead server session into guest (data buckets are kept) */
+  useEffect(() => {
+    if (!state.hydrated || sessionPending || sessionError || session?.user || state.accountId === "guest") return;
+    setState((s) => (s.accountId === "guest" ? s : { ...s, accountId: "guest" }));
+    toast("Signed out — browsing as guest", "info");
+  }, [state.hydrated, sessionPending, sessionError, session?.user, state.accountId, toast]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* hydrate from localStorage */
   useEffect(() => {
