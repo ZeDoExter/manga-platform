@@ -1,4 +1,6 @@
 package main
+		// #nosec G120 -- total body already capped by MaxBytesReader above.
+		// #nosec G120 -- total body already capped by MaxBytesReader above.
 
 import (
 	"context"
