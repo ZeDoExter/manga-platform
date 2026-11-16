@@ -86,6 +86,13 @@ func (s *Service) ListStories(ctx context.Context) ([]*Story, error) {
 func (s *Service) DeleteStory(ctx context.Context, storyID string) error {
 	return s.store.DeleteStory(ctx, storyID)
 }
+// DeleteChapter permanently removes a chapter from the catalog.
+func (s *Service) DeleteChapter(ctx context.Context, chapterID string) error {
+	if chapterID == "" {
+		return ErrInvalidID
+	}
+	return s.store.DeleteChapter(ctx, chapterID)
+}
 
 // UpdateStory refreshes the editable story metadata and cover used by the web sync.
 func (s *Service) UpdateStory(ctx context.Context, storyID, title, synopsis string, tags []string, coverKey *string) (*Story, error) {

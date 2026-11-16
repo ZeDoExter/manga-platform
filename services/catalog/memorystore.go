@@ -125,6 +125,23 @@ func (m *MemoryStore) DeleteStory(_ context.Context, storyID string) error {
 	delete(m.storyChapters, storyID)
 	return nil
 }
+func (m *MemoryStore) DeleteChapter(_ context.Context, chapterID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	c, exists := m.chapters[chapterID]
+	if !exists {
+		return ErrChapterNotFound
+	}
+	delete(m.chapters, chapterID)
+	ids := m.storyChapters[c.StoryID]
+	for i, id := range ids {
+		if id == chapterID {
+			m.storyChapters[c.StoryID] = append(ids[:i], ids[i+1:]...)
+			break
+		}
+	}
+	return nil
+}
 
 func (m *MemoryStore) UpdateStory(_ context.Context, storyID, title, synopsis string, tags []string, coverKey *string) (*Story, error) {
 	m.mu.Lock()

@@ -212,3 +212,33 @@ func TestUpdateStory_PersistsMetadataAndCover(t *testing.T) {
 		t.Fatalf("expected ErrStoryNotFound, got %v", err)
 	}
 }
+
+func TestDeleteChapter_RemovesAndIdempotent(t *testing.T) {
+	ctx := context.Background()
+	svc := catalog.NewService()
+	story, err := svc.CreateStory(ctx, "author", catalog.StoryTypeManga,
+		"T", "s", nil, []catalog.CreatorSplit{{CreatorID: "author", Percentage: 100}})
+	if err != nil {
+		t.Fatalf("CreateStory: %v", err)
+	}
+	chap, err := svc.CreateChapter(ctx, story.ID, 1, "Ch1", 0, nil, "", nil)
+	if err != nil {
+		t.Fatalf("CreateChapter: %v", err)
+	}
+	if err := svc.DeleteChapter(ctx, chap.ID); err != nil {
+		t.Fatalf("DeleteChapter: %v", err)
+	}
+	if _, err := svc.GetChapter(ctx, chap.ID); err != catalog.ErrChapterNotFound {
+		t.Fatalf("expected ErrChapterNotFound, got %v", err)
+	}
+	list, err := svc.ListChaptersByStory(ctx, story.ID)
+	if err != nil || len(list) != 0 {
+		t.Fatalf("expected empty chapter list, got %+v (%v)", list, err)
+	}
+	if err := svc.DeleteChapter(ctx, chap.ID); err != catalog.ErrChapterNotFound {
+		t.Fatalf("expected ErrChapterNotFound on repeat, got %v", err)
+	}
+	if err := svc.DeleteChapter(ctx, ""); err != catalog.ErrInvalidID {
+		t.Fatalf("expected ErrInvalidID, got %v", err)
+	}
+}

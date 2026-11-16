@@ -252,3 +252,14 @@ func (p *PGStore) ListChaptersByStory(ctx context.Context, storyID string) ([]*C
 	}
 	return out, rows.Err()
 }
+
+func (p *PGStore) DeleteChapter(ctx context.Context, chapterID string) error {
+	tag, err := p.pool.Exec(ctx, `DELETE FROM catalog.chapters WHERE id = $1`, chapterID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrChapterNotFound
+	}
+	return nil
+}

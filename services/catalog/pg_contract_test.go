@@ -87,6 +87,16 @@ func TestPGStore_Contract(t *testing.T) {
 	if after.Status != catalog.StatusTakenDown {
 		t.Fatalf("status not persisted: %s", after.Status)
 	}
+	chap2, err := svc.CreateChapter(ctx, story.ID, 2, "Ch2", 0, []string{}, "", nil)
+	if err != nil {
+		t.Fatalf("CreateChapter ch2: %v", err)
+	}
+	if err := svc.DeleteChapter(ctx, chap2.ID); err != nil {
+		t.Fatalf("DeleteChapter: %v", err)
+	}
+	if _, err := svc.GetChapter(ctx, chap2.ID); err != catalog.ErrChapterNotFound {
+		t.Fatalf("expected ErrChapterNotFound after delete, got %v", err)
+	}
 	// Chapter for missing story rejected (empty slice keeps NOT NULL happy).
 	if _, err := svc.CreateChapter(ctx, "story_missing", 1, "x", 0, []string{}, "", nil); err != catalog.ErrStoryNotFound {
 		t.Fatalf("expected ErrStoryNotFound, got %v", err)

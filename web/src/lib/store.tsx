@@ -17,7 +17,7 @@ import {
   setFollow,
   type GuestItem,
 } from "./library-api";
-import { deleteRemoteStory, fetchRemoteCatalog, syncCatalogStory } from "./catalog-api";
+import { deleteRemoteChapter, deleteRemoteStory, fetchRemoteCatalog, syncCatalogStory } from "./catalog-api";
 import { useSession } from "./auth-client";
 const KEY = "dootoon.v3";
 
@@ -492,8 +492,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
       },
       deleteChapter(storyId, chapterId) {
+        const snapshot = ref.current.studio.find((x) => x.id === storyId)?.chapters.find((c) => c.id === chapterId);
+        const chapterNo = snapshot?.number;
         upStory(storyId, (x) => ({ ...x, chapters: x.chapters.filter((c) => c.id !== chapterId) }));
-        toast("Chapter deleted", "info");
+        if (chapterNo === undefined) {
+          toast("Chapter deleted", "info");
+          return;
+        }
+        void deleteRemoteChapter(storyId, chapterNo).then(
+          () => toast("Chapter deleted", "info"),
+          (err) => {
+            // Remote failed: restore locally so we never diverge silently.
+            if (snapshot) {
+              upStory(storyId, (x) => (x.chapters.some((c) => c.id === chapterId) ? x : { ...x, chapters: [...x.chapters, snapshot] }));
+            }
+            toast(`Delete failed on server (${errMsg(err)}) — chapter restored.`, "warn");
+          },
+        );
       },
       postAnnouncement(text) {
         setState((s) => {

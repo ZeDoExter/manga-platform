@@ -204,6 +204,11 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "missing id" }, { status: 400 });
+    const chapterRaw = searchParams.get("chapter");
+    const chapter = chapterRaw === null ? null : Number(chapterRaw);
+    if (chapter !== null && (!Number.isInteger(chapter) || chapter <= 0)) {
+      return NextResponse.json({ error: "invalid chapter" }, { status: 400 });
+    }
     // Only the owner or an admin may delete. Missing story (404) falls
     // through: DELETE is idempotent, so "already gone" still succeeds.
     if (me.role !== "admin") {
@@ -224,6 +229,16 @@ export async function DELETE(req: NextRequest) {
           return NextResponse.json({ error: "Only the owner can delete this story" }, { status: 403 });
         }
       }
+    }
+    if (chapter !== null) {
+      const res = await fetch(`${CATALOG_URL}/chapters/${encodeURIComponent(chapterKey(id, chapter))}`, {
+        method: "DELETE",
+        cache: "no-store",
+      });
+      if (!res.ok && res.status !== 404) {
+        return NextResponse.json({ error: "failed to delete chapter" }, { status: res.status });
+      }
+      return NextResponse.json({ ok: true });
     }
     const res = await fetch(`${CATALOG_URL}/stories/${encodeURIComponent(id)}`, {
       method: "DELETE",

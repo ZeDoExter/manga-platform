@@ -87,6 +87,17 @@ func main() {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
+mux.HandleFunc("DELETE /chapters/{id}", func(w http.ResponseWriter, r *http.Request) {
+	if err := svc.DeleteChapter(r.Context(), r.PathValue("id")); err != nil {
+		if errors.Is(err, catalog.ErrChapterNotFound) {
+			httpapi.Fail(w, http.StatusNotFound, err.Error())
+			return
+		}
+		httpapi.Fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+})
 
 mux.HandleFunc("PATCH /stories/{id}", func(w http.ResponseWriter, r *http.Request) {
 	var req api.UpdateStoryRequest

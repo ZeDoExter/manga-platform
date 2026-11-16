@@ -43,3 +43,24 @@ export async function deleteRemoteStory(id: string): Promise<void> {
     throw new Error(detail ? `${detail} (${res.status})` : `delete failed (${res.status})`);
   }
 }
+
+export async function deleteRemoteChapter(storyId: string, chapter: number): Promise<void> {
+  const res = await fetch(`/api/catalog?id=${encodeURIComponent(storyId)}&chapter=${chapter}`, {
+    method: "DELETE",
+  });
+  // 404 = already gone server-side: treat as success so retries converge.
+  if (!res.ok && res.status !== 404) {
+    const detail = await res.text().catch(() => "").then((t) => {
+      try {
+        const body: unknown = JSON.parse(t);
+        if (body && typeof body === "object" && "error" in body && typeof body.error === "string") {
+          return body.error;
+        }
+      } catch {
+        // Not JSON: fall through to raw text below.
+      }
+      return t.slice(0, 120);
+    });
+    throw new Error(detail ? `${detail} (${res.status})` : `delete failed (${res.status})`);
+  }
+}

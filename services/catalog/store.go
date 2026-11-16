@@ -18,4 +18,5 @@ type Store interface {
 	ListChaptersByStory(ctx context.Context, storyID string) ([]*Chapter, error)
 	UpdateChapter(ctx context.Context, chapterID, title string, priceCoins int64, pageKeys []string, novelText string) (*Chapter, error)
 	SetChapterStatus(ctx context.Context, chapterID string, status ContentStatus) error
+	DeleteChapter(ctx context.Context, chapterID string) error
 }
