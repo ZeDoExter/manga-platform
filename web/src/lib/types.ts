@@ -151,6 +151,8 @@ export interface StudioChapter {
   pages?: StudioPage[];
   reads?: number;
   priceCoins?: number;
+  /** Last successful server sync (ms). Absent = never confirmed (local draft). */
+  syncedAt?: number;
 }
 export interface StudioStory {
   id: string;

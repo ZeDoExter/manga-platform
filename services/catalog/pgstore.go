@@ -148,6 +148,9 @@ func (p *PGStore) InsertChapter(ctx context.Context, c *Chapter) error {
 		if pgmigrate.IsUniqueViolationOn(err, "chapters_pkey") {
 			return ErrChapterExists
 		}
+		if pgmigrate.IsUniqueViolationOn(err, "chapters_story_order_uniq") {
+			return ErrChapterExists
+		}
 		if isFKViolation(err) {
 			return ErrStoryNotFound
 		}

@@ -209,10 +209,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!remote) return; // offline: local stories stand alone, prune nothing.
         const remoteIds = new Set(remote.map((r) => r.id));
         setState((s) => {
+          const pullNow = Date.now();
           const byId = new Map(s.studio.map((x) => [x.id, x] as [string, StudioStory]));
           for (const r of remote) {
             if (!byId.has(r.id)) {
-              byId.set(r.id, r);
+              byId.set(r.id, { ...r, syncedAt: pullNow });
             } else {
               const cur = byId.get(r.id)!;
               const chMap = new Map(cur.chapters.map((c) => [c.number, c] as [number, StudioChapter]));
@@ -224,10 +225,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   chMap.set(rc.number, { ...existing, pages: rc.pages, text: rc.text || existing.text });
                 }
               }
+              const serverNumbers = new Set(r.chapters.map((c) => c.number));
+              const merged = Array.from(chMap.values())
+                .map((c) => (serverNumbers.has(c.number) ? { ...c, syncedAt: c.syncedAt ?? pullNow } : c))
+                .filter((c) => !c.syncedAt || serverNumbers.has(c.number));
               byId.set(r.id, {
                 ...cur,
+                syncedAt: cur.syncedAt ?? pullNow,
                 coverImage: cur.coverImage || r.coverImage,
-                chapters: Array.from(chMap.values()).sort((a, b) => b.number - a.number),
+                chapters: merged.sort((a, b) => b.number - a.number),
               });
             }
           }
@@ -485,7 +491,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const chapters = exists ? x.chapters.map((c) => (c.id === ch.id ? ch : c)) : [...x.chapters, ch];
           const next = { ...x, chapters: chapters.sort((a, b) => b.number - a.number) };
           void syncCatalogStory(next, ch).then(
-            () => upStory(storyId, (x) => ({ ...x, syncedAt: Date.now() })),
+            () =>
+              upStory(storyId, (x) => ({
+                ...x,
+                syncedAt: Date.now(),
+                chapters: x.chapters.map((c) => (c.id === ch.id ? { ...c, syncedAt: Date.now() } : c)),
+              })),
             (err) => toast(`Chapter saved locally, but server sync failed (${errMsg(err)}).`, "warn"),
           );
           return next;

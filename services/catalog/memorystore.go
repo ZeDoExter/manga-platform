@@ -65,6 +65,11 @@ func (m *MemoryStore) InsertChapter(_ context.Context, c *Chapter) error {
 	if _, exists := m.chapters[c.ID]; exists {
 		return ErrChapterExists
 	}
+	for _, id := range m.storyChapters[c.StoryID] {
+		if m.chapters[id].OrderIndex == c.OrderIndex {
+			return ErrChapterExists
+		}
+	}
 	m.chapters[c.ID] = copyChapter(c)
 	m.storyChapters[c.StoryID] = append(m.storyChapters[c.StoryID], c.ID)
 	return nil

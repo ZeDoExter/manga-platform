@@ -242,3 +242,19 @@ func TestDeleteChapter_RemovesAndIdempotent(t *testing.T) {
 		t.Fatalf("expected ErrInvalidID, got %v", err)
 	}
 }
+
+func TestInsertChapter_DuplicateOrderRejected(t *testing.T) {
+	ctx := context.Background()
+	svc := catalog.NewService()
+	story, err := svc.CreateStory(ctx, "author", catalog.StoryTypeManga,
+		"T", "s", nil, []catalog.CreatorSplit{{CreatorID: "author", Percentage: 100}})
+	if err != nil {
+		t.Fatalf("CreateStory: %v", err)
+	}
+	if _, err := svc.CreateChapter(ctx, story.ID, 1, "Ch1", 0, nil, "", nil); err != nil {
+		t.Fatalf("CreateChapter: %v", err)
+	}
+	if _, err := svc.CreateChapter(ctx, story.ID, 1, "Ch1 dup", 0, nil, "", nil); err != catalog.ErrChapterExists {
+		t.Fatalf("expected ErrChapterExists for duplicate order, got %v", err)
+	}
+}
