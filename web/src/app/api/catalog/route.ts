@@ -204,15 +204,25 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "missing id" }, { status: 400 });
-    // Only the owner or an admin may delete.
+    // Only the owner or an admin may delete. Missing story (404) falls
+    // through: DELETE is idempotent, so "already gone" still succeeds.
     if (me.role !== "admin") {
-      const owner = (await fetch(`${CATALOG_URL}/stories/${encodeURIComponent(id)}`, {
-        cache: "no-store",
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null)) as { owner_id?: string } | null;
-      if (!owner || owner.owner_id !== me.accountId) {
-        return NextResponse.json({ error: "Only the owner can delete this story" }, { status: 403 });
+      let res: Response | null = null;
+      try {
+        res = await fetch(`${CATALOG_URL}/stories/${encodeURIComponent(id)}`, {
+          cache: "no-store",
+        });
+      } catch {
+        return NextResponse.json({ error: "catalog service unavailable" }, { status: 502 });
+      }
+      if (res.status !== 404) {
+        if (!res.ok) {
+          return NextResponse.json({ error: "catalog service unavailable" }, { status: 502 });
+        }
+        const owner = (await res.json().catch(() => null)) as { owner_id?: string } | null;
+        if (!owner || owner.owner_id !== me.accountId) {
+          return NextResponse.json({ error: "Only the owner can delete this story" }, { status: 403 });
+        }
       }
     }
     const res = await fetch(`${CATALOG_URL}/stories/${encodeURIComponent(id)}`, {
