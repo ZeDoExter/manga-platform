@@ -47,6 +47,7 @@ function StoryInner({ story }: { story: Story }) {
   const following = me.following.includes(story.creator);
   const detail = DETAILS[story.id];
   const studio = state.studio.find((s) => s.id === story.id && !s.mirror);
+  const progValid = prog && (!studio || studio.chapters.some((c) => c.status === "published" && c.number === prog.chapter)) ? prog : undefined;
   const [remoteComments, setRemoteComments] = useState<RemoteComment[]>([]);
   const mineReview = me.reviews.find((r) => r.storyId === story.id);
   useEffect(() => {
@@ -68,7 +69,7 @@ function StoryInner({ story }: { story: Story }) {
   void p2;
 
   const firstCh = studio ? studio.chapters.filter((c) => c.status === "published").sort((a, b) => a.number - b.number)[0]?.number ?? 1 : 1;
-  const readHref = `/read/${story.id}/${prog?.chapter ?? firstCh}`;
+  const readHref = `/read/${story.id}/${progValid?.chapter ?? firstCh}`;
 
   return (
     <div>
@@ -108,8 +109,14 @@ function StoryInner({ story }: { story: Story }) {
             <p className="mt-3 font-serif text-lg italic text-white/75">“{story.tagline}”</p>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href={readHref} className="btn btn-accent !px-5 !py-3"><Icon name="play" size={15} fill /> {prog ? `Continue Ch. ${prog.chapter}` : "Start reading"}</Link>
-              {prog && <Link href={`/read/${story.id}/${firstCh}`} className="btn !border-white !bg-white !text-[#15120f]">From Chapter {firstCh}</Link>}
+              {story.chapters > 0 ? (
+                <>
+                  <Link href={readHref} className="btn btn-accent !px-5 !py-3"><Icon name="play" size={15} fill /> {progValid ? `Continue Ch. ${progValid.chapter}` : "Start reading"}</Link>
+                  {progValid && <Link href={`/read/${story.id}/${firstCh}`} className="btn !border-white !bg-white !text-[#15120f]">From Chapter {firstCh}</Link>}
+                </>
+              ) : (
+                <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-white/60">No published chapters yet</span>
+              )}
               <button className="btn btn-ghost !border-white/80 !bg-transparent !text-white !shadow-none" onClick={() => act.toggleLibrary(story.id)} aria-pressed={saved}><Icon name={saved ? "check" : "plus"} size={15} /> {saved ? "In library" : "Add to library"}</button>
               <button className="btn btn-ghost !border-white/80 !bg-transparent !text-white !shadow-none" onClick={() => setColMenu(true)} aria-expanded={colMenu}><Icon name="grid" size={15} /> Collections</button>
               <button className="btn btn-ghost btn-icon !border-white/80 !bg-transparent !text-white !shadow-none" aria-label="Copy link" onClick={() => { navigator.clipboard?.writeText(window.location.href); toast("Link copied to clipboard"); }}><Icon name="share" size={15} /></button>
@@ -206,7 +213,7 @@ function StoryInner({ story }: { story: Story }) {
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat label="Followers" value={fmtNum(story.followers + (saved ? 1 : 0))} sub={saved ? "including you" : "readers following"} />
           <Stat label="Weekly readers" value={fmtNum(readsWeek[story.id] ?? 0)} sub="last 7 days" />
-          <Stat label="Chapters" value={story.chapters} sub={`Latest: ${story.latest}`} />
+          <Stat label="Chapters" value={story.chapters} sub={story.chapters > 0 ? `Latest: ${story.latest}` : "nothing published yet"} />
           <Stat label="Updated" value={fmtAgoHours(story.updatedHours)} sub={`${story.year} · ${isVisual(story.type) ? "illustrated" : "prose"}`} />
         </div>
 
@@ -270,7 +277,7 @@ function Chapters({ story }: { story: Story }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button className="btn btn-ghost btn-sm" onClick={() => { setDesc((d) => !d); setPage(0); }}><Icon name={desc ? "down" : "up"} size={13} /> {desc ? "Newest first" : "Oldest first"}</button>
-          {prog && <Link href={`/read/${story.id}/${prog.chapter}`} className="btn btn-sm"><Icon name="play" size={12} fill /> Resume Ch. {prog.chapter}</Link>}
+          {prog && sorted.some((r) => r.n === prog.chapter) && <Link href={`/read/${story.id}/${prog.chapter}`} className="btn btn-sm"><Icon name="play" size={12} fill /> Resume Ch. {prog.chapter}</Link>}
         </div>
         {pages > 1 && (
           <div className="flex flex-wrap gap-1">

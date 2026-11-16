@@ -14,7 +14,7 @@ import { Avatar, Empty, Icon, ProgressBar, Tabs, TypeBadge } from "./ui";
 
 export function Ticker() {
   const { catalog } = useApp();
-  const items = useMemo(() => [...catalog].sort((a, b) => a.updatedHours - b.updatedHours).slice(0, 12), [catalog]);
+  const items = useMemo(() => [...catalog].filter((s) => s.chapters > 0).sort((a, b) => a.updatedHours - b.updatedHours).slice(0, 12), [catalog]);
   if (!items.length) return null;
   const row = (k: string) => (
     <div key={k} className="flex shrink-0 items-center gap-8 pr-8">
@@ -47,7 +47,7 @@ export function ContinueReading() {
         const s = getStory(h.storyId);
         if (!s) return null;
         const p = me.progress[s.id];
-        const pct = Math.min(1, ((p?.chapter ?? h.chapter) - 1 + (p?.pct ?? 0)) / s.chapters);
+        const pct = s.chapters > 0 ? Math.min(1, ((p?.chapter ?? h.chapter) - 1 + (p?.pct ?? 0)) / s.chapters) : 0;
         return (
           <Link key={s.id} href={`/read/${s.id}/${h.chapter}`} className="panel panel-hover group flex w-[72vw] max-w-[280px] shrink-0 snap-start gap-3 p-2.5 md:w-auto md:max-w-none md:flex-col">
             <Cover story={s} compact className="w-20 shrink-0 rounded border-2 border-line md:w-full" />

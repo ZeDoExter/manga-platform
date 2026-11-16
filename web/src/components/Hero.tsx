@@ -104,9 +104,11 @@ export function Hero() {
             </div>
             <p className="mt-4 hidden max-w-xl text-[0.95rem] leading-relaxed text-white/80 md:line-clamp-3">{s.synopsis}</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href={`/read/${s.id}/${prog?.chapter ?? 1}`} className="btn btn-accent !px-5 !py-3">
-                <Icon name="play" size={15} fill /> {prog ? `Continue Ch. ${prog.chapter}` : "Read Chapter 1"}
-              </Link>
+              {s.chapters > 0 && (
+                <Link href={`/read/${s.id}/${prog?.chapter ?? 1}`} className="btn btn-accent !px-5 !py-3">
+                  <Icon name="play" size={15} fill /> {prog ? `Continue Ch. ${prog.chapter}` : "Read Chapter 1"}
+                </Link>
+              )}
               <button className="btn btn-ghost hidden !border-white/80 !bg-transparent !text-white !shadow-none md:inline-flex" onClick={() => act.toggleLibrary(s.id)} aria-pressed={saved}>
                 <Icon name={saved ? "check" : "plus"} size={15} /> {saved ? "In library" : "Library"}
               </button>

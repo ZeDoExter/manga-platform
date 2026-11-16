@@ -54,7 +54,7 @@ export function studioToStory(s: StudioStory, owner: Account | undefined): Story
     votes: 0,
     followers: 0,
     weekly: 0,
-    chapters: Math.max(1, published.length),
+    chapters: published.length,
     latest: last?.title ?? "Coming soon",
     first: published[0]?.title ?? "Chapter One",
     updatedHours: last ? Math.max(0, (Date.now() - last.updatedAt) / 3600000) : 1,

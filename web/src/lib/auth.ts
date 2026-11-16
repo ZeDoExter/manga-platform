@@ -80,6 +80,8 @@ export const auth = betterAuth({
         }
       : {},
   session: {
+    expiresIn: 60 * 60 * 24 * 30, // 30 days, rolling: weekly activity extends it
+    updateAge: 60 * 60 * 24 * 7, // refresh expiry at most once a week
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60, // revalidate against PG every 5 min (ban-safe); no DB hit otherwise

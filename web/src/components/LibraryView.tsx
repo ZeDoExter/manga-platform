@@ -24,7 +24,7 @@ interface SmartRule {
 const RULES: SmartRule[] = [
   { id: "finish", name: "Finish tonight", icon: "clock", rule: "Within 15 chapters of the latest release", test: (s, { prog }) => !!prog && s.chapters - prog.chapter > 0 && s.chapters - prog.chapter <= 15 },
   { id: "fresh", name: "Fresh drops", icon: "zap", rule: "New chapter in the last 48 hours that you haven’t read", test: (s, { prog }) => s.updatedHours < 48 && (!prog || prog.chapter < s.chapters) },
-  { id: "caught", name: "All caught up", icon: "check", rule: "You’ve read the latest chapter", test: (s, { prog }) => !!prog && prog.chapter >= s.chapters },
+  { id: "caught", name: "All caught up", icon: "check", rule: "You’ve read the latest chapter", test: (s, { prog }) => s.chapters > 0 && !!prog && prog.chapter >= s.chapters },
   { id: "slow", name: "Slow burns", icon: "moon", rule: "Pace ≤ 4 · depth ≥ 7", test: (s) => s.taste.pace <= 4 && s.taste.depth >= 7 },
   { id: "pound", name: "Heart-pounders", icon: "flame", rule: "Action ≥ 8 or pace ≥ 8", test: (s) => s.taste.action >= 8 || s.taste.pace >= 8 },
   { id: "dormant", name: "Gathering dust", icon: "calendar", rule: "Untouched for 30+ days", test: (_s, { prog, now }) => !!prog && now - prog.at > 30 * DAY },
@@ -204,7 +204,7 @@ export function LibraryView() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-extrabold">{s.title}</div>
                       <div className="font-mono text-[0.68rem] text-muted">Chapter {h.chapter} · {fmtAgo(h.at, now)}</div>
-                      {p && <ProgressBar value={Math.min(1, p.chapter / s.chapters)} className="mt-1.5 max-w-xs" />}
+                      {p && <ProgressBar value={s.chapters > 0 ? Math.min(1, p.chapter / s.chapters) : 0} className="mt-1.5 max-w-xs" />}
                     </div>
                     <Link href={`/read/${s.id}/${h.chapter}`} className="btn btn-sm btn-ghost">Re-read</Link>
                   </li>

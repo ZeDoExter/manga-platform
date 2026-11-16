@@ -192,7 +192,7 @@ export function ReaderProfile({ account, isMe }: { account: Account; isMe: boole
                       return (
                         <Link key={s.id} href={`/read/${s.id}/${p.chapter}`} className="panel-flat panel-hover flex items-center gap-3 p-2.5">
                           <Cover story={s} compact className="w-14 shrink-0 rounded border-2 border-line" />
-                          <div className="min-w-0 flex-1"><div className="truncate text-sm font-extrabold">{s.title}</div><div className="font-mono text-[0.68rem] text-muted">Ch. {p.chapter} of {s.chapters} · {fmtAgo(p.at, now)}</div><ProgressBar value={Math.min(1, p.chapter / s.chapters)} className="mt-2" color={accent} /></div>
+                          <div className="min-w-0 flex-1"><div className="truncate text-sm font-extrabold">{s.title}</div><div className="font-mono text-[0.68rem] text-muted">Ch. {p.chapter} of {s.chapters} · {fmtAgo(p.at, now)}</div><ProgressBar value={s.chapters > 0 ? Math.min(1, p.chapter / s.chapters) : 0} className="mt-2" color={accent} /></div>
                         </Link>
                       );
                     })}
