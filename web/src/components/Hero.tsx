@@ -76,14 +76,14 @@ export function Hero() {
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        {/* backdrop */}
+        {/* backdrop: sharp cover like Top10, darkened for legibility */}
         <div key={s.id} className="absolute inset-0 -z-10 anim-fade-up" style={{ animationDuration: "1s" }}>
           {s.cover && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={resolveImageUrl(s.cover)} alt="" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full scale-125 transform-gpu object-cover opacity-45 blur-2xl" />
+            <img src={resolveImageUrl(s.cover)} alt="" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full object-cover" />
           )}
-          <div className="absolute inset-0" style={{ background: `linear-gradient(100deg, ${s.palette[0]} 8%, ${s.palette[0]}cc 45%, transparent 100%)` }} />
-          <div className="tone-lg absolute inset-0 opacity-50 [mask-image:linear-gradient(90deg,transparent,#000_70%)]" style={{ ["--tone" as string]: "rgba(255,255,255,.14)" }} />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/20" />
+          <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 to-transparent" />
         </div>
         <div className="pointer-events-none absolute -right-24 top-0 h-full w-48 -skew-x-12 bg-accent/90 mix-blend-multiply" />
 
