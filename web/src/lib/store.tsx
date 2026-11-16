@@ -210,6 +210,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const remoteIds = new Set(remote.map((r) => r.id));
         setState((s) => {
           const pullNow = Date.now();
+          const GRACE_MS = 7 * 86400000;
           const byId = new Map(s.studio.map((x) => [x.id, x] as [string, StudioStory]));
           for (const r of remote) {
             if (!byId.has(r.id)) {
@@ -227,7 +228,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
               }
               const serverNumbers = new Set(r.chapters.map((c) => c.number));
               const merged = Array.from(chMap.values())
-                .map((c) => (serverNumbers.has(c.number) ? { ...c, syncedAt: c.syncedAt ?? pullNow } : c))
+                .map((c) => {
+                  if (serverNumbers.has(c.number)) return { ...c, syncedAt: c.syncedAt ?? pullNow };
+                  if (c.syncedAt) return c; // stamped but gone -> dropped by the filter below
+                  // Never confirmed: keep only fresh locally-created drafts (uid ids).
+                  // A server-shaped id here is a legacy ghost: it could only have
+                  // come from a server pull, so stamp it and let the filter drop it.
+                  const freshLocal = /^ch_[a-z0-9]+$/.test(c.id) && pullNow - (c.updatedAt ?? pullNow) <= GRACE_MS;
+                  return freshLocal ? c : { ...c, syncedAt: pullNow };
+                })
                 .filter((c) => !c.syncedAt || serverNumbers.has(c.number));
               byId.set(r.id, {
                 ...cur,
@@ -241,7 +250,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // was surely pushed at least once (every save syncs), so treat it as
           // synced; fresher ones keep the benefit of the doubt (offline drafts).
           const now = Date.now();
-          const GRACE_MS = 7 * 86400000;
           const studio = Array.from(byId.values())
             .map((x) =>
               x.syncedAt || STORY_MAP[x.id] || now - x.createdAt <= GRACE_MS ? x : { ...x, syncedAt: now },
