@@ -68,7 +68,7 @@ jobs:
           COVERAGE=$(go tool cover -func=coverage-pg.out | grep total | grep -o "[0-9.]*%")
           echo "Commerce service test coverage (unit+integration) $COVERAGE"
           awk -v c="$COVERAGE" -v min="$MIN_COVERAGE" 'BEGIN { gsub(/%/, "", c); if (c + 0 < min + 0) { print "FAILED_COVERAGE_BELOW_THRESHOLD"; exit 1 } print "PASSED_COVERAGE_OK" }'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage
