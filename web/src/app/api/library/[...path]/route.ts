@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerIdentity, stampGoHeaders } from "@/lib/identity-server";
 
+export const dynamic = "force-dynamic";
+
 const LIBRARY_URL = (process.env.LIBRARY_URL ?? "http://localhost:8087").replace(/\/+$/, "");
 
 async function proxy(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {

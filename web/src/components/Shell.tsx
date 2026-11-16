@@ -10,6 +10,7 @@ import { suggest } from "@/lib/search";
 import { cx } from "@/lib/util";
 import { Avatar, Icon } from "./ui";
 import { Cover } from "./Cover";
+import { UpdateBanner } from "./UpdateBanner";
 import type { Story } from "@/lib/types";
 
 const PUBLIC_LINKS = [
@@ -51,6 +52,7 @@ export function Shell({ children }: { children: ReactNode }) {
       {!immersive && <Footer />}
       {!immersive && <BottomNav path={path} />}
       <Palette open={palette} onClose={() => setPalette(false)} />
+      {!immersive && <UpdateBanner />}
     </>
   );
 }

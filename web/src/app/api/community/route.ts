@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { chapterKey } from "@/lib/economy";
 import { getServerIdentity } from "@/lib/identity-server";
 
+export const dynamic = "force-dynamic";
+
 const COMMUNITY_URL = (process.env.COMMUNITY_URL ?? "http://localhost:8086").replace(/\/+$/, "");
 const CATALOG_URL = (process.env.CATALOG_URL ?? "http://localhost:8082").replace(/\/+$/, "");
 

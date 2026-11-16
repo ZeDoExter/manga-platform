@@ -108,7 +108,7 @@ jobs:
             docker push "$ACR/$img:latest"
           done
           echo "=== building manga-web ==="
-          docker build -t "$ACR/manga-web:$SHORT" -t "$ACR/manga-web:latest" -f web/Dockerfile ./web
+          docker build --build-arg APP_VERSION="$SHORT" -t "$ACR/manga-web:$SHORT" -t "$ACR/manga-web:latest" -f web/Dockerfile ./web
           docker push "$ACR/manga-web:$SHORT"
           docker push "$ACR/manga-web:latest"
 

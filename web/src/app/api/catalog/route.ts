@@ -3,6 +3,8 @@ import { chapterKey } from "@/lib/economy";
 import type { StudioChapter, StudioStory } from "@/lib/types";
 import { getServerIdentity } from "@/lib/identity-server";
 
+export const dynamic = "force-dynamic";
+
 const CATALOG_URL = (process.env.CATALOG_URL ?? "http://localhost:8082").replace(/\/+$/, "");
 
 interface BackendStory {
