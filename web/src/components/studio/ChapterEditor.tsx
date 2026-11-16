@@ -183,7 +183,7 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
           let count = 0;
           setProgress({ active: true, pct: 0, label: `Uploading (0 / ${extractedFiles.length})…` });
 
-          const results = await uploadAll(extractedFiles, state.accountId, story.id, ch.id, 3, (f, res) => {
+          const results = await uploadAll(extractedFiles, state.accountId, story.id, ch.id, 6, (f, res) => {
             count++;
             const pct = Math.round((count / extractedFiles.length) * 100);
             setProgress({ active: true, pct, label: `Uploading (${count} / ${extractedFiles.length})…` });
@@ -234,7 +234,7 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
 
     let count = 0;
     setProgress({ active: true, pct: 0, label: `Uploading (0 / ${imgs.length})…` });
-    const results = await uploadAll(imgs, state.accountId, story.id, ch.id, 3, (f, res) => {
+    const results = await uploadAll(imgs, state.accountId, story.id, ch.id, 6, (f, res) => {
       count++;
       const pct = Math.round((count / imgs.length) * 100);
       setProgress({ active: true, pct, label: `Uploading (${count} / ${imgs.length})…` });

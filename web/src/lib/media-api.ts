@@ -1,5 +1,6 @@
 // Client for the media service (image upload/resize/WebP).
 // Identity comes from the session cookie; the BFF stamps X-User-* itself.
+import { compressPage } from "./image";
 
 const BASE = process.env.NEXT_PUBLIC_MEDIA_URL ?? '/api/media';
 
@@ -16,6 +17,7 @@ async function uploadImage(
   file: File, userID: string, storyID = '', chapterID = '',
   onProgress?: (pct: number) => void,
 ): Promise<UploadResult> {
+  file = await compressPage(file);
   const form = new FormData();
   form.append('file', file);
   const qs = storyID && chapterID
@@ -41,10 +43,10 @@ async function uploadImage(
   return promise;
 }
 
-// uploadAll sends files with bounded parallelism (default 3).
+// uploadAll sends files with bounded parallelism (default 6).
 export async function uploadAll(
   files: File[], userID: string, storyID: string, chapterID: string,
-  concurrency = 3, onEach?: (file: File, res: UploadResult | Error) => void,
+  concurrency = 6, onEach?: (file: File, res: UploadResult | Error) => void,
 ): Promise<(UploadResult | Error)[]> {
   const out: (UploadResult | Error)[] = new Array(files.length);
   let next = 0;
