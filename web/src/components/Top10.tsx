@@ -121,11 +121,11 @@ export function Top10() {
 
       {/* mobile: snap carousel */}
       <ol className="scroll-x -mx-4 flex snap-x list-none gap-4 px-4 pb-4 md:hidden">
-        {list.map((s) => (
+        {list.map((s, i) => (
           <li key={s.id} className="w-[60vw] max-w-[240px] shrink-0 snap-center">
-            <Link href={`/story/${s.id}`} className="block" aria-label={`#${s.rank} ${s.title}`}>
+            <Link href={`/story/${s.id}`} className="block" aria-label={`#${s.rank ?? i + 1} ${s.title}`}>
               <div className="flex items-center gap-2.5">
-                <span className="h-display bg-accent px-2.5 py-0.5 pr-4 text-2xl text-white [clip-path:polygon(0_0,100%_0,88%_100%,0_100%)]">#{s.rank}</span>
+                <span className="h-display bg-accent px-2.5 py-0.5 pr-4 text-2xl text-white [clip-path:polygon(0_0,100%_0,88%_100%,0_100%)]">#{s.rank ?? i + 1}</span>
                 <TypeBadge type={s.type} />
               </div>
               <div className="relative mt-2 rounded-md border-2 border-line shadow-[5px_5px_0_var(--shadow)]">
