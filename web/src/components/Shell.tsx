@@ -118,25 +118,11 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
           <Icon name={night ? "sun" : "moon"} size={18} />
         </button>
 
-        {account.role === "guest" && !session?.user ? (
-          <div className="relative" ref={ref}>
-            <button onClick={() => setMenu((m) => !m)} className="btn btn-accent !py-2 text-xs font-extrabold" aria-expanded={menu} aria-haspopup="menu" aria-label="Sign in">
-              <Icon name="user" size={14} /> <span className="hidden sm:inline">Sign in</span>
-            </button>
-            {menu && (
-              <div role="menu" className="panel anim-pop absolute right-0 top-[calc(100%+10px)] z-[110] w-72 p-2">
-                <Link href="/login" onClick={() => setMenu(false)} className="btn btn-accent mb-2 flex w-full items-center justify-center gap-2 !py-2 text-xs font-extrabold">
-                  <Icon name="user" size={14} /> Sign in / Google
-                </Link>
-              </div>
-            )}
-          </div>
-        ) : null}
-        <div className={cx("relative", account.role === "guest" && !session?.user && "hidden")} ref={account.role === "guest" && !session?.user ? undefined : ref}>
+        <div className="relative" ref={ref}>
           <button onClick={() => setMenu((m) => !m)} className="flex items-center gap-2 rounded-full border-2 border-line bg-card py-0.5 pl-0.5 pr-2 shadow-[2px_2px_0_var(--shadow)] md:pr-3" aria-expanded={menu} aria-haspopup="menu" aria-label="Account menu">
-            <Avatar account={account} style={account.role === "guest" ? undefined : me.profile.avatar} size={34} />
+            <Avatar account={account} style={me.profile.avatar} size={34} />
             <span className="hidden text-left leading-tight md:block">
-              <span className="block text-xs font-extrabold">{account.name.split(" ")[0]}</span>
+              <span className="block text-xs font-extrabold">{(account.role === "guest" ? me.profile.name : account.name).split(" ")[0]}</span>
               <span className={cx("block font-mono text-[0.58rem] font-bold uppercase tracking-wider", isAdmin ? "text-hl" : isCreator ? "text-accent" : "text-accent2")}>{isAdmin ? "Admin" : isCreator ? "Uploader" : account.role === "guest" ? "Guest" : "Reader"}</span>
             </span>
             <Icon name="down" size={14} />
