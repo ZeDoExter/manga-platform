@@ -123,6 +123,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       followers: 0,
       following: 0,
       verified: true,
+      image: u.image ?? undefined,
     };
     ACCOUNT_MAP[id] = acc;
     return acc;

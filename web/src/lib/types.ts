@@ -73,6 +73,7 @@ export interface Account {
   following: number;
   native?: string;
   verified?: boolean;
+  image?: string;
 }
 
 /* ---------- personal state ---------- */

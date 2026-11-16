@@ -121,7 +121,7 @@ export const AVATAR_STYLES: [string, string, string][] = [
   ["#0c3b2e", "#35d07f", "葉"],
 ];
 
-export function Avatar({ account, size = 40, style, className, ring }: { account?: Pick<Account, "colors" | "glyph" | "name">; size?: number; style?: number; className?: string; ring?: boolean }) {
+export function Avatar({ account, size = 40, style, className, ring }: { account?: Pick<Account, "colors" | "glyph" | "name" | "image">; size?: number; style?: number; className?: string; ring?: boolean }) {
   const s = style !== undefined ? AVATAR_STYLES[style % AVATAR_STYLES.length] : undefined;
   const c1 = s ? s[0] : account?.colors[0] ?? "#222";
   const c2 = s ? s[1] : account?.colors[1] ?? "#fff";
@@ -133,7 +133,12 @@ export function Avatar({ account, size = 40, style, className, ring }: { account
       aria-label={account?.name}
       role="img"
     >
-      <span className="leading-none">{g}</span>
+      {account?.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={account.image} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <span className="leading-none">{g}</span>
+      )}
       <span className="tone absolute inset-0 opacity-30" style={{ ["--tone" as string]: `${c2}66` }} />
     </span>
   );
