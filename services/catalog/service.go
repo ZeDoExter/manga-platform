@@ -82,10 +82,12 @@ func (s *Service) GetStory(ctx context.Context, storyID string) (*Story, error) 
 func (s *Service) ListStories(ctx context.Context) ([]*Story, error) {
 	return s.store.ListStories(ctx)
 }
+
 // DeleteStory permanently removes a story from the catalog.
 func (s *Service) DeleteStory(ctx context.Context, storyID string) error {
 	return s.store.DeleteStory(ctx, storyID)
 }
+
 // DeleteChapter permanently removes a chapter from the catalog.
 func (s *Service) DeleteChapter(ctx context.Context, chapterID string) error {
 	if chapterID == "" {
@@ -94,12 +96,15 @@ func (s *Service) DeleteChapter(ctx context.Context, chapterID string) error {
 	return s.store.DeleteChapter(ctx, chapterID)
 }
 
-// UpdateStory refreshes the editable story metadata and cover used by the web sync.
-func (s *Service) UpdateStory(ctx context.Context, storyID, title, synopsis string, tags []string, coverKey *string) (*Story, error) {
+// UpdateStory refreshes the editable story metadata, cover and color mode used by the web sync.
+func (s *Service) UpdateStory(ctx context.Context, storyID, title, synopsis string, tags []string, coverKey *string, colorMode *string) (*Story, error) {
 	if title == "" {
 		return nil, ErrInvalidTitle
 	}
-	return s.store.UpdateStory(ctx, storyID, title, synopsis, tags, coverKey)
+	if colorMode != nil && *colorMode != "color" && *colorMode != "mono" {
+		return nil, ErrInvalidColorMode
+	}
+	return s.store.UpdateStory(ctx, storyID, title, synopsis, tags, coverKey, colorMode)
 }
 
 // ListChaptersByStory returns all chapters of a story ordered by order_index.

@@ -12,7 +12,7 @@ type Store interface {
 	GetStory(ctx context.Context, storyID string) (*Story, error)
 	ListStories(ctx context.Context) ([]*Story, error)
 	DeleteStory(ctx context.Context, storyID string) error
-	UpdateStory(ctx context.Context, storyID, title, synopsis string, tags []string, coverKey *string) (*Story, error)
+	UpdateStory(ctx context.Context, storyID, title, synopsis string, tags []string, coverKey *string, colorMode *string) (*Story, error)
 	InsertChapter(ctx context.Context, c *Chapter) error
 	GetChapter(ctx context.Context, chapterID string) (*Chapter, error)
 	ListChaptersByStory(ctx context.Context, storyID string) ([]*Chapter, error)

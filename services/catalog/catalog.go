@@ -6,14 +6,15 @@ import (
 )
 
 var (
-	ErrStoryNotFound   = errors.New("story not found")
-	ErrChapterNotFound = errors.New("chapter not found")
-	ErrStoryExists     = errors.New("story already exists")
-	ErrChapterExists   = errors.New("chapter already exists")
-	ErrInvalidID       = errors.New("id cannot be empty")
-	ErrInvalidSplit    = errors.New("creator split must sum to 100%")
-	ErrInvalidPrice    = errors.New("chapter price cannot be negative")
-	ErrInvalidTitle    = errors.New("title cannot be empty")
+	ErrStoryNotFound    = errors.New("story not found")
+	ErrChapterNotFound  = errors.New("chapter not found")
+	ErrStoryExists      = errors.New("story already exists")
+	ErrChapterExists    = errors.New("chapter already exists")
+	ErrInvalidID        = errors.New("id cannot be empty")
+	ErrInvalidSplit     = errors.New("creator split must sum to 100%")
+	ErrInvalidPrice     = errors.New("chapter price cannot be negative")
+	ErrInvalidTitle     = errors.New("title cannot be empty")
+	ErrInvalidColorMode = errors.New("color mode must be color or mono")
 )
 
 type StoryType string
@@ -41,6 +42,7 @@ type Story struct {
 	ID            string         `json:"id"`
 	OwnerID       string         `json:"owner_id"`
 	Type          StoryType      `json:"type"`
+	ColorMode     string         `json:"color_mode"`
 	Title         string         `json:"title"`
 	CoverKey      string         `json:"cover_key"`
 	Synopsis      string         `json:"synopsis"`

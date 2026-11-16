@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StudioChapter } from "@/lib/types";
-import { TYPE_LABEL } from "@/lib/types";
+import { COLOR_LABEL, TYPE_LABEL, isVisual, type ColorMode } from "@/lib/types";
 import { ALL_GENRES, MOODS } from "@/data/stories";
 import { cx, fmtAgo, fmtNum } from "@/lib/util";
 import { useApp } from "@/lib/store";
@@ -171,6 +171,7 @@ function Inner({ id }: { id: string }) {
               <div><span className="label">Genres (max 4)</span><div className="mt-1.5 flex flex-wrap gap-1.5">{ALL_GENRES.map((g) => <button key={g} className={cx("chip", story.genres.includes(g) && "chip-on")} onClick={() => act.updateStory(story.id, { genres: tog(story.genres, g, 4) })}>{g}</button>)}</div></div>
               <div><span className="label">Tags</span><div className="mt-1.5 flex gap-2"><input className="field" value={tagIn} onChange={(e) => setTagIn(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())} placeholder="Add a tag" /><button className="btn" onClick={addTag}>Add</button></div><div className="mt-2 flex flex-wrap gap-1.5">{story.tags.map((t) => <button key={t} className="chip chip-on" onClick={() => act.updateStory(story.id, { tags: story.tags.filter((x) => x !== t) })}>#{t} ✕</button>)}</div></div>
               <div><span className="label">Reader mood</span><div className="mt-1.5 flex flex-wrap gap-1.5">{MOODS.map((m) => <button key={m} className={cx("chip", story.mood === m && "chip-on")} onClick={() => act.updateStory(story.id, { mood: m })}>{m}</button>)}</div></div>
+              {isVisual(story.type) && <div><span className="label">Artwork</span><div className="mt-1.5 flex flex-wrap gap-1.5">{(["color", "mono"] as ColorMode[]).map((m) => <button key={m} className={cx("chip", (story.colorMode ?? "color") === m && "chip-on")} onClick={() => act.updateStory(story.id, { colorMode: m })}>{COLOR_LABEL[m]}</button>)}</div></div>}
             </div>
             <div className="space-y-6">
               <div className="panel space-y-4 p-5">

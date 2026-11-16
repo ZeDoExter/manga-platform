@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Mood, Motif, StoryType, StudioStory } from "@/lib/types";
-import { TYPE_LABEL, isVisual } from "@/lib/types";
+import type { ColorMode, Mood, Motif, StoryType, StudioStory } from "@/lib/types";
+import { COLOR_LABEL, TYPE_LABEL, isVisual } from "@/lib/types";
 import { ALL_GENRES, MOODS, TYPES } from "@/data/stories";
 import { defaultPages } from "@/lib/content";
 import { cx, uid } from "@/lib/util";
@@ -29,6 +29,7 @@ function Wizard() {
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
   const [type, setType] = useState<StoryType>("manga");
+  const [colorMode, setColorMode] = useState<ColorMode>("color");
   const [tagline, setTagline] = useState("");
   const [synopsis, setSynopsis] = useState("");
   const [genres, setGenres] = useState<string[]>([]);
@@ -59,7 +60,7 @@ function Wizard() {
       text: visual ? undefined : "The first line of every story is a promise.\n\nWrite yours here — then preview it exactly as readers will see it.",
       pages: visual ? defaultPages(4, uid("p")) : undefined,
     };
-    const st: StudioStory = { id, ownerId: account.id, title: title.trim(), type, synopsis: synopsis.trim(), tagline: tagline.trim(), genres, tags, palette, motif, mood, coverImage: image, status: publish ? "published" : "draft", chapters: [ch], createdAt: Date.now() };
+    const st: StudioStory = { id, ownerId: account.id, title: title.trim(), type, colorMode, synopsis: synopsis.trim(), tagline: tagline.trim(), genres, tags, palette, motif, mood, coverImage: image, status: publish ? "published" : "draft", chapters: [ch], createdAt: Date.now() };
     act.createStory(st);
     toast(publish ? `“${st.title}” published! Find it in Discover 🎉` : `Draft saved — “${st.title}” is in your Studio ✓`);
     router.push(publish ? `/studio/${id}` : `/studio/${id}/edit/${ch.id}`);
@@ -92,6 +93,14 @@ function Wizard() {
                   {TYPES.map((t) => <button key={t} onClick={() => setType(t)} aria-pressed={type === t} className={cx("rounded-md border-2 border-line p-3 text-left transition-all", type === t ? "bg-ink text-paper shadow-[3px_3px_0_var(--accent)]" : "bg-card hover:-translate-y-0.5")}><div className="text-sm font-extrabold">{TYPE_LABEL[t]}</div><div className="font-mono text-[0.62rem] opacity-70">{isVisual(t) ? "pages / panels" : "text editor"}</div></button>)}
                 </div>
               </div>
+              {isVisual(type) && (
+                <div>
+                  <span className="label">Artwork</span>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {(["color", "mono"] as const).map((m) => <button key={m} onClick={() => setColorMode(m)} aria-pressed={colorMode === m} className={cx("rounded-md border-2 border-line p-3 text-left transition-all", colorMode === m ? "bg-ink text-paper shadow-[3px_3px_0_var(--accent)]" : "bg-card hover:-translate-y-0.5")}><div className="text-sm font-extrabold">{COLOR_LABEL[m]}</div><div className="font-mono text-[0.62rem] opacity-70">{m === "color" ? "full color pages" : "black & white"}</div></button>)}
+                  </div>
+                </div>
+              )}
               <Field label="Tagline" hint="one line that sells it"><input className="field" value={tagline} onChange={(e) => setTagline(e.target.value)} maxLength={90} placeholder="She maps the places that were never built." /></Field>
               <Field label="Synopsis" hint={`${synopsis.length}/500 · min 20`} required><textarea className="field min-h-32" value={synopsis} onChange={(e) => setSynopsis(e.target.value)} maxLength={500} placeholder="Introduce your world, your hook, and the question readers can’t put down…" /></Field>
               {!valid0 && <p className="text-xs font-semibold text-accent">Add a title (3+ chars) and a synopsis (20+ chars) to continue.</p>}

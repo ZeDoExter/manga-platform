@@ -14,6 +14,7 @@ interface BackendStory {
   synopsis: string;
   tags: string[];
   status: "draft" | "published" | "hidden" | "taken_down";
+  color_mode?: string;
   created_at: string;
 }
 
@@ -68,6 +69,7 @@ export async function GET() {
           ownerId: s.owner_id,
           title: s.title,
           type: s.type === "novel" ? "light-novel" : "manga",
+          colorMode: s.color_mode === "mono" ? "mono" : "color",
           synopsis: s.synopsis || "",
           tagline: s.synopsis ? s.synopsis.slice(0, 80) : "Original series on DOOTOON",
           genres: s.tags?.length ? s.tags.slice(0, 2) : ["Original"],
@@ -139,6 +141,7 @@ export async function POST(req: NextRequest) {
         synopsis,
         tags,
         ...(coverKey === undefined ? {} : { cover_key: coverKey }),
+        color_mode: story.colorMode === "mono" ? "mono" : "color",
       }),
       cache: "no-store",
     }).catch(() => null);

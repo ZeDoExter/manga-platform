@@ -16,7 +16,9 @@ import (
 func newService(ctx context.Context) *catalog.Service {
 	return pgmigrate.Boot(ctx, "catalog", dbmigrations.Migrations, dbmigrations.Dir,
 		catalog.NewService,
-		func(pool *pgxpool.Pool) *catalog.Service { return catalog.NewServiceWithStore(catalog.NewPGStore(pool)) })
+		func(pool *pgxpool.Pool) *catalog.Service {
+			return catalog.NewServiceWithStore(catalog.NewPGStore(pool))
+		})
 }
 
 func main() {
@@ -87,36 +89,36 @@ func main() {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
-mux.HandleFunc("DELETE /chapters/{id}", func(w http.ResponseWriter, r *http.Request) {
-	if err := svc.DeleteChapter(r.Context(), r.PathValue("id")); err != nil {
-		if errors.Is(err, catalog.ErrChapterNotFound) {
-			httpapi.Fail(w, http.StatusNotFound, err.Error())
+	mux.HandleFunc("DELETE /chapters/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if err := svc.DeleteChapter(r.Context(), r.PathValue("id")); err != nil {
+			if errors.Is(err, catalog.ErrChapterNotFound) {
+				httpapi.Fail(w, http.StatusNotFound, err.Error())
+				return
+			}
+			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		httpapi.Fail(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-})
+		w.WriteHeader(http.StatusNoContent)
+	})
 
-mux.HandleFunc("PATCH /stories/{id}", func(w http.ResponseWriter, r *http.Request) {
-	var req api.UpdateStoryRequest
-	if err := httpapi.Decode(r, &req); err != nil {
-		httpapi.Fail(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	story, err := svc.UpdateStory(r.Context(), r.PathValue("id"), req.Title, req.Synopsis, req.Tags, req.CoverKey)
-	switch {
-	case err == nil:
-		httpapi.JSON(w, http.StatusOK, story)
-	case errors.Is(err, catalog.ErrStoryNotFound):
-		httpapi.Fail(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, catalog.ErrInvalidTitle):
-		httpapi.Fail(w, http.StatusBadRequest, err.Error())
-	default:
-		httpapi.Fail(w, http.StatusInternalServerError, err.Error())
-	}
-})
+	mux.HandleFunc("PATCH /stories/{id}", func(w http.ResponseWriter, r *http.Request) {
+		var req api.UpdateStoryRequest
+		if err := httpapi.Decode(r, &req); err != nil {
+			httpapi.Fail(w, http.StatusBadRequest, "invalid request body")
+			return
+		}
+		story, err := svc.UpdateStory(r.Context(), r.PathValue("id"), req.Title, req.Synopsis, req.Tags, req.CoverKey, req.ColorMode)
+		switch {
+		case err == nil:
+			httpapi.JSON(w, http.StatusOK, story)
+		case errors.Is(err, catalog.ErrStoryNotFound):
+			httpapi.Fail(w, http.StatusNotFound, err.Error())
+		case errors.Is(err, catalog.ErrInvalidTitle), errors.Is(err, catalog.ErrInvalidColorMode):
+			httpapi.Fail(w, http.StatusBadRequest, err.Error())
+		default:
+			httpapi.Fail(w, http.StatusInternalServerError, err.Error())
+		}
+	})
 
 	mux.HandleFunc("POST /stories/{id}/chapters", func(w http.ResponseWriter, r *http.Request) {
 		var req api.CreateChapterRequest

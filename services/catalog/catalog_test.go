@@ -175,11 +175,12 @@ func TestUpdateStory_PersistsMetadataAndCover(t *testing.T) {
 	}
 
 	cover := "stories/story_cov/cover/abc.webp"
-	updated, err := svc.UpdateStory(ctx, story.ID, "New title", "new syn", []string{"Drama"}, &cover)
+	mono := "mono"
+	updated, err := svc.UpdateStory(ctx, story.ID, "New title", "new syn", []string{"Drama"}, &cover, &mono)
 	if err != nil {
 		t.Fatalf("UpdateStory: %v", err)
 	}
-	if updated.Title != "New title" || updated.Synopsis != "new syn" || updated.CoverKey != cover {
+	if updated.Title != "New title" || updated.Synopsis != "new syn" || updated.CoverKey != cover || updated.ColorMode != "mono" {
 		t.Fatalf("metadata not updated: %+v", updated)
 	}
 	if len(updated.Tags) != 1 || updated.Tags[0] != "Drama" {
@@ -187,17 +188,20 @@ func TestUpdateStory_PersistsMetadataAndCover(t *testing.T) {
 	}
 
 	// nil cover leaves the stored key untouched (local-only data-URL cover).
-	kept, err := svc.UpdateStory(ctx, story.ID, "New title", "new syn", []string{"Drama"}, nil)
+	kept, err := svc.UpdateStory(ctx, story.ID, "New title", "new syn", []string{"Drama"}, nil, nil)
 	if err != nil {
 		t.Fatalf("UpdateStory nil cover: %v", err)
 	}
 	if kept.CoverKey != cover {
 		t.Fatalf("nil cover must keep %q, got %q", cover, kept.CoverKey)
 	}
+	if kept.ColorMode != "mono" {
+		t.Fatalf("nil color mode must keep %q, got %q", "mono", kept.ColorMode)
+	}
 
 	// Empty cover clears it ("use generated cover").
 	empty := ""
-	cleared, err := svc.UpdateStory(ctx, story.ID, "New title", "new syn", nil, &empty)
+	cleared, err := svc.UpdateStory(ctx, story.ID, "New title", "new syn", nil, &empty, nil)
 	if err != nil {
 		t.Fatalf("UpdateStory clear cover: %v", err)
 	}
@@ -205,11 +209,15 @@ func TestUpdateStory_PersistsMetadataAndCover(t *testing.T) {
 		t.Fatalf("expected cleared cover, got %q", cleared.CoverKey)
 	}
 
-	if _, err := svc.UpdateStory(ctx, story.ID, "", "s", nil, nil); err != catalog.ErrInvalidTitle {
+	if _, err := svc.UpdateStory(ctx, story.ID, "", "s", nil, nil, nil); err != catalog.ErrInvalidTitle {
 		t.Fatalf("expected ErrInvalidTitle, got %v", err)
 	}
-	if _, err := svc.UpdateStory(ctx, "story_missing", "T", "s", nil, nil); err != catalog.ErrStoryNotFound {
+	if _, err := svc.UpdateStory(ctx, "story_missing", "T", "s", nil, nil, nil); err != catalog.ErrStoryNotFound {
 		t.Fatalf("expected ErrStoryNotFound, got %v", err)
+	}
+	bad := "sepia"
+	if _, err := svc.UpdateStory(ctx, story.ID, "T", "s", nil, nil, &bad); err != catalog.ErrInvalidColorMode {
+		t.Fatalf("expected ErrInvalidColorMode, got %v", err)
 	}
 }
 

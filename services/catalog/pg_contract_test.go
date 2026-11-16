@@ -51,11 +51,12 @@ func TestPGStore_Contract(t *testing.T) {
 	}
 
 	cover := "stories/pg/cover/abc.webp"
-	if _, err := svc.UpdateStory(ctx, story.ID, "PG Story v2", "syn2", []string{"Drama"}, &cover); err != nil {
+	mono := "mono"
+	if _, err := svc.UpdateStory(ctx, story.ID, "PG Story v2", "syn2", []string{"Drama"}, &cover, &mono); err != nil {
 		t.Fatalf("UpdateStory: %v", err)
 	}
 	got2, _ := svc.GetStory(ctx, story.ID)
-	if got2.Title != "PG Story v2" || got2.CoverKey != cover || len(got2.Tags) != 1 {
+	if got2.Title != "PG Story v2" || got2.CoverKey != cover || len(got2.Tags) != 1 || got2.ColorMode != "mono" {
 		t.Fatalf("story update not persisted: %+v", got2)
 	}
 

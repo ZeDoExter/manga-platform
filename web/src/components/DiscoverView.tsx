@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ALL_GENRES, CREATOR_MAP } from "@/data/stories";
-import { TYPE_LABEL, type StoryType } from "@/lib/types";
+import { COLOR_LABEL, TYPE_LABEL, type ColorMode, type StoryType } from "@/lib/types";
 import { matchScore } from "@/lib/content";
 import { suggest } from "@/lib/search";
 import { cx } from "@/lib/util";
@@ -35,6 +35,7 @@ export function DiscoverView({ initial }: { initial: { q?: string; genre?: strin
   const [types, setTypes] = useState<StoryType[]>(sp.get("type") ? [sp.get("type") as StoryType] : []);
   const [genres, setGenres] = useState<string[]>(sp.get("genre") ? [sp.get("genre") as string] : []);
   const [status, setStatus] = useState("any");
+  const [artwork, setArtwork] = useState<"any" | ColorMode>("any");
   const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState<Sort>("match");
   const [focus, setFocus] = useState(false);
@@ -63,6 +64,7 @@ export function DiscoverView({ initial }: { initial: { q?: string; genre?: strin
       .filter((s) => (types.length ? types.includes(s.type) : true))
       .filter((s) => (genres.length ? genres.every((g) => s.genres.includes(g)) : true))
       .filter((s) => (status === "any" ? true : s.status === status))
+      .filter((s) => (artwork === "any" ? true : s.colorMode === artwork))
       .filter((s) => liveRating(ratings, s).avg >= minRating)
       .filter((s) => {
         if (!terms.length) return true;
@@ -79,11 +81,11 @@ export function DiscoverView({ initial }: { initial: { q?: string; genre?: strin
       chapters: (a, b) => b.s.chapters - a.s.chapters,
     };
     return list.sort(by[sort]);
-  }, [catalog, q, types, genres, status, minRating, sort, me.taste, me.profile.genres, ratings, readsWeek]);
+  }, [catalog, q, types, genres, status, artwork, minRating, sort, me.taste, me.profile.genres, ratings, readsWeek]);
 
   const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
-  const activeCount = types.length + genres.length + (status !== "any" ? 1 : 0) + (minRating > 0 ? 1 : 0) + (q ? 1 : 0);
-  const clear = () => { setQ(""); setTypes([]); setGenres([]); setStatus("any"); setMinRating(0); router.replace("/discover"); };
+  const activeCount = types.length + genres.length + (status !== "any" ? 1 : 0) + (artwork !== "any" ? 1 : 0) + (minRating > 0 ? 1 : 0) + (q ? 1 : 0);
+  const clear = () => { setQ(""); setTypes([]); setGenres([]); setStatus("any"); setArtwork("any"); setMinRating(0); router.replace("/discover"); };
 
   return (
     <div className="wrap py-8 md:py-12">
@@ -149,6 +151,10 @@ export function DiscoverView({ initial }: { initial: { q?: string; genre?: strin
               <div className="label mb-2 mt-5">Status</div>
               <div className="flex flex-wrap gap-1.5">
                 {["any", "Ongoing", "Completed"].map((s) => <button key={s} className={cx("chip", status === s && "chip-on")} aria-pressed={status === s} onClick={() => setStatus(s)}>{s}</button>)}
+              </div>
+              <div className="label mb-2 mt-5">Artwork</div>
+              <div className="flex flex-wrap gap-1.5">
+                {(["any", "color", "mono"] as const).map((a) => <button key={a} className={cx("chip", artwork === a && "chip-on")} aria-pressed={artwork === a} onClick={() => setArtwork(a)}>{a === "any" ? "All" : COLOR_LABEL[a]}</button>)}
               </div>
               <div className="label mb-1 mt-5 flex justify-between"><span>Minimum rating</span><span className="text-ink">{minRating ? `${minRating.toFixed(1)}★` : "any"}</span></div>
               <input type="range" min={0} max={4.8} step={0.1} value={minRating} onChange={(e) => setMinRating(+e.target.value)} className="w-full" aria-label="Minimum rating" />

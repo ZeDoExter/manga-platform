@@ -60,9 +60,9 @@ func (p *PGStore) InsertStory(ctx context.Context, s *Story) error {
 func (p *PGStore) GetStory(ctx context.Context, storyID string) (*Story, error) {
 	s := &Story{}
 	if err := p.pool.QueryRow(ctx, `
-		SELECT id, owner_id, type, title, cover_key, synopsis, status, created_at
+		SELECT id, owner_id, type, title, cover_key, synopsis, status, created_at, color_mode
 		FROM catalog.stories WHERE id = $1`, storyID).Scan(
-		&s.ID, &s.OwnerID, &s.Type, &s.Title, &s.CoverKey, &s.Synopsis, &s.Status, &s.CreatedAt,
+		&s.ID, &s.OwnerID, &s.Type, &s.Title, &s.CoverKey, &s.Synopsis, &s.Status, &s.CreatedAt, &s.ColorMode,
 	); err != nil {
 		return nil, pgmigrate.NotFound(err, ErrStoryNotFound)
 	}
@@ -99,7 +99,7 @@ func (p *PGStore) GetStory(ctx context.Context, storyID string) (*Story, error) 
 	return s, rows.Err()
 }
 
-func (p *PGStore) UpdateStory(ctx context.Context, storyID, title, synopsis string, tags []string, coverKey *string) (*Story, error) {
+func (p *PGStore) UpdateStory(ctx context.Context, storyID, title, synopsis string, tags []string, coverKey *string, colorMode *string) (*Story, error) {
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -110,13 +110,18 @@ func (p *PGStore) UpdateStory(ctx context.Context, storyID, title, synopsis stri
 	if coverKey != nil {
 		cover = *coverKey
 	}
+	var mode any
+	if colorMode != nil {
+		mode = *colorMode
+	}
 	tag, err := tx.Exec(ctx, `
 		UPDATE catalog.stories
 		SET title = $2,
 		    synopsis = $3,
-		    cover_key = CASE WHEN $4::text IS NULL THEN cover_key ELSE $4 END
+		    cover_key = CASE WHEN $4::text IS NULL THEN cover_key ELSE $4 END,
+		    color_mode = CASE WHEN $5::text IS NULL THEN color_mode ELSE $5 END
 		WHERE id = $1`,
-		storyID, title, synopsis, cover)
+		storyID, title, synopsis, cover, mode)
 	if err != nil {
 		return nil, err
 	}

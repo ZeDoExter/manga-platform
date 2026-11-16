@@ -1,5 +1,8 @@
 export type StoryType = "manga" | "manhwa" | "manhua" | "light-novel" | "web-novel" | "original";
 
+export type ColorMode = "color" | "mono";
+export const COLOR_LABEL: Record<ColorMode, string> = { color: "ภาพสี", mono: "ขาวดำ" };
+
 export const TYPE_LABEL: Record<StoryType, string> = {
   manga: "Manga",
   manhwa: "Manhwa",
@@ -33,6 +36,7 @@ export interface Story {
   title: string;
   alt: string;
   type: StoryType;
+  colorMode: ColorMode;
   creator: string;
   genres: string[];
   tags: string[];
@@ -159,6 +163,7 @@ export interface StudioStory {
   ownerId: string;
   title: string;
   type: StoryType;
+  colorMode?: ColorMode;
   synopsis: string;
   tagline: string;
   genres: string[];

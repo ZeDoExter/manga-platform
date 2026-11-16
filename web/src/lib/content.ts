@@ -46,6 +46,7 @@ export function studioToStory(s: StudioStory, owner: Account | undefined): Story
     title: s.title,
     alt: s.tagline || "Original series",
     type: s.type,
+    colorMode: s.colorMode ?? "color",
     creator: owner?.id ?? s.ownerId,
     genres: s.genres.length ? s.genres : ["Original"],
     tags: s.tags,

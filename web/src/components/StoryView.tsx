@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DETAILS } from "@/data/details";
 import { CREATOR_MAP } from "@/data/stories";
 import { ACCOUNT_MAP } from "@/data/accounts";
-import { TYPE_LABEL, isVisual, type Account, type Story } from "@/lib/types";
+import { COLOR_LABEL, TYPE_LABEL, isVisual, type Account, type Story } from "@/lib/types";
 import { relatedStories } from "@/lib/content";
 import { storyRating, type RemoteComment } from "@/lib/ratings";
 import { useStoryReads } from "@/lib/reads";
@@ -90,6 +90,7 @@ function StoryInner({ story }: { story: Story }) {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <TypeBadge type={story.type} />
+              {isVisual(story.type) && <span className="chip !border-white/60 !bg-white/10 !text-white">{COLOR_LABEL[story.colorMode]}</span>}
               <span className="chip !border-white/60 !bg-white/10 !text-white">{story.status}</span>
               <span className="chip !border-white/60 !bg-white/10 !text-white">{story.age}</span>
               {story.rank && <span className="chip !border-hl !bg-hl !text-[#15120f]">Top 10 · #{story.rank}</span>}

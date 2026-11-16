@@ -148,7 +148,7 @@ func (m *MemoryStore) DeleteChapter(_ context.Context, chapterID string) error {
 	return nil
 }
 
-func (m *MemoryStore) UpdateStory(_ context.Context, storyID, title, synopsis string, tags []string, coverKey *string) (*Story, error) {
+func (m *MemoryStore) UpdateStory(_ context.Context, storyID, title, synopsis string, tags []string, coverKey *string, colorMode *string) (*Story, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	s, exists := m.stories[storyID]
@@ -160,6 +160,9 @@ func (m *MemoryStore) UpdateStory(_ context.Context, storyID, title, synopsis st
 	s.Tags = append([]string(nil), tags...)
 	if coverKey != nil {
 		s.CoverKey = *coverKey
+	}
+	if colorMode != nil {
+		s.ColorMode = *colorMode
 	}
 	return copyStory(s), nil
 }
