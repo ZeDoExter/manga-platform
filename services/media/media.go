@@ -17,7 +17,7 @@ var (
 	ErrTooLarge       = errors.New("image exceeds 10MB")
 	ErrTooManyPixels  = errors.New("image exceeds 40 megapixels")
 	ErrTooTall        = errors.New("image taller than 16000px (webtoon strips must be split client-side)")
-	ErrUnsupportedFmt = errors.New("unsupported image format (need JPEG or PNG)")
+	ErrUnsupportedFmt = errors.New("unsupported image format (need JPEG, PNG, GIF or WebP)")
 	ErrInvalidKey     = errors.New("invalid image key")
 	ErrNotAZip        = errors.New("not a zip archive")
 	ErrZipTooLarge    = errors.New("zip exceeds 100MB or 1GB unpacked")
