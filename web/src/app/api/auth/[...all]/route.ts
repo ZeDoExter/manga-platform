@@ -1,13 +1,11 @@
 import { auth } from "@/lib/auth";
+import { DEMO_SEEDS } from "@/lib/demo-seeds";
 import { toNextJsHandler } from "better-auth/next-js";
 import type { NextRequest } from "next/server";
 
 const handler = toNextJsHandler(auth);
 
-const SEEDS = [
-  { name: "Creator", email: "creator@dootoon.store", password: "dootoon123", role: "creator" },
-  { name: "System Admin", email: "admin@dootoon.store", password: "dootoon123", role: "admin" },
-] as const;
+const SEEDS = DEMO_SEEDS;
 
 let seedPromise: Promise<void> | null = null;
 function ensureSeed() {

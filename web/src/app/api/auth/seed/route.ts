@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { DEMO_SEEDS } from "@/lib/demo-seeds";
 
 export const dynamic = "force-dynamic";
 
-// Demo seed: 3 login users (reader / creator / admin).
-// better-auth memory adapter loses data on restart — this re-seeds it.
-// Password for all: dootoon123
-const SEEDS = [
-  { name: "Creator", email: "creator@dootoon.store", password: "dootoon123", role: "creator" },
-  { name: "System Admin", email: "admin@dootoon.store", password: "dootoon123", role: "admin" },
-] as const;
+const SEEDS = DEMO_SEEDS;
 
 export async function POST() {
   const created: string[] = [];
