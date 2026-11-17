@@ -22,6 +22,7 @@ import (
 
 	"github.com/gen2brain/webp"
 	"golang.org/x/image/draw"
+	_ "golang.org/x/image/webp"
 )
 
 // processOne validates, resizes, and encodes a single image.
@@ -29,7 +30,7 @@ import (
 func processOne(raw []byte) (out []byte, w, h int, animated bool, err error) {
 	ct := http.DetectContentType(raw)
 	switch {
-	case strings.HasPrefix(ct, "image/jpeg"), strings.HasPrefix(ct, "image/png"):
+	case strings.HasPrefix(ct, "image/jpeg"), strings.HasPrefix(ct, "image/png"), strings.HasPrefix(ct, "image/webp"):
 	case strings.HasPrefix(ct, "image/gif"):
 		animated = true // first frame only
 	default:

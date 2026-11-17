@@ -197,6 +197,7 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
             }
           }
 
+          const failed = results.filter((r): r is Error => r instanceof Error);
           if (added.length) {
             if (pages.length > 0 && confirm(`Replace existing ${pages.length} pages with ${added.length} pages from ${archive.name}?`)) {
               setPages(added);
@@ -206,6 +207,8 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
             }
             toast(`${added.length} pages loaded in order (1 to ${added.length}) ✓`);
           }
+          if (failed.length) toast(`${failed.length} page${failed.length === 1 ? "" : "s"} failed: ${failed[0].message}`, "warn");
+          if (!added.length && !failed.length) toast("No images found in that archive", "warn");
         } else {
           // Fallback to server batch if fflate didn't find images
           const items = await uploadArchive(archive, state.accountId, story.id, ch.id, (pct) => {
@@ -215,10 +218,12 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
           for (const it of items) {
             if (it.result?.key) added.push({ id: uid("pg"), kind: "upload", src: it.result.key });
           }
+          const failed = items.filter((it) => !it.result?.key);
           if (added.length) {
             setPages([...pages, ...added]);
             toast(`${added.length} pages added ✓`);
           }
+          if (failed.length) toast(`${failed.length} page${failed.length === 1 ? "" : "s"} failed${failed[0].error ? `: ${failed[0].error}` : ""}`, "warn");
         }
       } catch {
         toast("Upload could not be processed. Please try again.", "warn");
@@ -251,6 +256,9 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
       setPages([...pages, ...added]);
       toast(`${added.length} pages added in order ✓`);
     }
+    const failed = results.filter((r): r is Error => r instanceof Error);
+    if (failed.length) toast(`${failed.length} page${failed.length === 1 ? "" : "s"} failed: ${failed[0].message}`, "warn");
+    if (!added.length && !failed.length && imgs.length) toast("No pages were added", "warn");
     setProgress(null);
     setBusy(false);
   };
