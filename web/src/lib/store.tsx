@@ -41,6 +41,14 @@ interface ToastItem {
   kind: "ok" | "info" | "warn";
 }
 
+export interface ConfirmRequest {
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  danger?: boolean;
+}
+
 export interface Actions {
   signOutLocal(): void;
   setTheme(t: "paper" | "night"): void;
@@ -73,6 +81,7 @@ interface Ctx {
   state: AppState;
   act: Actions;
   toast: (msg: string, kind?: ToastItem["kind"]) => void;
+  askConfirm: (req: ConfirmRequest) => Promise<boolean>;
   now: number;
   account: Account;
   me: AccountData;
@@ -104,6 +113,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const id = ++tid.current;
     setToasts((t) => [...t.slice(-3), { id, msg, kind }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
+  }, []);
+  const [confirmReq, setConfirmReq] = useState<ConfirmRequest | null>(null);
+  const confirmResolve = useRef<((v: boolean) => void) | null>(null);
+  const askConfirm = useCallback((req: ConfirmRequest) => {
+    const { promise, resolve } = Promise.withResolvers<boolean>();
+    confirmResolve.current?.(false); // superseded prompt answers "no"
+    confirmResolve.current = resolve;
+    setConfirmReq({ confirmLabel: "Confirm", cancelLabel: "Cancel", ...req });
+    return promise;
+  }, []);
+  const answerConfirm = useCallback((v: boolean) => {
+    confirmResolve.current?.(v);
+    confirmResolve.current = null;
+    setConfirmReq(null);
   }, []);
   const { data: session, isPending: sessionPending, error: sessionError } = useSession();
 
@@ -604,6 +627,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       state,
       act,
       toast,
+      askConfirm,
       now,
       account: activeAccount,
       me: state.data[activeAccount.id] ?? emptyData(activeAccount.name),
@@ -611,7 +635,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       getStory,
       dataFor,
     }),
-    [state, act, toast, now, activeAccount, catalog, getStory, dataFor],
+    [state, act, toast, askConfirm, now, activeAccount, catalog, getStory, dataFor],
   );
 
   return (
@@ -627,6 +651,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
           </div>
         ))}
       </div>
+      {confirmReq && (
+        <div
+          className="fixed inset-0 z-[400] grid place-items-center bg-black/60 p-4"
+          role="alertdialog"
+          aria-modal="true"
+          aria-label={confirmReq.title}
+          onClick={() => answerConfirm(false)}
+          onKeyDown={(e) => e.key === "Escape" && answerConfirm(false)}
+        >
+          <div
+            className="anim-pop panel w-full max-w-sm p-5 shadow-[4px_4px_0_var(--shadow)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="h-display text-xl">{confirmReq.title}</div>
+            <p className="mt-2 text-sm text-ink2">{confirmReq.message}</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button className="btn btn-ghost" onClick={() => answerConfirm(false)} autoFocus>
+                {confirmReq.cancelLabel}
+              </button>
+              <button
+                className={`btn ${confirmReq.danger ? "btn-accent" : ""}`}
+                onClick={() => answerConfirm(true)}
+              >
+                {confirmReq.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppCtx.Provider>
   );
 }

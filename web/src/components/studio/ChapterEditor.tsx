@@ -40,7 +40,7 @@ function Loader({ storyId, chapterId }: { storyId: string; chapterId: string }) 
 }
 
 function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
-  const { act, toast, now, state } = useApp();
+  const { act, toast, askConfirm, now, state } = useApp();
   const visual = isVisual(story.type);
   const [title, setTitle] = useState(ch.title);
   const [num, setNum] = useState(String(ch.number));
@@ -199,13 +199,21 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
 
           const failed = results.filter((r): r is Error => r instanceof Error);
           if (added.length) {
-            if (pages.length > 0 && confirm(`Replace existing ${pages.length} pages with ${added.length} pages from ${archive.name}?`)) {
+            const replace =
+              pages.length > 0 &&
+              (await askConfirm({
+                title: "Replace pages?",
+                message: `Replace the existing ${pages.length} pages with ${added.length} pages from ${archive.name}?`,
+                confirmLabel: "Replace",
+                danger: true,
+              }));
+            if (replace) {
               setPages(added);
               setSel(0);
             } else {
               setPages([...pages, ...added]);
             }
-            toast(`${added.length} pages loaded in order (1 to ${added.length}) ✓`);
+            toast(`${added.length} pages loaded in order (1 to ${added.length})`);
           }
           if (failed.length) toast(`${failed.length} page${failed.length === 1 ? "" : "s"} failed: ${failed[0].message}`, "warn");
           if (!added.length && !failed.length) toast("No images found in that archive", "warn");
@@ -330,7 +338,7 @@ function Editor({ story, ch }: { story: StudioStory; ch: StudioChapter }) {
                       </button>
                     )}
                     {pages.length > 0 && (
-                      <button className="btn btn-ghost btn-sm text-xs !text-muted hover:!text-accent" onClick={() => { if (confirm("Clear all pages in this chapter?")) { setPages([]); setSel(0); } }}>
+                      <button className="btn btn-ghost btn-sm text-xs !text-muted hover:!text-accent" onClick={async () => { if (await askConfirm({ title: "Clear all pages?", message: "Remove every page from this chapter? This can't be undone.", confirmLabel: "Clear all", danger: true })) { setPages([]); setSel(0); } }}>
                         Clear all
                       </button>
                     )}

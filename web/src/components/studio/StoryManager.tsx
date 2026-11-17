@@ -25,7 +25,7 @@ export function StoryManager({ id }: { id: string }) {
 }
 
 function Inner({ id }: { id: string }) {
-  const { state, act, toast, now } = useApp();
+  const { state, act, toast, askConfirm, now } = useApp();
   const router = useRouter();
   const story = state.studio.find((s) => s.id === id);
   const [tab, setTab] = useState<Tab>("overview");
@@ -143,7 +143,7 @@ function Inner({ id }: { id: string }) {
                       <button className="btn btn-sm btn-ghost" onClick={() => setPreview(c)}><Icon name="eye" size={12} /> Preview</button>
                       {c.status === "published" ? <button className="btn btn-sm btn-ghost" onClick={() => setCh(c, "draft")}>Unpublish</button> : <button className="btn btn-sm btn-ghost" onClick={() => setCh(c, "published")}>Publish</button>}
                       <button className="btn btn-sm btn-ghost" onClick={() => { setSchedFor(schedFor === c.id ? null : c.id); setSchedVal(c.scheduledFor ?? new Date(now + 86400000).toISOString().slice(0, 13) + ":00"); }}><Icon name="calendar" size={12} /> Schedule</button>
-                      <button className="btn btn-sm btn-ghost btn-icon" aria-label={`Delete chapter ${c.number}`} onClick={() => window.confirm(`Delete chapter ${c.number}?`) && act.deleteChapter(story.id, c.id)}><Icon name="trash" size={12} /></button>
+                      <button className="btn btn-sm btn-ghost btn-icon" aria-label={`Delete chapter ${c.number}`} onClick={async () => { if (await askConfirm({ title: `Delete chapter ${c.number}?`, message: `“${c.title || `Chapter ${c.number}`}” and its pages will be removed. This can't be undone.`, confirmLabel: "Delete", danger: true })) act.deleteChapter(story.id, c.id); }}><Icon name="trash" size={12} /></button>
                     </div>
                     {schedFor === c.id && (
                       <div className="anim-fade-up flex w-full flex-wrap items-center gap-2 rounded-md border-2 border-dashed border-line/50 bg-paper2 p-2.5">
@@ -190,7 +190,7 @@ function Inner({ id }: { id: string }) {
               <div className="panel border-accent p-5">
                 <h3 className="h-display text-lg text-accent">Danger zone</h3>
                 <p className="mt-1 text-sm text-muted">Deleting removes this story and all its chapters from your browser storage.</p>
-                <button className="btn btn-ghost mt-3 !text-accent" onClick={() => { if (window.confirm(`Delete “${story.title}” permanently?`)) { act.deleteStory(story.id); router.push("/studio"); } }}><Icon name="trash" size={14} /> Delete story</button>
+                <button className="btn btn-ghost mt-3 !text-accent" onClick={async () => { if (await askConfirm({ title: "Delete story?", message: `“${story.title}” and all its chapters will be permanently removed. This can't be undone.`, confirmLabel: "Delete story", danger: true })) { act.deleteStory(story.id); router.push("/studio"); } }}><Icon name="trash" size={14} /> Delete story</button>
               </div>
             </div>
           </div>
