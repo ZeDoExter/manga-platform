@@ -83,3 +83,60 @@ func ensureRGBA(img image.Image) *image.RGBA {
 	draw.Draw(dst, b, img, b.Min, draw.Src)
 	return dst
 }
+
+
+// hasClientBadge reports whether the image already carries a client-painted
+// badge: it scans the bottom-right corner for a solid 8x8 block of the
+// badge accent orange. Font-independent (text is never inspected).
+// Lenient by design: a miss only costs the slow server-encode path,
+// so false negatives are safe and false positives just skip a redundant badge.
+func hasClientBadge(img image.Image) bool {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	if w < 240 || h < 240 {
+		return false
+	}
+	x1, y1 := b.Max.X-8, b.Max.Y-8
+	x0, y0 := b.Max.X-220, b.Max.Y-60
+	if x0 < b.Min.X {
+		x0 = b.Min.X
+	}
+	if y0 < b.Min.Y {
+		y0 = b.Min.Y
+	}
+	for y := y0; y <= y1; y += 2 {
+		for x := x0; x <= x1; x += 2 {
+			if orangeBlock(img, x, y) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// orangeBlock reports whether the 8x8 block at (x, y) is all near-badge-orange.
+// Tolerance absorbs WebP lossy drift on flat fills (typically < 10).
+func orangeBlock(img image.Image, x, y int) bool {
+	for dy := range 8 {
+		for dx := range 8 {
+			r, g, bl, _ := img.At(x+dx, y+dy).RGBA()
+			r8, g8, b8 := r>>8, g>>8, bl>>8
+			dr := int(r8) - 255
+			if dr < 0 {
+				dr = -dr
+			}
+			dg := int(g8) - 74
+			if dg < 0 {
+				dg = -dg
+			}
+			db := int(b8) - 34
+			if db < 0 {
+				db = -db
+			}
+			if dr > 48 || dg > 48 || db > 48 {
+				return false
+			}
+		}
+	}
+	return true
+}

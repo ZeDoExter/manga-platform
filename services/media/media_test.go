@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gen2brain/webp"
 	"manga-platform/pkg/imagestore"
 	"manga-platform/services/media"
 )
@@ -115,5 +116,72 @@ func TestFR_U2_ConfirmAndTakedownWipe(t *testing.T) {
 	// Path traversal rejected.
 	if _, err := svc.Confirm(ctx, "tmp/../../evil.webp", "s", "c"); err != media.ErrInvalidKey {
 		t.Fatalf("expected ErrInvalidKey, got %v", err)
+	}
+}
+
+// testBadgedWebP builds a WebP like the web client sends: art plus the
+// flat orange accent square in the bottom-right corner.
+func testBadgedWebP(t *testing.T, badged bool) []byte {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, 1000, 1000))
+	for y := range 1000 {
+		for x := range 1000 {
+			img.Set(x, y, color.RGBA{uint8(x % 256), uint8(y % 256), 128, 255})
+		}
+	}
+	if badged {
+		for y := 950; y < 970; y++ {
+			for x := 800; x < 820; x++ {
+				img.Set(x, y, color.RGBA{255, 74, 34, 255})
+			}
+		}
+	}
+	var buf bytes.Buffer
+	if err := webp.Encode(&buf, img, webp.Options{Quality: 80, Method: 0}); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func TestFR_U2_BadgedWebPPassesThrough(t *testing.T) {
+	ctx := context.Background()
+	store := imagestore.NewMemoryStore("http://cdn.test", []byte("secret"))
+	svc := media.NewService(store, 2)
+
+	raw := testBadgedWebP(t, true)
+	res, err := svc.Upload(ctx, bytes.NewReader(raw), "story-1", "chap-1")
+	if err != nil {
+		t.Fatalf("Upload: %v", err)
+	}
+	rc, err := store.Get(ctx, res.Key)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	defer rc.Close()
+	stored := new(bytes.Buffer)
+	if _, err := stored.ReadFrom(rc); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(stored.Bytes(), raw) {
+		t.Fatalf("badged webp was re-encoded (%d -> %d bytes)", len(raw), stored.Len())
+	}
+
+	// No badge: same bytes minus the accent must take the slow path.
+	plain := testBadgedWebP(t, false)
+	res2, err := svc.Upload(ctx, bytes.NewReader(plain), "story-1", "chap-1")
+	if err != nil {
+		t.Fatalf("plain Upload: %v", err)
+	}
+	rc2, err := store.Get(ctx, res2.Key)
+	if err != nil {
+		t.Fatalf("plain Get: %v", err)
+	}
+	defer rc2.Close()
+	stored2 := new(bytes.Buffer)
+	if _, err := stored2.ReadFrom(rc2); err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Equal(stored2.Bytes(), plain) {
+		t.Fatal("unbadged webp passed through without a badge")
 	}
 }

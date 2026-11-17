@@ -29,8 +29,11 @@ import (
 // Shared by Upload (single file) and UploadBatch (zip entries).
 func processOne(raw []byte) (out []byte, w, h int, animated bool, err error) {
 	ct := http.DetectContentType(raw)
+	isWebP := false
 	switch {
-	case strings.HasPrefix(ct, "image/jpeg"), strings.HasPrefix(ct, "image/png"), strings.HasPrefix(ct, "image/webp"):
+	case strings.HasPrefix(ct, "image/jpeg"), strings.HasPrefix(ct, "image/png"):
+	case strings.HasPrefix(ct, "image/webp"):
+		isWebP = true
 	case strings.HasPrefix(ct, "image/gif"):
 		animated = true // first frame only
 	default:
@@ -52,9 +55,17 @@ func processOne(raw []byte) (out []byte, w, h int, animated bool, err error) {
 	if err != nil {
 		return nil, 0, 0, false, fmt.Errorf("%w: %v", ErrUnsupportedFmt, err)
 	}
-
 	bounds := img.Bounds()
 	w, h = bounds.Dx(), bounds.Dy()
+
+	// Fast path: the web client already resized, badged, and WebP-encoded
+	// its uploads. A verified client badge means the bytes are final:
+	// store them untouched (~20x cheaper than decode + watermark + encode).
+	// A miss (direct API use, old client, tiny image) just falls through
+	// to the slow path below, which badges and encodes server-side.
+	if isWebP && w <= MaxWidth && h <= MaxHeight && hasClientBadge(img) {
+		return raw, w, h, false, nil
+	}
 	if w > MaxWidth {
 		nh := h * MaxWidth / w
 		dst := image.NewRGBA(image.Rect(0, 0, MaxWidth, nh))
@@ -70,7 +81,7 @@ func processOne(raw []byte) (out []byte, w, h int, animated bool, err error) {
 	img = rgba
 
 	var buf bytes.Buffer
-	if err := webp.Encode(&buf, img, webp.Options{Quality: WebPQuality, Method: 1}); err != nil {
+	if err := webp.Encode(&buf, img, webp.Options{Quality: WebPQuality, Method: 0}); err != nil {
 		return nil, 0, 0, false, fmt.Errorf("webp encode: %w", err)
 	}
 	return buf.Bytes(), w, h, animated, nil
