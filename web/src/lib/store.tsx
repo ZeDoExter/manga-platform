@@ -95,6 +95,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const ref = useRef(state);
   ref.current = state;
+  // Recently deleted ids: pull must not resurrect them while the server
+  // delete is still in flight (cleared on reload; server is clean by then).
+  const tombstones = useRef(new Map<string, number>());
   const tid = useRef(0);
 
   const toast = useCallback((msg: string, kind: ToastItem["kind"] = "ok") => {
@@ -213,6 +216,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const GRACE_MS = 7 * 86400000;
           const byId = new Map(s.studio.map((x) => [x.id, x] as [string, StudioStory]));
           for (const r of remote) {
+            const storyTomb = tombstones.current.get(`s:${r.id}`);
+            if (storyTomb && pullNow - storyTomb < 60000) continue;
             if (!byId.has(r.id)) {
               byId.set(r.id, { ...r, syncedAt: pullNow });
             } else {
@@ -221,7 +226,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               for (const rc of r.chapters) {
                 const existing = chMap.get(rc.number);
                 if (!existing) {
-                  chMap.set(rc.number, rc);
+                  const chTomb = tombstones.current.get(`c:${r.id}:${rc.number}`);
+                  if (!chTomb || pullNow - chTomb >= 60000) chMap.set(rc.number, rc);
                 } else if ((rc.pages?.length ?? 0) > (existing.pages?.length ?? 0)) {
                   chMap.set(rc.number, { ...existing, pages: rc.pages, text: rc.text || existing.text });
                 }
@@ -482,10 +488,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       deleteStory(id) {
         const snapshot = ref.current.studio.find((x) => x.id === id);
         setState((s) => ({ ...s, studio: s.studio.filter((x) => x.id !== id) }));
+        tombstones.current.set(`s:${id}`, Date.now());
         void deleteRemoteStory(id).then(
           () => toast("Story deleted", "info"),
           (err) => {
             // Remote failed: restore locally so we never diverge silently.
+            tombstones.current.delete(`s:${id}`);
             if (snapshot) {
               setState((s) => (s.studio.some((x) => x.id === id) ? s : { ...s, studio: [snapshot, ...s.studio] }));
             }
@@ -514,6 +522,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const snapshot = ref.current.studio.find((x) => x.id === storyId)?.chapters.find((c) => c.id === chapterId);
         const chapterNo = snapshot?.number;
         upStory(storyId, (x) => ({ ...x, chapters: x.chapters.filter((c) => c.id !== chapterId) }));
+        if (chapterNo !== undefined) tombstones.current.set(`c:${storyId}:${chapterNo}`, Date.now());
         if (chapterNo === undefined) {
           toast("Chapter deleted", "info");
           return;
@@ -522,6 +531,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           () => toast("Chapter deleted", "info"),
           (err) => {
             // Remote failed: restore locally so we never diverge silently.
+            if (chapterNo !== undefined) tombstones.current.delete(`c:${storyId}:${chapterNo}`);
             if (snapshot) {
               upStory(storyId, (x) => (x.chapters.some((c) => c.id === chapterId) ? x : { ...x, chapters: [...x.chapters, snapshot] }));
             }
