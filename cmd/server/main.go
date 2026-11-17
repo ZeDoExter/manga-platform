@@ -23,10 +23,11 @@ func main() {
 	mux := http.NewServeMux()
 	httpapi.Health(mux)
 	mux.Handle("/api/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Defense in depth with the Envoy strip above: never forward
-		// caller-supplied identity to reader.
-		r.Header.Del("X-User-ID")
-		r.Header.Del("X-User-Role")
+		// Identity headers pass through untouched. Trust boundary:
+		// edge clients can't smuggle them (the api.dootoon.store HTTPRoute
+		// strips x-user-*), and the only in-cluster caller is the BFF,
+		// which stamps them from its verified session. Stripping here
+		// would demote every logged-in reader to guest (401 on paid chapters).
 		proxy.ServeHTTP(w, r)
 	}))
 
