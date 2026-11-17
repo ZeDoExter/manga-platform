@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { badGateway } from "@/lib/api-error";
 import { chapterKey } from "@/lib/economy";
 import type { StudioChapter, StudioStory } from "@/lib/types";
 import { getServerIdentity } from "@/lib/identity-server";
@@ -128,6 +129,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!createRes.ok && createRes.status !== 409) {
+      if (createRes.status >= 500) return badGateway();
       const errText = await createRes.text().catch(() => "catalog error");
       return NextResponse.json({ error: errText }, { status: createRes.status });
     }
@@ -195,11 +197,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "catalog sync failed" },
-      { status: 502 },
-    );
+  } catch {
+    return badGateway();
   }
 }
 export async function DELETE(req: NextRequest) {
@@ -223,11 +222,11 @@ export async function DELETE(req: NextRequest) {
           cache: "no-store",
         });
       } catch {
-        return NextResponse.json({ error: "catalog service unavailable" }, { status: 502 });
+        return badGateway();
       }
       if (res.status !== 404) {
         if (!res.ok) {
-          return NextResponse.json({ error: "catalog service unavailable" }, { status: 502 });
+          return badGateway();
         }
         const owner = (await res.json().catch(() => null)) as { owner_id?: string } | null;
         if (!owner || owner.owner_id !== me.accountId) {
@@ -253,10 +252,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "failed to delete story" }, { status: res.status });
     }
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "catalog service unavailable" },
-      { status: 502 },
-    );
+  } catch {
+    return badGateway();
   }
 }

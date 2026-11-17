@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { badGateway } from "@/lib/api-error";
 import { chapterKey } from "@/lib/economy";
 import { getServerIdentity } from "@/lib/identity-server";
 
@@ -97,15 +98,13 @@ export async function POST(req: NextRequest) {
     });
 
     if (!res.ok) {
+      if (res.status >= 500) return badGateway();
       const errText = await res.text().catch(() => "community error");
       return NextResponse.json({ error: errText }, { status: res.status });
     }
     const created = await res.json();
     return NextResponse.json({ ok: true, comment: created });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "community service unavailable" },
-      { status: 502 },
-    );
+  } catch {
+    return badGateway();
   }
 }

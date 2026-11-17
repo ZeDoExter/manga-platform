@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { badGateway } from "@/lib/api-error";
 import { chapterKey } from "@/lib/economy";
 
 const COMMERCE_URL = (process.env.COMMERCE_URL ?? "http://localhost:8083").replace(/\/+$/, "");
@@ -151,15 +152,13 @@ export async function POST(req: NextRequest) {
       cache: "no-store",
     });
     if (!cRes.ok) {
+      if (cRes.status >= 500) return badGateway();
       const t = await cRes.text().catch(() => "comment failed");
       return NextResponse.json({ error: t.slice(0, 200) }, { status: cRes.status });
     }
     const created = (await cRes.json()) as { id?: string };
     return NextResponse.json({ ok: true, id: created.id ?? null, coins });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "paid comment failed" },
-      { status: 502 },
-    );
+  } catch {
+    return badGateway();
   }
 }

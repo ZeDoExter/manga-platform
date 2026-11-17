@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { badGateway } from "@/lib/api-error";
 import { getServerIdentity, stampGoHeaders } from "@/lib/identity-server";
 
 export const dynamic = "force-dynamic";
@@ -22,16 +23,14 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
       cache: "no-store",
       signal: AbortSignal.timeout(300000),
     });
+    if (res.status >= 500) return badGateway();
     const out = await res.arrayBuffer();
     return new NextResponse(out, {
       status: res.status,
       headers: { "content-type": res.headers.get("content-type") ?? "application/json" },
     });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "media service unavailable" },
-      { status: 502 },
-    );
+  } catch {
+    return badGateway();
   }
 }
 

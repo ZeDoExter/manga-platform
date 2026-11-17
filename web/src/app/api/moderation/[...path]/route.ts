@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { badGateway } from "@/lib/api-error";
 import { getServerIdentity, stampGoHeaders } from "@/lib/identity-server";
 
 const MODERATION_URL = (process.env.MODERATION_URL ?? "http://localhost:8085").replace(/\/+$/, "");
@@ -29,16 +30,14 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
       body,
       cache: "no-store",
     });
+    if (res.status >= 500) return badGateway();
     const text = await res.text();
     return new NextResponse(text, {
       status: res.status,
       headers: { "content-type": res.headers.get("content-type") ?? "application/json" },
     });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "moderation service unavailable" },
-      { status: 502 },
-    );
+  } catch {
+    return badGateway();
   }
 }
 
