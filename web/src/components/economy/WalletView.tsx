@@ -132,7 +132,7 @@ export function WalletView() {
   if (error && !wallet) {
     return (
       <div className="wrap py-16">
-        <Empty icon="zap" title="Wallet service offline" text={`${error}. Start the Go services and try again.`} action={<button className="btn" onClick={() => void refresh()}>Retry</button>} />
+        <Empty icon="coin" title="Wallet unavailable" text="Your wallet couldn't be loaded. Please try again in a moment." action={<button className="btn" onClick={() => void refresh()}>Retry</button>} />
       </div>
     );
   }

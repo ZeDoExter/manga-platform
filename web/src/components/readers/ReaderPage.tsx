@@ -89,7 +89,7 @@ export function ReaderPage({ id, ch }: { id: string; ch: string }) {
   if (!data) {
     return (
       <div className="wrap py-24">
-        <Empty icon="book" title="Chapter not available" text="This chapter doesn't exist or hasn't been published." action={<Link href={`/story/${id}`} className="btn">Back to {story.title}</Link>} />
+        <Empty icon="book" title="Coming soon" text="This chapter hasn't been published yet. Check back later." action={<Link href={`/story/${id}`} className="btn">Back to {story.title}</Link>} />
       </div>
     );
   }

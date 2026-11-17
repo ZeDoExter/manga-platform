@@ -63,11 +63,19 @@ export function Paywall({ story, chapter, chapterLabel, access, checking, buying
                 <div className="skeleton h-10" />
               </div>
             ) : error ? (
-              <div>
-                <div className="flex items-center gap-2 text-sm font-extrabold"><Icon name="zap" size={16} className="text-accent" /> The reading service didn&apos;t answer</div>
-                <p className="mt-2 text-sm text-ink2">{error}. Check that the Go services are running, then try again.</p>
-                <button className="btn btn-accent mt-4" onClick={onRetry}>Try again</button>
-              </div>
+              /not found/i.test(error) ? (
+                <div>
+                  <div className="text-sm font-extrabold">Coming soon</div>
+                  <p className="mt-2 text-sm text-ink2">This chapter hasn&apos;t been published yet. Check back later.</p>
+                  <Link href={`/story/${story.id}`} className="btn mt-4">Back to the story</Link>
+                </div>
+              ) : (
+                <div>
+                  <div className="text-sm font-extrabold">Something went wrong</div>
+                  <p className="mt-2 text-sm text-ink2">Please try again in a moment.</p>
+                  <button className="btn btn-accent mt-4" onClick={onRetry}>Try again</button>
+                </div>
+              )
             ) : unavailable ? (
               <div>
                 <div className="flex items-center gap-2 text-sm font-extrabold"><Icon name="lock" size={16} className="text-accent" /> This chapter is unavailable</div>
