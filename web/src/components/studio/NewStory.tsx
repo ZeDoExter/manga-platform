@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import type { ColorMode, Mood, Motif, StoryType, StudioStory } from "@/lib/types";
 import { COLOR_LABEL, TYPE_LABEL, isVisual } from "@/lib/types";
 import { ALL_GENRES, MOODS, TYPES } from "@/data/stories";
-import { defaultPages } from "@/lib/content";
 import { cx, uid } from "@/lib/util";
 import { useApp } from "@/lib/store";
 import { uploadCover } from "@/lib/media-api";
@@ -57,12 +56,12 @@ function Wizard() {
       title: "Chapter 1",
       status: publish ? ("published" as const) : ("draft" as const),
       updatedAt: Date.now(),
-      text: visual ? undefined : "The first line of every story is a promise.\n\nWrite yours here — then preview it exactly as readers will see it.",
-      pages: visual ? defaultPages(4, uid("p")) : undefined,
+      text: visual ? undefined : "",
+      pages: visual ? [] : undefined,
     };
     const st: StudioStory = { id, ownerId: account.id, title: title.trim(), type, colorMode, synopsis: synopsis.trim(), tagline: tagline.trim(), genres, tags, palette, motif, mood, coverImage: image, status: publish ? "published" : "draft", chapters: [ch], createdAt: Date.now() };
     act.createStory(st);
-    toast(publish ? `“${st.title}” published! Find it in Discover 🎉` : `Draft saved — “${st.title}” is in your Studio ✓`);
+    toast(publish ? `“${st.title}” published! Find it in Discover.` : `Draft saved — “${st.title}” is in your Studio.`);
     router.push(publish ? `/studio/${id}` : `/studio/${id}/edit/${ch.id}`);
   };
 
@@ -121,7 +120,7 @@ function Wizard() {
           {step === 2 && (
             <>
               <div className="flex flex-wrap items-center gap-3">
-                <input ref={file} type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; setBusy(true); try { setImage(await uploadCover(f, account.id, draftId)); toast("Cover uploaded ✓"); } catch { try { setImage(await fileToDataUrl(f, 640)); toast("Cover saved on this device only (upload failed)", "warn"); } catch { toast("Couldn’t read that image", "warn"); } } setBusy(false); }} aria-label="Upload cover artwork" />
+                <input ref={file} type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; setBusy(true); try { setImage(await uploadCover(f, account.id, draftId)); toast("Cover uploaded"); } catch { try { setImage(await fileToDataUrl(f, 640)); toast("Cover saved on this device only (upload failed)", "warn"); } catch { toast("Couldn’t read that image", "warn"); } } setBusy(false); }} aria-label="Upload cover artwork" />
                 <button className="btn" onClick={() => file.current?.click()} disabled={busy}><Icon name="upload" size={14} /> {busy ? "Processing…" : "Upload artwork"}</button>
                 {image && <button className="btn btn-ghost" onClick={() => setImage(undefined)}>Remove & use generated</button>}
                 <span className="text-xs text-muted">or design a generated cover below</span>
@@ -136,7 +135,7 @@ function Wizard() {
               <dl className="grid gap-3 sm:grid-cols-2">
                 {[["Format", TYPE_LABEL[type]], ["Genres", genres.join(", ")], ["Tags", tags.map((t) => "#" + t).join(" ") || "—"], ["Mood", mood], ["Tagline", tagline || "—"], ["Cover", image ? "Uploaded artwork" : `Generated · ${motif}`]].map(([k, v]) => <div key={k} className="rounded-md border-2 border-line/30 p-3"><dt className="label">{k}</dt><dd className="mt-0.5 text-sm font-bold">{v}</dd></div>)}
               </dl>
-              <p className="text-sm text-ink2">We’ll create <b>Chapter 1</b> for you with {isVisual(type) ? "four placeholder manga pages" : "a starter paragraph"}. Save it as a draft to keep working, or publish it right away.</p>
+              <p className="text-sm text-ink2">We’ll create an empty <b>Chapter 1</b> for you — add your pages or text next. Save it as a draft to keep working, or publish it right away.</p>
               <div className="flex flex-wrap gap-3">
                 <button className="btn !px-5 !py-3" onClick={() => create(false)}><Icon name="edit" size={15} /> Save draft & start writing</button>
                 <button className="btn btn-accent !px-5 !py-3" onClick={() => create(true)}><Icon name="zap" size={15} /> Create & publish Chapter 1</button>

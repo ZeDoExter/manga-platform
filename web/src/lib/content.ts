@@ -1,4 +1,4 @@
-import type { Story, Taste, StudioStory, StudioPage, PagePreset, Account } from "./types";
+import type { Story, Taste, StudioStory, Account } from "./types";
 import { TASTE_KEYS } from "./types";
 import { clamp } from "./util";
 import { presetPage, type PageSpec } from "./manga";
@@ -9,10 +9,6 @@ export type ReaderContent =
   | { kind: "novel"; paragraphs: string[]; title: string }
   | { kind: "manga"; pages: ReaderPageItem[]; title: string };
 
-export function defaultPages(count = 6, seed = "p"): StudioPage[] {
-  const presets: PagePreset[] = ["splash", "establishing", "dialogue", "action", "closeup", "dialogue", "action", "splash"];
-  return Array.from({ length: count }, (_, i) => ({ id: `${seed}-${i}`, kind: "preset" as const, preset: presets[i % presets.length] }));
-}
 
 export function resolveImageUrl(src?: string): string {
   if (!src) return "";

@@ -225,6 +225,21 @@ export function MangaReader({ story, chapter, title, nav, content, preview, onCl
     </div>
   );
 
+  if (total === 0) {
+    return (
+      <div className="fixed inset-0 grid place-items-center bg-[#0d0c12] text-white" style={{ zIndex: z }}>
+        <div className="px-4 text-center">
+          <div className="h-display text-3xl">No pages yet</div>
+          <p className="mt-2 text-sm text-white/70">The creator hasn’t added pages to this chapter.</p>
+          <div className="mt-5 flex flex-col gap-2.5">
+            {!preview && <Link href={`/story/${story.id}`} className="btn btn-ghost">Back to story</Link>}
+            {preview && <button className="btn btn-ghost" onClick={onClose}>Close preview</button>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-[#0d0c12] text-white" style={{ zIndex: z }}>
       {/* content */}

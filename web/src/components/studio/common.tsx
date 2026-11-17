@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 import type { Mood, Motif, PagePreset, Story, StudioChapter, StudioStory } from "@/lib/types";
 import { isVisual } from "@/lib/types";
-import { defaultPages, studioContent } from "@/lib/content";
+import { studioContent } from "@/lib/content";
 import { defaultChapterPrice } from "@/lib/economy";
 import { cx, uid } from "@/lib/util";
 import { useApp } from "@/lib/store";
@@ -72,7 +72,7 @@ export function newChapter(s: StudioStory, status: StudioChapter["status"] = "dr
     status,
     updatedAt: Date.now(),
     text: visual ? undefined : "",
-    pages: visual ? defaultPages(4, uid("p")) : undefined,
+    pages: visual ? [] : undefined,
     priceCoins: defaultChapterPrice(s.type, number, Math.max(published, number)),
   };
 }
