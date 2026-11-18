@@ -83,6 +83,7 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
     ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: "lock" }] : []),
   ];
   return (
+    <>
     <header className="sticky top-0 z-[100] border-b-2 border-line bg-paper/90 backdrop-blur-md">
       <div className="wrap flex h-16 items-center gap-3">
         <Link href="/" className="group flex items-center gap-2.5" aria-label="DOOTOON home">
@@ -180,6 +181,10 @@ function TopNav({ path, onSearch }: { path: string; onSearch: () => void }) {
         </div>
       </div>
     </header>
+    <div className="border-b-2 border-line bg-hl px-4 py-1.5 text-center font-mono text-[0.7rem] font-bold tracking-wide text-[#15120f]" role="note">
+      DEMO — stories, coins, and payments are simulated
+    </div>
+    </>
   );
 }
 
